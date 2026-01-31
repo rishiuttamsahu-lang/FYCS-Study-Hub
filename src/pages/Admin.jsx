@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { useApp } from "../context/AppContext";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, query, where, getDocs, collection } from "firebase/firestore";
 import { db } from "../firebase";
 
 const tabs = [
@@ -47,6 +47,33 @@ export default function Admin() {
   } = useApp();
   
   const ADMIN_EMAIL = "rishiuttamsahu@gmail.com";
+  
+  // Temporary function to make Piyush admin
+  const makePiyushAdmin = async () => {
+    try {
+      // First, let's find Piyush's user document
+      const q = query(collection(db, "users"), where("email", "==", "piyushgupta122006@gmail.com"));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        toast.error("Piyush not found in database. He needs to login first.");
+        return;
+      }
+      
+      const userDoc = querySnapshot.docs[0];
+      const userId = userDoc.id;
+      
+      await updateDoc(doc(db, "users", userId), { 
+        role: "admin",
+        isBanned: false 
+      });
+      
+      toast.success("Piyush has been made admin successfully!");
+    } catch (error) {
+      console.error("Error making Piyush admin:", error);
+      toast.error("Error: " + error.message);
+    }
+  };
   
   useEffect(() => {
     // If loaded and user is NOT the admin, kick them out
@@ -809,14 +836,28 @@ export default function Admin() {
                     toast.error("Reset analytics functionality would be implemented here");
                   }
                 }}
-                className="btn-danger px-6 py-3 font-bold flex items-center gap-2"
+                className="btn-danger px-6 py-3 font-bold flex items-center gap-2 mb-4"
               >
                 <Trash2 size={18} />
                 Reset All Analytics
               </button>
-              <p className="text-xs text-white/40 mt-2">
+              <p className="text-xs text-white/40 mt-2 mb-4">
                 This will reset all views and downloads to zero
               </p>
+              
+              <div className="border-t border-white/10 pt-4 mt-4">
+                <h4 className="font-bold text-md mb-2 text-emerald-300">Admin Management</h4>
+                <p className="text-white/50 text-sm mb-3">
+                  Make Piyush Gupta an admin
+                </p>
+                <button
+                  type="button"
+                  onClick={makePiyushAdmin}
+                  className="bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 px-4 py-2 rounded-lg font-bold text-sm transition-colors"
+                >
+                  Make Piyush Admin
+                </button>
+              </div>
             </div>
           </div>
         )}
