@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { useApp } from "../context/AppContext";
-import { doc, updateDoc, deleteDoc, query, where, getDocs, collection } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 const tabs = [
@@ -48,32 +48,7 @@ export default function Admin() {
   
   // Admin access is now protected by ProtectedRoute component
   
-  // Temporary function to make Piyush admin
-  const makePiyushAdmin = async () => {
-    try {
-      // First, let's find Piyush's user document
-      const q = query(collection(db, "users"), where("email", "==", "piyushgupta122006@gmail.com"));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        toast.error("Piyush not found in database. He needs to login first.");
-        return;
-      }
-      
-      const userDoc = querySnapshot.docs[0];
-      const userId = userDoc.id;
-      
-      await updateDoc(doc(db, "users", userId), { 
-        role: "admin",
-        isBanned: false 
-      });
-      
-      toast.success("Piyush has been made admin successfully!");
-    } catch (error) {
-      console.error("Error making Piyush admin:", error);
-      toast.error("Error: " + error.message);
-    }
-  };
+
   
   // Admin access is now protected by ProtectedRoute component
   
@@ -306,18 +281,18 @@ export default function Admin() {
   return (
     <div className="p-5 pt-8 max-w-4xl mx-auto bg-[#0a0a0a]/50 backdrop-blur-sm rounded-xl">
       {/* Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+      <div className="mb-6 md:mb-8 text-center">
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
           Admin Dashboard
         </h1>
-        <p className="text-white/55 text-sm mt-2">
+        <p className="text-white/55 text-xs md:text-sm mt-1 md:mt-2">
           Manage all aspects of FYCS Study Hub
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="glass-card p-2 mb-8 overflow-x-auto">
-        <div className="flex gap-2 min-w-max">
+      <div className="glass-card p-2 mb-6 md:mb-8 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1 md:gap-2 min-w-max">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -325,14 +300,14 @@ export default function Admin() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-full text-sm font-bold transition-all whitespace-nowrap ${
+                className={`flex items-center justify-center gap-2 md:gap-2 px-4 py-3 md:px-5 md:py-3 rounded-full text-sm md:text-sm font-bold transition-all whitespace-nowrap min-w-[60px] md:min-w-0 ${
                   isActive
                     ? "bg-[#FFD700] text-black shadow-lg"
                     : "bg-white/0 text-white/70 hover:bg-white/5 hover:text-white"
                 }`}
               >
                 {tab.icon}
-                <span>{tab.label}</span>
+                <span className="hidden md:inline">{tab.label}</span>
               </button>
             );
           })}
@@ -344,13 +319,13 @@ export default function Admin() {
         {/* Analytics Tab */}
         {activeTab === "analytics" && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <div className="glass-card p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-white/50 text-xs uppercase tracking-wider font-bold">Total Materials</div>
-                  <FileText size={20} className="text-white/70" />
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+              <div className="glass-card p-4 md:p-5">
+                <div className="flex items-center justify-between mb-2 md:mb-3">
+                  <div className="text-white/50 text-[10px] md:text-xs uppercase tracking-wider font-bold">Total Materials</div>
+                  <FileText size={16} className="text-white/70 md:w-5 md:h-5" />
                 </div>
-                <div className="text-2xl font-extrabold">{safeStats.totalMaterials}</div>
+                <div className="text-xl md:text-2xl font-extrabold">{safeStats.totalMaterials}</div>
               </div>
               
               <div className="glass-card p-5">
@@ -378,9 +353,9 @@ export default function Admin() {
               </div>
             </div>
             
-            <div className="glass-card p-6">
-              <h3 className="font-bold text-lg mb-4 text-white/90">Platform Overview</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="glass-card p-4 md:p-6">
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-white/90">Platform Overview</h3>
+              <div className="grid grid-cols-3 gap-3 md:gap-4 text-xs md:text-sm">
                 <div>
                   <div className="text-white/50 mb-1">Semesters</div>
                   <div className="font-bold">{safeStats.totalSemesters}</div>
@@ -658,13 +633,13 @@ export default function Admin() {
                 if (semSubjects.length === 0) return null;
                 
                 return (
-                  <div key={semester.id} className="glass-card p-5">
-                    <h3 className="font-bold text-lg mb-4 text-white/90 border-b border-white/10 pb-2">
+                  <div key={semester.id} className="glass-card p-4 md:p-5">
+                    <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-white/90 border-b border-white/10 pb-2">
                       {semester.name}
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
                       {(semSubjects || []).map(subject => (
-                        <div key={subject.id} className="glass-card p-4 flex items-center justify-between">
+                        <div key={subject.id} className="glass-card p-3 md:p-4 flex items-center justify-between">
                           <div>
                             <div className="font-semibold">{subject.name}</div>
                             <div className="text-xs text-white/50 mt-1">Icon: {subject.icon}</div>
@@ -672,7 +647,7 @@ export default function Admin() {
                           <div className="flex gap-2">
                             <button
                               type="button"
-                              className="p-2 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
+                              className="p-1.5 md:p-2 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
                               title="Edit subject"
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -683,7 +658,7 @@ export default function Admin() {
                             <button
                               type="button"
                               onClick={() => deleteSubject(subject.id)}
-                              className="p-2 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
+                              className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
                               title="Delete subject"
                             >
                               <Trash2 size={16} />
@@ -716,7 +691,8 @@ export default function Admin() {
               <p className="text-sm text-white/50 mt-1">Manage registered users and their roles</p>
             </div>
             
-            <div className="overflow-x-auto">
+            {/* Desktop Table View - Hidden on mobile */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
@@ -748,7 +724,7 @@ export default function Admin() {
                               onClick={() => promoteUser(user.id)}
                               className="px-3 py-1 rounded-lg bg-purple-500/15 text-purple-300 text-sm font-bold hover:bg-purple-500/25 transition-colors"
                             >
-                              Promote to Admin
+                              Promote
                             </button>
                           ) : (
                             <button
@@ -756,7 +732,7 @@ export default function Admin() {
                               onClick={() => demoteUser(user.id)}
                               className="px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 text-sm font-bold hover:bg-amber-500/25 transition-colors"
                             >
-                              Demote to Student
+                              Demote
                             </button>
                           )}
                           {user.isBanned ? (
@@ -765,7 +741,7 @@ export default function Admin() {
                               onClick={() => handleUnban(user.id)}
                               className="px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 text-sm font-bold hover:bg-emerald-500/25 transition-colors"
                             >
-                              Unban User
+                              Unban
                             </button>
                           ) : (
                             <button
@@ -773,7 +749,7 @@ export default function Admin() {
                               onClick={() => banUser(user.id)}
                               className="px-3 py-1 rounded-lg bg-rose-500/15 text-rose-300 text-sm font-bold hover:bg-rose-500/25 transition-colors"
                             >
-                              Ban User
+                              Ban
                             </button>
                           )}
                         </div>
@@ -792,18 +768,89 @@ export default function Admin() {
                 </tbody>
               </table>
             </div>
+            
+            {/* Mobile Card View - Hidden on desktop */}
+            <div className="md:hidden space-y-3">
+              {(users || []).map(user => (
+                <div key={user.id} className="glass-card p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">{user.displayName || user.name}</h3>
+                      <p className="text-white/70 text-xs mt-1">{user.email}</p>
+                      <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold mt-2 ${
+                        user.role === "admin" 
+                          ? "bg-purple-500/20 text-purple-300" 
+                          : "bg-blue-500/20 text-blue-300"
+                      }`}>
+                        {user.role}
+                      </span>
+                    </div>
+                    {user.isBanned && (
+                      <span className="px-2 py-1 bg-rose-500/20 text-rose-300 text-[10px] font-bold rounded-full">
+                        Banned
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {user.role === "student" ? (
+                      <button
+                        type="button"
+                        onClick={() => promoteUser(user.id)}
+                        className="px-3 py-1.5 rounded-lg bg-purple-500/15 text-purple-300 text-xs font-bold hover:bg-purple-500/25 transition-colors flex-1 min-w-[100px]"
+                      >
+                        Promote
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => demoteUser(user.id)}
+                        className="px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 text-xs font-bold hover:bg-amber-500/25 transition-colors flex-1 min-w-[100px]"
+                      >
+                        Demote
+                      </button>
+                    )}
+                    
+                    {user.isBanned ? (
+                      <button
+                        type="button"
+                        onClick={() => handleUnban(user.id)}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 transition-colors flex-1 min-w-[100px]"
+                      >
+                        Unban
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => banUser(user.id)}
+                        className="px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 text-xs font-bold hover:bg-rose-500/25 transition-colors flex-1 min-w-[100px]"
+                      >
+                        Ban
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Empty state for mobile */}
+              {(!users || users.length === 0) && (
+                <div className="glass-card p-8 text-center">
+                  <p className="text-white/50 text-sm">No users found</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Settings Tab */}
         {activeTab === "settings" && (
           <div className="space-y-6">
-            <div className="glass-card p-6">
-              <h3 className="font-bold text-lg mb-4 text-white/90">System Information</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-white/10">
-                  <span className="text-white/50">Platform Version</span>
-                  <span className="font-mono font-bold">1.0.0</span>
+            <div className="glass-card p-4 md:p-6">
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-white/90">System Information</h3>
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex justify-between items-center py-1.5 md:py-2 border-b border-white/10">
+                  <span className="text-white/50 text-sm md:text-base">Platform Version</span>
+                  <span className="font-mono font-bold text-sm md:text-base">1.0.0</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-white/10">
                   <span className="text-white/50">Total Materials</span>
@@ -816,9 +863,9 @@ export default function Admin() {
               </div>
             </div>
             
-            <div className="glass-card p-6 border border-rose-500/20 bg-rose-500/5">
-              <h3 className="font-bold text-lg mb-2 text-rose-300">Danger Zone</h3>
-              <p className="text-white/50 text-sm mb-4">
+            <div className="glass-card p-4 md:p-6 border border-rose-500/20 bg-rose-500/5">
+              <h3 className="font-bold text-base md:text-lg mb-2 text-rose-300">Danger Zone</h3>
+              <p className="text-white/50 text-xs md:text-sm mb-3 md:mb-4">
                 These actions cannot be undone. Proceed with caution.
               </p>
               <button
@@ -828,7 +875,7 @@ export default function Admin() {
                     toast.error("Reset analytics functionality would be implemented here");
                   }
                 }}
-                className="btn-danger px-6 py-3 font-bold flex items-center gap-2 mb-4"
+                className="btn-danger px-4 py-2 md:px-6 md:py-3 font-bold flex items-center gap-2 mb-3 md:mb-4"
               >
                 <Trash2 size={18} />
                 Reset All Analytics
@@ -837,19 +884,7 @@ export default function Admin() {
                 This will reset all views and downloads to zero
               </p>
               
-              <div className="border-t border-white/10 pt-4 mt-4">
-                <h4 className="font-bold text-md mb-2 text-emerald-300">Admin Management</h4>
-                <p className="text-white/50 text-sm mb-3">
-                  Make Piyush Gupta an admin
-                </p>
-                <button
-                  type="button"
-                  onClick={makePiyushAdmin}
-                  className="bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 px-4 py-2 rounded-lg font-bold text-sm transition-colors"
-                >
-                  Make Piyush Admin
-                </button>
-              </div>
+
             </div>
           </div>
         )}
