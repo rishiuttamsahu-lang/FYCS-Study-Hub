@@ -147,6 +147,7 @@ export default function Library() {
               key={material.id} 
               material={material} 
               convertToDownloadLink={convertToDownloadLink}
+              getSubjectById={getSubjectById}
             />
           ))
         ) : (

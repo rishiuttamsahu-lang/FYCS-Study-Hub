@@ -111,6 +111,7 @@ const Home = () => {
               navigateToSubject={true}
               navigate={navigate}
               isNewMaterial={isNewMaterial}
+              getSubjectById={getSubjectById}
             />
           ))
         ) : (

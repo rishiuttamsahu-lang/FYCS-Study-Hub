@@ -1,4 +1,4 @@
-import { ChevronLeft, ExternalLink, FileText, Download } from "lucide-react";
+import { ChevronLeft, ExternalLink, FileText, Download, Search, ArrowUpDown, Check } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
@@ -12,6 +12,11 @@ export default function Materials() {
   const semester = getSemesterById(semId);
   const subject = getSubjectById(subjectId);
   const [typeTab, setTypeTab] = useState("Notes"); // Notes | Practicals | IMP | Assignment
+  
+  // Search and Sort states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest"); // newest, oldest, a-z
+  const [showSortMenu, setShowSortMenu] = useState(false);
   
   // Helper function to convert Google Drive view links to direct download links
   const convertToDownloadLink = (viewLink) => {
@@ -42,7 +47,44 @@ export default function Materials() {
     [getMaterialsBySubject, subjectId]
   );
 
-  const filtered = approvedForSubject.filter((m) => m.type === typeTab);
+  // Filter and sort logic
+  const filteredAndSorted = useMemo(() => {
+    // First filter by type
+    let result = approvedForSubject.filter((m) => m.type === typeTab);
+    
+    // Then filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((m) => 
+        m.title.toLowerCase().includes(query) ||
+        m.type.toLowerCase().includes(query)
+      );
+    }
+    
+    // Then sort
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          // Handle both Timestamp objects and regular dates
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || 0);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || 0);
+          return dateB - dateA; // Descending
+        
+        case "oldest":
+          const dateA2 = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || 0);
+          const dateB2 = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || 0);
+          return dateA2 - dateB2; // Ascending
+        
+        case "a-z":
+          return a.title.localeCompare(b.title);
+        
+        default:
+          return 0;
+      }
+    });
+    
+    return result;
+  }, [approvedForSubject, typeTab, searchQuery, sortBy]);
 
   if (!semester || !subject) {
     return (
@@ -108,19 +150,79 @@ export default function Materials() {
         </div>
       </div>
 
+      {/* Search and Sort Controls */}
+      <div className="flex gap-2 mb-4">
+        {/* Search Bar */}
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={16} className="text-white/50" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search notes, practicals..."
+            className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-zinc-800 text-white placeholder:text-white/30 focus:border-[#FFD700] focus:outline-none"
+          />
+        </div>
+        
+        {/* Sort Button */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowSortMenu(!showSortMenu)}
+            className="glass-card w-12 h-12 rounded-xl flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10"
+            title="Sort materials"
+          >
+            <ArrowUpDown size={18} className="text-white/80" />
+          </button>
+          
+          {/* Sort Dropdown Menu */}
+          {showSortMenu && (
+            <div className="absolute right-0 top-full mt-2 w-48 glass-card rounded-xl border border-white/10 z-10">
+              <div className="py-2">
+                {[
+                  { value: "newest", label: "Newest First" },
+                  { value: "oldest", label: "Oldest First" },
+                  { value: "a-z", label: "Title A-Z" }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setSortBy(option.value);
+                      setShowSortMenu(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm flex items-center justify-between hover:bg-white/5 transition-colors ${
+                      sortBy === option.value ? "text-[#FFD700] font-bold" : "text-white"
+                    }`}
+                  >
+                    {option.label}
+                    {sortBy === option.value && <Check size={16} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="space-y-3">
-        {filtered.map((m) => (
+        {filteredAndSorted.map((m) => (
           <MaterialCard 
             key={m.id} 
             material={m} 
             onIncrementView={incrementView}
             convertToDownloadLink={convertToDownloadLink}
+            getSubjectById={getSubjectById}
           />
         ))}
 
-        {!filtered.length ? (
+        {!filteredAndSorted.length ? (
           <div className="glass-card p-4 text-center text-white/60 text-sm">
-            No {typeTab} found for this subject.
+            {searchQuery 
+              ? `No ${typeTab} found matching "${searchQuery}"` 
+              : `No ${typeTab} found for this subject.`}
           </div>
         ) : null}
       </div>
