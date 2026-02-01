@@ -53,7 +53,7 @@ function App() {
         }
       />
       <Router>
-        <div className="min-h-screen bg-[#0a0a0a] text-white pb-24">
+        <div className="bg-[#0a0a0a] text-white pb-24">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/semester/:semId" element={<Subjects />} />

@@ -1,8 +1,37 @@
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, ExternalLink, Clock, Trash2, Settings, Download } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { useState, useEffect } from "react";
 
 export default function Profile() {
   const { user, login, logout } = useApp();
+  const [recentHistory, setRecentHistory] = useState([]);
+  const [downloadHistory, setDownloadHistory] = useState([]);
+  const [activeTab, setActiveTab] = useState("recent"); // "recent" | "downloads" | "settings"
+  
+  // Load both histories on component mount
+  useEffect(() => {
+    const recent = JSON.parse(localStorage.getItem('recentHistory') || '[]');
+    const downloads = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
+    setRecentHistory(recent);
+    setDownloadHistory(downloads);
+  }, []);
+  
+  const clearRecentHistory = () => {
+    localStorage.removeItem('recentHistory');
+    setRecentHistory([]);
+  };
+  
+  const clearDownloadHistory = () => {
+    localStorage.removeItem('downloadHistory');
+    setDownloadHistory([]);
+  };
+  
+  const clearAllData = () => {
+    localStorage.removeItem('recentHistory');
+    localStorage.removeItem('downloadHistory');
+    setRecentHistory([]);
+    setDownloadHistory([]);
+  };
   
   // Helper to get initials
   const getInitials = (name) => name ? name.charAt(0).toUpperCase() : "U";
@@ -10,7 +39,7 @@ export default function Profile() {
   // If user is not logged in
   if (!user) {
     return (
-      <div className="p-5 pt-8 max-w-md mx-auto">
+      <div className="p-5 pt-4 max-w-md mx-auto">
         <div className="glass-card p-8 text-center">
           <User size={48} className="mx-auto mb-4 text-white/30" />
           <div className="font-bold text-lg mb-2">Please Login</div>
@@ -39,53 +68,249 @@ export default function Profile() {
   
   // User is logged in - show profile
   return (
-    <div className="p-5 pt-8 max-w-md mx-auto">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold">Profile</h2>
-        <p className="text-white/55 text-xs mt-1">Your FYCS Study Hub account.</p>
+    <div className="bg-black pt-4">
+      {/* HEADER BANNER - Clean solid black */}
+      <div className="h-25 bg-black">
+        {/* Empty banner space - clean and solid */}
       </div>
 
-      <div className="glass-card p-6">
-        {/* Avatar */}
-        <div className="flex justify-center mb-6">
+      <div className="px-5 pb-8 max-w-md mx-auto">
+        {/* OVERLAPPING PROFILE PIC */}
+        <div className="-mt-16 mb-6">
           {user.photoURL ? (
             <img 
               src={user.photoURL} 
               alt={user.displayName} 
-              className="w-24 h-24 rounded-full border-2 border-white/20 object-cover"
+              className="w-24 h-24 rounded-full border-[6px] border-zinc-900 object-cover"
             />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center">
-              <span className="text-4xl font-bold text-white/80">
+            <div className="w-24 h-24 rounded-full border-[6px] border-zinc-900 bg-zinc-800 flex items-center justify-center">
+              <span className="text-3xl font-bold text-white">
                 {getInitials(user.displayName)}
               </span>
             </div>
           )}
         </div>
 
-        {/* User Details */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">{user.displayName || "User"}</h1>
-          <p className="text-white/60 mb-4">{user.email}</p>
+        {/* USER INFO & ACTIONS */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white mb-1">{user.displayName || "User"}</h1>
+          <p className="text-white/60 text-sm mb-4">{user.email}</p>
+          
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await logout();
+              } catch (error) {
+                console.error('Logout error:', error);
+              }
+            }}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            <LogOut size={16} />
+            Sign Out
+          </button>
         </div>
 
-        {/* Sign Out Button */}
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              await logout();
-            } catch (error) {
-              console.error('Logout error:', error);
-            }
-          }}
-          className="w-full py-3 bg-red-500/20 text-red-400 border border-red-500/50 rounded-xl font-medium hover:bg-red-500/30 transition-colors"
-        >
-          <div className="flex items-center justify-center gap-2">
-            <LogOut size={18} />
-            Sign Out
+        {/* TABBED NAVIGATION - Compact */}
+        <div className="flex gap-4 mb-4 border-b border-zinc-800">
+          <button
+            type="button"
+            onClick={() => setActiveTab("recent")}
+            className={`py-2 px-4 text-sm font-medium transition-colors ${
+              activeTab === "recent"
+                ? "text-white border-b-2 border-yellow-400"
+                : "text-white/50 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Clock size={14} />
+              Recently Viewed
+            </div>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setActiveTab("downloads")}
+            className={`py-2 px-4 text-sm font-medium transition-colors ${
+              activeTab === "downloads"
+                ? "text-white border-b-2 border-yellow-400"
+                : "text-white/50 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Download size={14} />
+              My Downloads
+            </div>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setActiveTab("settings")}
+            className={`py-2 px-4 text-sm font-medium transition-colors ${
+              activeTab === "settings"
+                ? "text-white border-b-2 border-yellow-400"
+                : "text-white/50 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Settings size={14} />
+              Settings
+            </div>
+          </button>
+        </div>
+
+        {/* CONTENT AREA */}
+        {activeTab === "recent" && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg text-white">Recently Viewed</h3>
+              {recentHistory.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearRecentHistory}
+                  className="text-xs text-white/50 hover:text-red-400 transition-colors flex items-center gap-1"
+                >
+                  <Trash2 size={14} />
+                  Clear History
+                </button>
+              )}
+            </div>
+            
+            <div className="glass-card">
+              {recentHistory.length === 0 ? (
+                <div className="text-center py-8 text-white/40">
+                  No recent history.
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-800 max-h-80 overflow-y-auto">
+                  {recentHistory.map((item, index) => (
+                    <div key={`${item.id}-${index}`} className="p-3 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-1.5 py-0.5 bg-zinc-800 text-gray-300 text-[10px] rounded whitespace-nowrap">
+                            {item.subject.length > 12 ? item.subject.substring(0, 9) + "..." : item.subject}
+                          </span>
+                          <span className="text-[10px] text-white/50">{item.type}</span>
+                        </div>
+                        <h4 className="text-sm text-white/90 truncate">
+                          {item.title.length > 40 ? item.title.substring(0, 37) + "..." : item.title}
+                        </h4>
+                        <div className="text-[10px] text-white/40 mt-1">
+                          Viewed: {new Date(item.viewedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
+                        className="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
+                        title="Open material"
+                      >
+                        <ExternalLink size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </button>
+        )}
+
+        {activeTab === "downloads" && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg text-white">My Downloads</h3>
+              {downloadHistory.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearDownloadHistory}
+                  className="text-xs text-white/50 hover:text-red-400 transition-colors flex items-center gap-1"
+                >
+                  <Trash2 size={14} />
+                  Clear History
+                </button>
+              )}
+            </div>
+            
+            <div className="glass-card">
+              {downloadHistory.length === 0 ? (
+                <div className="text-center py-8 text-white/40">
+                  No download history.
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-800 max-h-80 overflow-y-auto">
+                  {downloadHistory.map((item, index) => (
+                    <div key={`${item.id}-${index}`} className="p-3 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-1.5 py-0.5 bg-zinc-800 text-gray-300 text-[10px] rounded whitespace-nowrap">
+                            {item.subject.length > 12 ? item.subject.substring(0, 9) + "..." : item.subject}
+                          </span>
+                          <span className="text-[10px] text-white/50">{item.type}</span>
+                        </div>
+                        <h4 className="text-sm text-white/90 truncate">
+                          {item.title.length > 40 ? item.title.substring(0, 37) + "..." : item.title}
+                        </h4>
+                        <div className="text-[10px] text-white/40 mt-1">
+                          Downloaded: {new Date(item.downloadedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
+                        className="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
+                        title="Open material"
+                      >
+                        <ExternalLink size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="glass-card p-6">
+            <h3 className="font-bold text-lg mb-6 text-white">Settings</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
+                <div>
+                  <div className="font-medium text-white">Edit Profile</div>
+                  <div className="text-xs text-white/50">Update your profile information</div>
+                </div>
+                <Settings size={18} className="text-white/50" />
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
+                <div>
+                  <div className="font-medium text-white">App Version</div>
+                  <div className="text-xs text-white/50">v1.0.0</div>
+                </div>
+                <div className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                  Latest
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={clearAllData}
+                  className="w-full py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg font-medium hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={16} />
+                  Clear All Data
+                </button>
+                <p className="text-xs text-white/50 mt-2 text-center">
+                  This will remove all history and reset your profile
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

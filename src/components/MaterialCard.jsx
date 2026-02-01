@@ -34,10 +34,61 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
     return subjectName;
   };
 
+  // Helper function to add material to recent history (views)
+  const addToRecentHistory = (material) => {
+    const historyItem = {
+      id: material.id,
+      title: material.title,
+      subject: getSubjectById?.(material.subjectId)?.name || "Unknown",
+      link: material.link,
+      type: material.type,
+      viewedAt: new Date().toISOString()
+    };
+    
+    // Get existing recent history
+    const existingHistory = JSON.parse(localStorage.getItem('recentHistory') || '[]');
+    
+    // Remove duplicates (same ID)
+    const filteredHistory = existingHistory.filter(item => item.id !== material.id);
+    
+    // Add new item to the top
+    const updatedHistory = [historyItem, ...filteredHistory].slice(0, 10); // Keep last 10 items
+    
+    // Save to localStorage
+    localStorage.setItem('recentHistory', JSON.stringify(updatedHistory));
+  };
+
+  // Helper function to add material to download history
+  const addToDownloadHistory = (material) => {
+    const historyItem = {
+      id: material.id,
+      title: material.title,
+      subject: getSubjectById?.(material.subjectId)?.name || "Unknown",
+      link: material.link,
+      type: material.type,
+      downloadedAt: new Date().toISOString()
+    };
+    
+    // Get existing download history
+    const existingHistory = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
+    
+    // Remove duplicates (same ID)
+    const filteredHistory = existingHistory.filter(item => item.id !== material.id);
+    
+    // Add new item to the top
+    const updatedHistory = [historyItem, ...filteredHistory].slice(0, 10); // Keep last 10 items
+    
+    // Save to localStorage
+    localStorage.setItem('downloadHistory', JSON.stringify(updatedHistory));
+  };
+
   const handleViewClick = () => {
     if (navigateToSubject && navigate) {
       navigate(`/semester/${material.semId}/${material.subjectId}`);
     } else {
+      // Add to recent history only
+      addToRecentHistory(material);
+      
       // Optimistic update: increment view count locally
       setViewCount(prev => prev + 1);
       
@@ -49,6 +100,9 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
   };
 
   const handleDownloadClick = () => {
+    // Add to download history only
+    addToDownloadHistory(material);
+    
     // Optimistic update: increment download count locally
     setDownloadCount(prev => prev + 1);
     

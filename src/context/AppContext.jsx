@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { db, auth, googleProvider } from '../firebase';
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy, where } from 'firebase/firestore';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 
 // Create Context
@@ -213,9 +213,30 @@ export const AppProvider = ({ children }) => {
   // 1. Add new material
   const addMaterial = async (formData) => {
     try {
+      const title = formData.title.trim();
+      const subjectId = formData.subjectId;
+      
+      // Pre-upload check: Query for existing material with same title and subject
+      const duplicateQuery = query(
+        collection(db, "materials"),
+        where("subjectId", "==", subjectId),
+        where("title", "==", title)
+      );
+      
+      const duplicateSnapshot = await getDocs(duplicateQuery);
+      
+      // Block duplicates
+      if (!duplicateSnapshot.empty) {
+        return { 
+          success: false, 
+          error: "⚠️ Duplicate Found: A file with this Name and Subject already exists!" 
+        };
+      }
+      
+      // Allow unique: Proceed with upload
       const newMaterial = {
-        title: formData.title.trim(),
-        subjectId: formData.subjectId,
+        title: title,
+        subjectId: subjectId,
         semId: formData.semId,
         type: formData.type,
         link: formData.link.trim(),

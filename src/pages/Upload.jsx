@@ -1,4 +1,4 @@
-import { CloudUpload, Link2, Tag } from "lucide-react";
+import { CloudUpload, Link2, Tag, FileText, Code, Star, Edit3, CheckCircle, XCircle } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -6,7 +6,11 @@ import { useApp } from "../context/AppContext";
 
 export default function Upload() {
   const navigate = useNavigate();
-  const { semesters, subjects, addMaterial, isAdmin } = useApp();
+  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial } = useApp();
+  const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'pending_admin'
+  
+  // Get pending materials
+  const pendingMaterials = materials.filter(material => material.status === 'Pending');
   
   // Redirect non-admin users
   useEffect(() => {
@@ -91,15 +95,43 @@ export default function Upload() {
   }
 
   return (
-    <div className="p-5 pt-8 max-w-md mx-auto">
+    <div className="p-5 pt-6 max-w-md mx-auto">
       <div className="mb-6">
         <h2 className="text-xl font-bold">Upload</h2>
         <p className="text-white/55 text-xs mt-1">
           Share notes, practicals, important materials, and assignments.
         </p>
       </div>
-
-      <form className="glass-card p-4" onSubmit={onSubmit}>
+      
+      {/* TOP TAB BAR */}
+      <div className="flex w-full bg-zinc-900 rounded-lg p-1 mb-6">
+        <button
+          type="button"
+          onClick={() => setActiveTab('upload')}
+          className={`flex-1 py-2 text-center font-bold transition-colors ${
+            activeTab === 'upload'
+              ? 'bg-yellow-400 text-black rounded-md'
+              : 'text-white/70'
+          }`}
+        >
+          Upload
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('pending_admin')}
+          className={`flex-1 py-2 text-center font-bold transition-colors ${
+            activeTab === 'pending_admin'
+              ? 'bg-yellow-400 text-black rounded-md'
+              : 'text-white/70'
+          }`}
+        >
+          Pending (Admin)
+        </button>
+      </div>
+      
+      {/* CONDITIONAL RENDERING */}
+      {activeTab === 'upload' ? (
+        <form className="glass-card p-4" onSubmit={onSubmit}>
         <div className="mb-4">
           <div className="text-white/50 uppercase text-[10px] tracking-widest font-bold">
             Publish Material
@@ -231,6 +263,100 @@ export default function Upload() {
           <CloudUpload size={18} />
         </button>
       </form>
+      ) : (
+        <div className="glass-card p-4">
+          <div className="mb-4">
+            <div className="text-white/50 uppercase text-[10px] tracking-widest font-bold">
+              Pending Materials
+            </div>
+            <div className="text-[12px] text-white/70 mt-2">
+              Materials awaiting approval.
+            </div>
+          </div>
+          
+          {pendingMaterials.length > 0 ? (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {pendingMaterials.map((material) => {
+                const subject = subjects.find(s => s.id === material.subjectId);
+                const semester = semesters.find(s => s.id === material.semId);
+                
+                return (
+                  <div key={material.id} className="glass-card p-3">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-start gap-2">
+                          <div className="mt-0.5">
+                            {material.type === 'Notes' ? <FileText className="text-blue-400" size={16} /> :
+                             material.type === 'Practicals' ? <Code className="text-green-400" size={16} /> :
+                             material.type === 'IMP' ? <Star className="text-yellow-400" size={16} /> :
+                             material.type === 'Assignment' ? <Edit3 className="text-purple-400" size={16} /> :
+                             <FileText className="text-amber-400" size={16} />}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-white/90 text-sm">{material.title}</h3>
+                            <div className="text-xs text-white/50 mt-1">
+                              {semester?.name} • {subject?.name} • {material.type}
+                            </div>
+                            <div className="text-xs text-white/40 mt-1">
+                              Uploaded by {material.uploadedBy} • {new Date(material.date).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const result = await approveMaterial(material.id);
+                              if (result.success) {
+                                toast.success("Material approved successfully!");
+                              } else {
+                                toast.error(result.error || "Failed to approve material");
+                              }
+                            } catch (error) {
+                              toast.error("Error approving material: " + error.message);
+                            }
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-200 font-bold hover:bg-emerald-500/20 transition-colors text-xs"
+                        >
+                          <CheckCircle size={14} />
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const result = await rejectMaterial(material.id);
+                              if (result.success) {
+                                toast.success("Material rejected successfully!");
+                              } else {
+                                toast.error(result.error || "Failed to reject material");
+                              }
+                            } catch (error) {
+                              toast.error("Error rejecting material: " + error.message);
+                            }
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 font-bold hover:bg-rose-500/15 transition-colors text-xs"
+                        >
+                          <XCircle size={14} />
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-white/40">
+              <p>No pending materials</p>
+              <p className="text-sm mt-1">All materials have been approved!</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
