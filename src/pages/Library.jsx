@@ -1,6 +1,7 @@
 import { FileText, Search, BookOpen, GraduationCap, Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useApp } from "../context/AppContext";
+import MaterialCard from "../components/MaterialCard";
 
 export default function Library() {
   const { materials, subjects, semesters, getSubjectById, getSemesterById } = useApp();
@@ -141,63 +142,13 @@ export default function Library() {
       {/* Materials Grid */}
       <div className="space-y-4">
         {filteredMaterials.length > 0 ? (
-          filteredMaterials.map((material) => {
-            const subject = getSubjectById(material.subjectId);
-            const semester = getSemesterById(material.semId);
-
-            return (
-              <div key={material.id} className="glass-card p-5">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">
-                        {material.type === 'Notes' ? <FileText size={20} className="text-blue-400" /> :
-                         material.type === 'Practicals' ? <Code size={20} className="text-green-400" /> :
-                         material.type === 'IMP' ? <Star size={20} className="text-yellow-400" /> :
-                         material.type === 'Assignment' ? <Edit3 size={20} className="text-purple-400" /> :
-                         <FileText size={20} className="text-white/85" />}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white/90 text-lg">{material.title}</h3>
-                        <div className="text-sm text-white/60 mt-1">
-                          {semester?.name} • {subject?.name} • {material.type}
-                        </div>
-                        <div className="flex gap-4 mt-2 text-xs text-white/50">
-                          <span>👁 {material.views} views</span>
-                          <span>⬇ {material.downloads || 0} downloads</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <a
-                      href={material.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-200 font-bold hover:bg-blue-500/20 transition-colors"
-                    >
-                      <FileText size={16} />
-                      View
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // Convert view link to download link
-                        const downloadUrl = convertToDownloadLink(material.link);
-                        // Open download link in new tab
-                        window.open(downloadUrl, "_blank", "noopener,noreferrer");
-                      }}
-                      className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
-                      title="Download"
-                    >
-                      <Download size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          filteredMaterials.map((material) => (
+            <MaterialCard 
+              key={material.id} 
+              material={material} 
+              convertToDownloadLink={convertToDownloadLink}
+            />
+          ))
         ) : (
           <div className="glass-card p-12 text-center">
             <FileText size={32} className="mx-auto mb-4 text-white/30" />

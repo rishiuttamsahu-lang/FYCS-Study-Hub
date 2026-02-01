@@ -1,4 +1,4 @@
-import { BarChart2, Book, CheckCircle, Clock, Code, Download, Edit3, Eye, FileText, Plus, Settings, Shield, Star, Trash2, Upload, User, XCircle } from "lucide-react";
+import { BarChart2, Book, CheckCircle, Clock, Code, Download, Edit3, Eye, FileText, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -19,6 +19,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("analytics");
   const [materialFilter, setMaterialFilter] = useState("Pending"); // Pending | Approved
   const [showAddSubjectForm, setShowAddSubjectForm] = useState(false);
+  const [userSearchTerm, setUserSearchTerm] = useState("");
   
   const [newSubject, setNewSubject] = useState({
     name: "",
@@ -65,6 +66,13 @@ export default function Admin() {
       </div>
     );
   }
+  
+  // Filter users based on search term
+  const filteredUsers = (users || []).filter(user => 
+    user.email?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    user.displayName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    user.name?.toLowerCase().includes(userSearchTerm.toLowerCase())
+  );
   
   // Safety check for stats calculation
   const safeStats = {
@@ -697,79 +705,116 @@ export default function Admin() {
             <div className="p-5 border-b border-white/10">
               <h3 className="font-bold text-lg text-white/90">User Management</h3>
               <p className="text-sm text-white/50 mt-1">Manage registered users and their roles</p>
+              
+              {/* Search Bar */}
+              <div className="mt-4 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search size={16} className="text-white/50" />
+                </div>
+                <input
+                  type="text"
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                  placeholder="Search by name or email..."
+                  className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-[#FFD700] focus:outline-none"
+                />
+              </div>
             </div>
             
             {/* Desktop Table View - Hidden on mobile */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-hide">
               <table className="w-full">
-                <thead>
+                <thead className="sticky top-0 bg-[#0a0a0a]">
                   <tr className="border-b border-white/10">
                     <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Name</th>
                     <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Email</th>
                     <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Role</th>
+                    <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Status</th>
                     <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(users || []).map(user => (
-                    <tr key={user.id} className="border-b border-white/5 hover:bg-white/2">
-                      <td className="p-4 font-medium">{user.displayName || user.name}</td>
-                      <td className="p-4 text-white/70">{user.email}</td>
-                      <td className="p-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          user.role === "admin" 
-                            ? "bg-purple-500/20 text-purple-300" 
-                            : "bg-blue-500/20 text-blue-300"
-                        }`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex gap-2">
-                          {user.role === "student" ? (
-                            <button
-                              type="button"
-                              onClick={() => promoteUser(user.id)}
-                              className="px-3 py-1 rounded-lg bg-purple-500/15 text-purple-300 text-sm font-bold hover:bg-purple-500/25 transition-colors"
-                            >
-                              Promote
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => demoteUser(user.id)}
-                              className="px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 text-sm font-bold hover:bg-amber-500/25 transition-colors"
-                            >
-                              Demote
-                            </button>
-                          )}
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map(user => (
+                      <tr key={user.id} className="border-b border-white/5 hover:bg-white/2">
+                        <td className="p-4 font-medium">{user.displayName || user.name}</td>
+                        <td className="p-4 text-white/70">{user.email}</td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                            user.role === "admin" 
+                              ? "bg-purple-500/20 text-purple-300" 
+                              : "bg-blue-500/20 text-blue-300"
+                          }`}>
+                            {user.role === "admin" ? (
+                              <><Shield size={12} className="mr-1" /> Admin</>
+                            ) : (
+                              <><User size={12} className="mr-1" /> Student</>
+                            )}
+                          </span>
+                        </td>
+                        <td className="p-4">
                           {user.isBanned ? (
-                            <button
-                              type="button"
-                              onClick={() => handleUnban(user.id)}
-                              className="px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 text-sm font-bold hover:bg-emerald-500/25 transition-colors"
-                            >
-                              Unban
-                            </button>
+                            <span className="inline-flex items-center px-2 py-1 bg-rose-500/20 text-rose-300 text-xs font-bold rounded-full">
+                              <XCircle size={12} className="mr-1" /> Banned
+                            </span>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => banUser(user.id)}
-                              className="px-3 py-1 rounded-lg bg-rose-500/15 text-rose-300 text-sm font-bold hover:bg-rose-500/25 transition-colors"
-                            >
-                              Ban
-                            </button>
+                            <span className="inline-flex items-center px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded-full">
+                              <CheckCircle size={12} className="mr-1" /> Active
+                            </span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  
-                  {/* Empty state */}
-                  {(!users || users.length === 0) && (
+                        </td>
+                        <td className="p-4">
+                          <div className="flex gap-2">
+                            {user.role === "student" ? (
+                              <button
+                                type="button"
+                                onClick={() => promoteUser(user.id)}
+                                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-purple-500/15 text-purple-300 text-sm font-bold hover:bg-purple-500/25 transition-colors"
+                              >
+                                <Shield size={14} />
+                                Promote
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => demoteUser(user.id)}
+                                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 text-sm font-bold hover:bg-amber-500/25 transition-colors"
+                              >
+                                <User size={14} />
+                                Demote
+                              </button>
+                            )}
+                            {user.isBanned ? (
+                              <button
+                                type="button"
+                                onClick={() => handleUnban(user.id)}
+                                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 text-sm font-bold hover:bg-emerald-500/25 transition-colors"
+                              >
+                                <CheckCircle size={14} />
+                                Unban
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => banUser(user.id)}
+                                className="flex items-center gap-1 px-3 py-1 rounded-lg bg-rose-500/15 text-rose-300 text-sm font-bold hover:bg-rose-500/25 transition-colors"
+                              >
+                                <XCircle size={14} />
+                                Ban
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
                     <tr>
-                      <td colSpan="4" className="p-8 text-center text-white/50">
-                        No users found
+                      <td colSpan="5" className="p-8 text-center">
+                        <User size={32} className="mx-auto mb-3 text-white/30" />
+                        <p className="text-white/50 text-sm">No users found</p>
+                        {userSearchTerm && (
+                          <p className="text-white/40 text-xs mt-1">Try a different search term</p>
+                        )}
                       </td>
                     </tr>
                   )}
@@ -778,72 +823,85 @@ export default function Admin() {
             </div>
             
             {/* Mobile Card View - Hidden on desktop */}
-            <div className="md:hidden space-y-3">
-              {(users || []).map(user => (
-                <div key={user.id} className="glass-card p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-bold text-white text-sm">{user.displayName || user.name}</h3>
-                      <p className="text-white/70 text-xs mt-1">{user.email}</p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold mt-2 ${
-                        user.role === "admin" 
-                          ? "bg-purple-500/20 text-purple-300" 
-                          : "bg-blue-500/20 text-blue-300"
-                      }`}>
-                        {user.role}
-                      </span>
+            <div className="md:hidden space-y-3 p-4 max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-hide">
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map(user => (
+                  <div key={user.id} className="glass-card p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-bold text-white text-sm">{user.displayName || user.name}</h3>
+                        <p className="text-white/70 text-xs mt-1 truncate max-w-[200px]">{user.email}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold ${
+                            user.role === "admin" 
+                              ? "bg-purple-500/20 text-purple-300" 
+                              : "bg-blue-500/20 text-blue-300"
+                          }`}>
+                            {user.role === "admin" ? (
+                              <><Shield size={10} className="inline mr-1" /> Admin</>
+                            ) : (
+                              <><User size={10} className="inline mr-1" /> Student</>
+                            )}
+                          </span>
+                          {user.isBanned && (
+                            <span className="px-2 py-1 bg-rose-500/20 text-rose-300 text-[10px] font-bold rounded-full flex items-center">
+                              <XCircle size={10} className="inline mr-1" /> Banned
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    {user.isBanned && (
-                      <span className="px-2 py-1 bg-rose-500/20 text-rose-300 text-[10px] font-bold rounded-full">
-                        Banned
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {user.role === "student" ? (
-                      <button
-                        type="button"
-                        onClick={() => promoteUser(user.id)}
-                        className="px-3 py-1.5 rounded-lg bg-purple-500/15 text-purple-300 text-xs font-bold hover:bg-purple-500/25 transition-colors flex-1 min-w-[100px]"
-                      >
-                        Promote
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => demoteUser(user.id)}
-                        className="px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 text-xs font-bold hover:bg-amber-500/25 transition-colors flex-1 min-w-[100px]"
-                      >
-                        Demote
-                      </button>
-                    )}
                     
-                    {user.isBanned ? (
-                      <button
-                        type="button"
-                        onClick={() => handleUnban(user.id)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 transition-colors flex-1 min-w-[100px]"
-                      >
-                        Unban
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => banUser(user.id)}
-                        className="px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 text-xs font-bold hover:bg-rose-500/25 transition-colors flex-1 min-w-[100px]"
-                      >
-                        Ban
-                      </button>
-                    )}
+                    <div className="flex gap-2">
+                      {user.role === "student" ? (
+                        <button
+                          type="button"
+                          onClick={() => promoteUser(user.id)}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-purple-500/15 text-purple-300 text-xs font-bold hover:bg-purple-500/25 transition-colors"
+                        >
+                          <Shield size={12} />
+                          Promote
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => demoteUser(user.id)}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 text-xs font-bold hover:bg-amber-500/25 transition-colors"
+                        >
+                          <User size={12} />
+                          Demote
+                        </button>
+                      )}
+                      
+                      {user.isBanned ? (
+                        <button
+                          type="button"
+                          onClick={() => handleUnban(user.id)}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 transition-colors"
+                        >
+                          <CheckCircle size={12} />
+                          Unban
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => banUser(user.id)}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 text-xs font-bold hover:bg-rose-500/25 transition-colors"
+                        >
+                          <XCircle size={12} />
+                          Ban
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-              
-              {/* Empty state for mobile */}
-              {(!users || users.length === 0) && (
+                ))
+              ) : (
                 <div className="glass-card p-8 text-center">
+                  <User size={32} className="mx-auto mb-3 text-white/30" />
                   <p className="text-white/50 text-sm">No users found</p>
+                  {userSearchTerm && (
+                    <p className="text-white/40 text-xs mt-1">Try a different search term</p>
+                  )}
                 </div>
               )}
             </div>

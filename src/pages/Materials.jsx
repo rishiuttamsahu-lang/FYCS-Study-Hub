@@ -2,6 +2,7 @@ import { ChevronLeft, ExternalLink, FileText, Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import MaterialCard from "../components/MaterialCard";
 
 export default function Materials() {
   const navigate = useNavigate();
@@ -109,57 +110,12 @@ export default function Materials() {
 
       <div className="space-y-3">
         {filtered.map((m) => (
-          <div key={m.id} className="glass-card p-4">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                {m.type === 'Notes' ? <FileText size={18} className="text-blue-400" /> :
-                 m.type === 'Practicals' ? <Code size={18} className="text-green-400" /> :
-                 m.type === 'IMP' ? <Star size={18} className="text-yellow-400" /> :
-                 m.type === 'Assignment' ? <Edit3 size={18} className="text-purple-400" /> :
-                 <FileText size={18} className="text-white/85" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-semibold text-sm truncate">{m.title}</div>
-                </div>
-                <div className="text-[11px] text-white/55 mt-1 truncate">
-                  {semester.name} • {subject.name} • {m.type}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  // Increment view count
-                  incrementView(m.id);
-                  // Open link in new tab
-                  window.open(m.link, "_blank", "noopener,noreferrer");
-                }}
-                className="btn-primary flex-1 py-2 text-sm rounded-xl flex items-center justify-center gap-2"
-              >
-                View <ExternalLink size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  // Convert view link to download link
-                  const downloadUrl = convertToDownloadLink(m.link);
-                  // Open download link in new tab
-                  window.open(downloadUrl, "_blank", "noopener,noreferrer");
-                }}
-                className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
-                title="Download"
-              >
-                <Download size={16} />
-              </button>
-              <div className="text-[11px] text-white/55 ml-2 min-w-[84px]">
-                <div>👁 {m.views}</div>
-                {"downloads" in m ? <div>⬇ {m.downloads}</div> : null}
-              </div>
-            </div>
-          </div>
+          <MaterialCard 
+            key={m.id} 
+            material={m} 
+            onIncrementView={incrementView}
+            convertToDownloadLink={convertToDownloadLink}
+          />
         ))}
 
         {!filtered.length ? (

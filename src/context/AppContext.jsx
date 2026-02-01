@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { db, auth, googleProvider } from '../firebase';
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy } from 'firebase/firestore';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 
 // Create Context
@@ -42,7 +42,7 @@ export const AppProvider = ({ children }) => {
   // Real-time listeners for materials and subjects
   useEffect(() => {
     const unsubscribeMaterials = onSnapshot(
-      collection(db, "materials"),
+      query(collection(db, "materials"), orderBy("createdAt", "desc")),
       (snapshot) => {
         const materialsList = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -223,7 +223,8 @@ export const AppProvider = ({ children }) => {
         views: 0,
         downloads: 0,
         uploadedBy: formData.uploadedBy || "Student",
-        date: serverTimestamp() // Use Firestore timestamp
+        date: serverTimestamp(), // Use Firestore timestamp
+        createdAt: serverTimestamp() // Add creation timestamp for sorting
       };
       
       const docRef = await addDoc(collection(db, "materials"), newMaterial);
@@ -343,13 +344,13 @@ export const AppProvider = ({ children }) => {
     return materials.filter(material => material.status === "Approved");
   };
 
-  const getRecentMaterials = (limit = 5) => {
+  const getRecentMaterials = (limit = 10) => {
     return materials
       .filter(material => material.status === "Approved")
       .sort((a, b) => {
         // Handle both Timestamp objects and regular dates
-        const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date || Date.now());
-        const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date || Date.now());
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || Date.now());
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || Date.now());
         return dateB - dateA; // Sort by date descending
       })
       .slice(0, limit);

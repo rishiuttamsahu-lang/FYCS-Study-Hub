@@ -2,6 +2,7 @@ import { BookOpen, Download, FileText, GraduationCap, Layers } from "lucide-reac
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import dbLogo from "../assets/image.png";
+import MaterialCard from "../components/MaterialCard";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -13,7 +14,20 @@ const Home = () => {
     subjects: subjects.filter((sub) => Number(sub.semId) === Number(s.id)).length,
   }));
 
-  const recentApproved = getRecentMaterials(5);
+  const recentApproved = getRecentMaterials(10);
+  
+  // Helper function to check if material is new (within 24 hours)
+  const isNewMaterial = (material) => {
+    if (!material.createdAt) return false;
+    
+    // Handle both Timestamp objects and regular dates
+    const createdAt = material.createdAt?.toDate ? 
+      material.createdAt.toDate() : 
+      new Date(material.createdAt || material.date || Date.now());
+    
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return createdAt > twentyFourHoursAgo;
+  };
   
   // Helper function to convert Google Drive view links to direct download links
   const convertToDownloadLink = (viewLink) => {
@@ -89,52 +103,16 @@ const Home = () => {
 
       <div className="space-y-4">
         {recentApproved.length > 0 ? (
-          recentApproved.map((m) => {
-            const sub = getSubjectById(m.subjectId);
-            const sem = getSemesterById(m.semId);
-            return (
-              <div key={m.id} className="glass-card p-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                    <FileText size={18} className="text-white/85" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">{m.title}</div>
-                    <div className="text-[11px] text-white/55 mt-1 truncate">
-                      {sem?.name} • {sub?.name} • {m.type}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    className="btn-primary flex-1 py-2 text-sm rounded-xl"
-                    onClick={() => navigate(`/semester/${m.semId}/${m.subjectId}`)}
-                  >
-                    View
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      // Convert view link to download link
-                      const downloadUrl = convertToDownloadLink(m.link);
-                      // Open download link in new tab
-                      window.open(downloadUrl, "_blank", "noopener,noreferrer");
-                    }}
-                    className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
-                    title="Download"
-                  >
-                    <Download size={16} />
-                  </button>
-                  <div className="text-[11px] text-white/55 ml-2 min-w-[84px]">
-                    <div>👁 {m.views}</div>
-                    {"downloads" in m ? <div>⬇ {m.downloads}</div> : null}
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          recentApproved.map((m) => (
+            <MaterialCard 
+              key={m.id} 
+              material={m} 
+              convertToDownloadLink={convertToDownloadLink}
+              navigateToSubject={true}
+              navigate={navigate}
+              isNewMaterial={isNewMaterial}
+            />
+          ))
         ) : (
           <div className="glass-card p-8 text-center">
             <div className="text-white/50 mb-2">No materials found</div>
