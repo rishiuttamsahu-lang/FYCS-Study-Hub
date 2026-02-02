@@ -1,17 +1,29 @@
 import { ChevronLeft, ExternalLink, FileText, Download, Search, ArrowUpDown, Check } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import MaterialCard from "../components/MaterialCard";
 
 export default function Materials() {
   const navigate = useNavigate();
   const { semId, subjectId } = useParams();
+  const [searchParams] = useSearchParams();
 
   const { getSemesterById, getSubjectById, getMaterialsBySubject, incrementView } = useApp();
   const semester = getSemesterById(semId);
   const subject = getSubjectById(subjectId);
-  const [typeTab, setTypeTab] = useState("Notes"); // Notes | Practicals | IMP | Assignment
+  
+  // Get initial tab from URL parameter or default to "Notes"
+  const initialTab = searchParams.get('tab') || 'notes';
+  // Convert to proper case (Notes, Practicals, etc.)
+  const tabMapping = {
+    'notes': 'Notes',
+    'practicals': 'Practicals',
+    'imp': 'IMP',
+    'assignment': 'Assignment'
+  };
+  const mappedTab = tabMapping[initialTab.toLowerCase()] || 'Notes';
+  const [typeTab, setTypeTab] = useState(mappedTab); // Notes | Practicals | IMP | Assignment
   
   // Search and Sort states
   const [searchQuery, setSearchQuery] = useState("");

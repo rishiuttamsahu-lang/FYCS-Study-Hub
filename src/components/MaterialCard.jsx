@@ -84,7 +84,9 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
 
   const handleViewClick = () => {
     if (navigateToSubject && navigate) {
-      navigate(`/semester/${material.semId}/${material.subjectId}`);
+      // Convert material type to lowercase for URL parameter
+      const tabParam = material.type.toLowerCase();
+      navigate(`/semester/${material.semId}/${material.subjectId}?tab=${tabParam}`);
     } else {
       // Add to recent history only
       addToRecentHistory(material);
