@@ -658,23 +658,23 @@ export default function Admin() {
                               </div>
                             </div>
                             
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <a
                                 href={material.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-200 font-bold hover:bg-blue-500/20 transition-colors"
+                                className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-200 font-bold hover:bg-blue-500/20 transition-colors min-w-[36px] sm:min-w-[auto]"
                               >
                                 <Upload size={16} />
-                                View
+                                <span className="hidden sm:inline">View</span>
                               </a>
                               <button
                                 type="button"
                                 onClick={() => handleEditClick(material)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600/15 border border-blue-500/25 text-blue-200 font-bold hover:bg-blue-600/20 transition-colors"
+                                className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-blue-600/15 border border-blue-500/25 text-blue-200 font-bold hover:bg-blue-600/20 transition-colors min-w-[36px] sm:min-w-[auto]"
                               >
                                 <Pencil size={16} />
-                                Edit
+                                <span className="hidden sm:inline">Edit</span>
                               </button>
                               <button
                                 type="button"
@@ -684,10 +684,10 @@ export default function Admin() {
                                     toast.success("Material deleted successfully!");
                                   }
                                 }}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 font-bold hover:bg-rose-500/15 transition-colors"
+                                className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 font-bold hover:bg-rose-500/15 transition-colors min-w-[36px] sm:min-w-[auto]"
                               >
                                 <Trash2 size={16} />
-                                Delete
+                                <span className="hidden sm:inline">Delete</span>
                               </button>
                             </div>
                           </div>

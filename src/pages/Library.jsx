@@ -15,18 +15,29 @@ export default function Library() {
     if (!viewLink) return viewLink;
     
     // Handle different Google Drive URL formats
+    
+    // Pattern 1: drive.google.com/file/d/{fileId}/view
     if (viewLink.includes("drive.google.com/file/d/")) {
       // Extract file ID from the URL
       const fileIdMatch = viewLink.match(/\/file\/d\/([^\/]+)/);
       if (fileIdMatch && fileIdMatch[1]) {
         return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
       }
-    } else if (viewLink.includes("drive.google.com/open?id=")) {
+    } 
+    // Pattern 2: drive.google.com/open?id={fileId} (legacy format)
+    else if (viewLink.includes("drive.google.com/open?id=")) {
       // Extract file ID from the legacy URL format
       const urlObj = new URL(viewLink);
       const fileId = urlObj.searchParams.get("id");
       if (fileId) {
         return `https://drive.google.com/uc?export=download&id=${fileId}`;
+      }
+    }
+    // Pattern 3: Extract ID from URL between /d/ and /view (as specified in requirements)
+    else if (viewLink.includes("/d/") && viewLink.includes("/view")) {
+      const fileIdMatch = viewLink.match(/\/d\/([^\/]+)\/view/);
+      if (fileIdMatch && fileIdMatch[1]) {
+        return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
       }
     }
     

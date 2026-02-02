@@ -1,4 +1,4 @@
-import { BookOpen, Download, FileText, GraduationCap, Layers } from "lucide-react";
+import { BookOpen, Download, FileText, GraduationCap, Layers, Lock, Circle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import dbLogo from "../assets/image.png";
@@ -12,6 +12,7 @@ const Home = () => {
     id: s.id,
     title: s.name,
     subjects: subjects.filter((sub) => Number(sub.semId) === Number(s.id)).length,
+    locked: s.id === '3' || s.id === '4', // Lock semesters 3 and 4
   }));
 
   const recentApproved = getRecentMaterials(10);
@@ -34,18 +35,29 @@ const Home = () => {
     if (!viewLink) return viewLink;
     
     // Handle different Google Drive URL formats
+    
+    // Pattern 1: drive.google.com/file/d/{fileId}/view
     if (viewLink.includes("drive.google.com/file/d/")) {
       // Extract file ID from the URL
       const fileIdMatch = viewLink.match(/\/file\/d\/([^\/]+)/);
       if (fileIdMatch && fileIdMatch[1]) {
         return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
       }
-    } else if (viewLink.includes("drive.google.com/open?id=")) {
+    } 
+    // Pattern 2: drive.google.com/open?id={fileId} (legacy format)
+    else if (viewLink.includes("drive.google.com/open?id=")) {
       // Extract file ID from the legacy URL format
       const urlObj = new URL(viewLink);
       const fileId = urlObj.searchParams.get("id");
       if (fileId) {
         return `https://drive.google.com/uc?export=download&id=${fileId}`;
+      }
+    }
+    // Pattern 3: Extract ID from URL between /d/ and /view (as specified in requirements)
+    else if (viewLink.includes("/d/") && viewLink.includes("/view")) {
+      const fileIdMatch = viewLink.match(/\/d\/([^\/]+)\/view/);
+      if (fileIdMatch && fileIdMatch[1]) {
+        return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
       }
     }
     
@@ -70,20 +82,43 @@ const Home = () => {
 
       {/* Semesters Grid */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        {semestersVm.map((sem) => (
+        {semestersVm.map((sem) => {
+          const isLocked = sem.locked;
+          const isSem2 = sem.id === '2'; // For the ongoing semester emphasis
+          
+          return (
           <button
             key={sem.id}
             type="button"
-            onClick={() => navigate(`/semester/${sem.id}`)}
-            className="glass-card p-4 text-left transition-colors hover:bg-white/5"
+            onClick={!isLocked ? () => navigate(`/semester/${sem.id}`) : undefined}
+            disabled={isLocked}
+            className={`glass-card p-4 text-left transition-colors ${isLocked ? 'opacity-70 cursor-not-allowed' : 'hover:bg-white/5'} relative`}
           >
-            <div className="bg-white/5 border border-white/10 w-9 h-9 rounded-xl flex items-center justify-center mb-3">
+            <div className="bg-white/5 border border-white/10 w-9 h-9 rounded-xl flex items-center justify-center mb-3 relative">
               <GraduationCap size={18} className="text-white/90" />
+              {isLocked && (
+                <Lock size={14} className="absolute -top-1 -right-1 text-amber-400" />
+              )}
+              {isSem2 && !isLocked && (
+                <Circle size={8} className="absolute -top-0.5 -right-0.5 text-green-500 fill-current" />
+              )}
             </div>
-            <h3 className="font-bold text-sm mb-1">{sem.title}</h3>
-            <p className="text-[10px] text-white/50">{sem.subjects} subjects available</p>
+            <h3 className="font-bold text-sm mb-1 flex items-center gap-1">
+              {sem.title}
+              {isSem2 && !isLocked && (
+                <span className="text-[8px] text-green-500 bg-green-500/10 px-1 py-0.5 rounded">LIVE</span>
+              )}
+            </h3>
+            {isLocked ? (
+              <span className="inline-block px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] rounded-full whitespace-nowrap">
+                Coming Soon
+              </span>
+            ) : (
+              <p className="text-[10px] text-white/50">{sem.subjects} subjects available</p>
+            )}
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Materials Section */}
