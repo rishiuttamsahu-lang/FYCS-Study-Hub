@@ -584,7 +584,7 @@ export default function Admin() {
                                     {semester?.name} • {subject?.name} • {material.type}
                                   </div>
                                   <div className="text-xs text-white/40 mt-2">
-                                    Uploaded by {material.uploadedBy} • {new Date(material.date).toLocaleDateString()}
+                                    Uploaded by {material.uploadedBy?.split(' ')[0] || 'Admin'} • {material.date ? new Date(typeof material.date === 'object' && material.date.toDate ? material.date.toDate() : material.date).toLocaleDateString() : 'Just now'}
                                   </div>
                                   <div className="flex gap-4 mt-2 text-xs text-white/50">
                                     <span>👁 {material.views} views</span>
@@ -648,7 +648,7 @@ export default function Admin() {
                                     {semester?.name} • {subject?.name} • {material.type}
                                   </div>
                                   <div className="text-xs text-white/40 mt-2">
-                                    Uploaded by {material.uploadedBy} • {new Date(material.date).toLocaleDateString()}
+                                    Uploaded by {material.uploadedBy?.split(' ')[0] || 'Admin'} • {material.date ? new Date(typeof material.date === 'object' && material.date.toDate ? material.date.toDate() : material.date).toLocaleDateString() : 'Just now'}
                                   </div>
                                   <div className="flex gap-4 mt-2 text-xs text-white/50">
                                     <span>👁 {material.views} views</span>

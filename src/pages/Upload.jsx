@@ -35,7 +35,7 @@ export default function Upload() {
     type: "Notes",
     subject: "",
     driveLink: "",
-    uploadedBy: "Student",
+    uploadDate: new Date().toLocaleDateString(),
   });
 
   // Get subjects filtered by selected semester
@@ -68,7 +68,7 @@ export default function Upload() {
         subjectId: form.subject,
         type: form.type,
         link: form.driveLink,
-        uploadedBy: form.uploadedBy,
+        uploadedBy: user?.displayName || user?.email.split('@')[0] || "Student", // Use authenticated user's name
       });
       
       if (result.success) {
@@ -79,7 +79,7 @@ export default function Upload() {
           type: "Notes",
           subject: "",
           driveLink: "",
-          uploadedBy: "Student",
+          uploadDate: new Date().toLocaleDateString(),
         });
         
         toast.success("Material submitted successfully! Pending approval.");
@@ -235,16 +235,19 @@ export default function Upload() {
           </div>
         </label>
 
-        {/* Uploader Name */}
         <label className="block mb-5">
-          <div className="text-[11px] font-bold text-white/70 mb-2">Your Name</div>
-          <div className="glass-card px-4 py-3 flex items-center gap-3">
-            <Tag size={18} className="text-white/55" />
+          <div className="text-[11px] font-bold text-white/70 mb-2">Upload Date</div>
+          <div className="glass-card px-4 py-3 flex items-center gap-3 bg-zinc-900/50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/55">
+              <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+              <line x1="16" x2="16" y1="2" y2="6"/>
+              <line x1="8" x2="8" y1="2" y2="6"/>
+              <line x1="3" x2="21" y1="10" y2="10"/>
+            </svg>
             <input
-              value={form.uploadedBy}
-              onChange={onChange("uploadedBy")}
-              placeholder="Enter your name"
-              className="w-full bg-transparent text-sm outline-hidden placeholder:text-white/35"
+              value={form.uploadDate}
+              readOnly
+              className="w-full bg-transparent text-sm outline-hidden text-zinc-500"
             />
           </div>
         </label>

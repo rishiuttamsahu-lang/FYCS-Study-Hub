@@ -9,6 +9,33 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
   const [viewCount, setViewCount] = useState(material.views || 0);
   const [downloadCount, setDownloadCount] = useState(material.downloads || 0);
 
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "Just now";
+    
+    try {
+      // Handle Firestore Timestamp objects
+      if (dateString?.toDate) {
+        return dateString.toDate().toLocaleDateString();
+      }
+      // Handle ISO date strings
+      else if (typeof dateString === 'string') {
+        return new Date(dateString).toLocaleDateString();
+      }
+      // Handle regular Date objects
+      else if (dateString instanceof Date) {
+        return dateString.toLocaleDateString();
+      }
+      // Handle timestamp objects
+      else {
+        return new Date(dateString).toLocaleDateString();
+      }
+    } catch (error) {
+      console.warn('Invalid date:', dateString, error);
+      return "Just now";
+    }
+  };
+
   // Helper function to get subject abbreviation
   const getSubjectAbbreviation = (subjectName) => {
     const abbreviations = {
@@ -148,6 +175,9 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
                 {getSubjectAbbreviation(getSubjectById(material.subjectId)?.name || "Unknown")}
               </span>
             )}
+            <span className="text-xs text-zinc-500 whitespace-nowrap">
+              • {formatDate(material.createdAt || material.date)}
+            </span>
           </div>
         </div>
       </div>
@@ -184,6 +214,14 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
                 <div className="text-[10px] text-white/55 flex items-center gap-1">
                   <span>⬇</span>
                   <span>{downloadCount} downloads</span>
+                </div>
+                <div className="text-[10px] text-white/55 flex items-center gap-1">
+                  <span>📅</span>
+                  <span>{formatDate(material.createdAt || material.date)}</span>
+                </div>
+                <div className="text-[10px] text-white/55 flex items-center gap-1">
+                  <span>👤</span>
+                  <span>by {material.uploadedBy?.split(' ')[0] || 'Admin'}</span>
                 </div>
               </div>
               {onEdit && (
