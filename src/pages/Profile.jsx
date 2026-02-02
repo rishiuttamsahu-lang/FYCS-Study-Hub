@@ -146,12 +146,12 @@ export default function Profile() {
           </button>
         </div>
 
-        {/* TABBED NAVIGATION - Compact */}
-        <div className="flex gap-4 mb-4 border-b border-zinc-800">
+        {/* TABBED NAVIGATION - Scrollable */}
+        <div className="flex gap-4 mb-4 border-b border-zinc-800 overflow-x-auto scrollbar-hide pr-4">
           <button
             type="button"
             onClick={() => setActiveTab("recent")}
-            className={`py-2 px-4 text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
               activeTab === "recent"
                 ? "text-white border-b-2 border-yellow-400"
                 : "text-white/50 hover:text-white"
@@ -166,7 +166,7 @@ export default function Profile() {
           <button
             type="button"
             onClick={() => setActiveTab("downloads")}
-            className={`py-2 px-4 text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
               activeTab === "downloads"
                 ? "text-white border-b-2 border-yellow-400"
                 : "text-white/50 hover:text-white"
@@ -181,7 +181,7 @@ export default function Profile() {
           <button
             type="button"
             onClick={() => setActiveTab("settings")}
-            className={`py-2 px-4 text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
               activeTab === "settings"
                 ? "text-white border-b-2 border-yellow-400"
                 : "text-white/50 hover:text-white"
@@ -306,7 +306,7 @@ export default function Profile() {
         )}
 
         {activeTab === "settings" && (
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 max-w-full overflow-x-hidden">
             <h3 className="font-bold text-lg mb-6 text-white">Settings</h3>
             
             <div className="space-y-4">

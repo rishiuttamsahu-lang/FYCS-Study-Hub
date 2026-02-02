@@ -27,6 +27,16 @@
   .btn-danger {
     @apply bg-rose-500/15 hover:bg-rose-500/20 border border-rose-500/25 text-rose-200 font-bold rounded-xl transition-colors;
   }
+  
+  /* Hide scrollbar for scrollable containers */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera*/
+  }
 }
 
 html,
