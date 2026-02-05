@@ -1,10 +1,10 @@
-import { BarChart2, Book, CheckCircle, Clock, Code, Download, Edit3, Eye, FileText, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle } from "lucide-react";
+import { BarChart2, Book, CheckCircle, Clock, Code, Download, Edit3, Eye, FileText, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { useApp } from "../context/AppContext";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, writeBatch, collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
 const tabs = [
@@ -24,6 +24,7 @@ export default function Admin() {
   const [editingSubject, setEditingSubject] = useState(null); // For subject edit modal
   const [editSubjectName, setEditSubjectName] = useState("");
   const [editSubjectIcon, setEditSubjectIcon] = useState("");
+  const [showResetModal, setShowResetModal] = useState(false);
   
   // Search, Filter, Sort states for Approved Materials
   const [searchQuery, setSearchQuery] = useState("");
@@ -398,6 +399,51 @@ export default function Admin() {
       console.error("Error updating subject:", error);
       toast.error("Error updating subject: " + error.message);
     }
+  };
+
+  // Execute the actual reset logic
+  const executeReset = async () => {
+    try {
+      // Close the modal first
+      setShowResetModal(false);
+      
+      // Show loading state
+      const loadingToast = toast.loading("Resetting all analytics...");
+      
+      // Fetch all documents from materials collection
+      const materialsSnapshot = await getDocs(collection(db, "materials"));
+      
+      // Create batch
+      const batch = writeBatch(db);
+      
+      // Queue updates for all documents
+      materialsSnapshot.docs.forEach((doc) => {
+        batch.update(doc.ref, { 
+          views: 0, 
+          downloads: 0, 
+          downloadedBy: [] 
+        });
+      });
+      
+      // Commit the batch
+      await batch.commit();
+      
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast);
+      toast.success("All analytics have been reset.");
+      
+      // Note: The UI will automatically update due to the real-time listener
+      // in AppContext that fetches materials
+      
+    } catch (error) {
+      console.error("Error resetting analytics:", error);
+      toast.error("Error resetting analytics: " + error.message);
+    }
+  };
+
+  // Handle reset analytics - opens the confirmation modal
+  const handleResetAnalytics = () => {
+    setShowResetModal(true);
   };
 
   return (
@@ -1114,11 +1160,7 @@ export default function Admin() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (window.confirm("Are you sure you want to reset all analytics? This cannot be undone.")) {
-                      toast.error("Reset analytics functionality would be implemented here");
-                    }
-                  }}
+                  onClick={handleResetAnalytics}
                   className="btn-danger px-4 py-2 md:px-6 md:py-3 font-bold flex items-center gap-2 mb-3 md:mb-4"
                 >
                   <Trash2 size={18} />
@@ -1303,6 +1345,50 @@ export default function Admin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Danger Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-red-500/20 w-full max-w-md p-6 rounded-xl shadow-2xl">
+            <div className="text-center">
+              {/* Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                  <AlertTriangle size={32} className="text-red-400" />
+                </div>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-bold text-white mb-2">
+                Reset All Analytics?
+              </h3>
+              
+              {/* Description */}
+              <p className="text-zinc-400 text-sm mb-6">
+                This will permanently reset views and downloads to zero. This action cannot be undone.
+              </p>
+              
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(false)}
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-3 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={executeReset}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors"
+                >
+                  Yes, Reset
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
