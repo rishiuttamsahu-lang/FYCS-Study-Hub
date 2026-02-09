@@ -25,12 +25,14 @@ export default function Admin() {
   const [editSubjectName, setEditSubjectName] = useState("");
   const [editSubjectIcon, setEditSubjectIcon] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [itemToReject, setItemToReject] = useState(null);
   
   // Search, Filter, Sort states for Approved Materials
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSubject, setFilterSubject] = useState("All");
-  const [sortBy, setSortBy] = useState("newest");
-  
+  const [filterType, setFilterType] = useState("All");
+  const [filterSem, setFilterSem] = useState("All");
   const [newSubject, setNewSubject] = useState({
     name: "",
     semesterId: "1",
@@ -104,36 +106,16 @@ export default function Admin() {
   // Get unique subjects for filter dropdown
   const uniqueSubjects = [...new Set(materials.filter(m => m.status === 'Approved').map(m => m.subjectId))];
   
-  // Filter and sort approved materials
+  // Filter and sort approved materials (always A-Z by title)
   const filteredMaterials = getApprovedMaterials()
     .filter(material => {
-      // Search filter
-      if (searchQuery && !material.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
-      
-      // Subject filter
-      if (filterSubject !== "All" && material.subjectId !== filterSubject) {
-        return false;
-      }
-      
+      if (searchQuery && !material.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (filterSem !== "All" && material.semId !== filterSem) return false;
+      if (filterType !== "All" && material.type !== filterType) return false;
+      if (filterSubject !== "All" && material.subjectId !== filterSubject) return false;
       return true;
     })
-    .sort((a, b) => {
-      // Sort logic
-      if (sortBy === "title") {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || Date.now());
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || Date.now());
-        return dateB - dateA; // Newest first
-      } else if (sortBy === "oldest") {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || Date.now());
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || Date.now());
-        return dateA - dateB; // Oldest first
-      } else if (sortBy === "most_views") {
-        return (b.views || 0) - (a.views || 0); // Most views first
-      }
-      return 0;
-    });
+    .sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { sensitivity: "base" }));
   
   // Format numbers
   const formatNumber = (num) => {
@@ -545,7 +527,7 @@ export default function Admin() {
           {/* Materials Tab */}
           {activeTab === "materials" && (
             <>
-              <div className="glass-card p-4 mb-6">
+              <div className="glass-card p-4 mb-6 overflow-visible">
                 <div className="flex flex-wrap gap-3 mb-4">
                   <button
                     type="button"
@@ -573,9 +555,9 @@ export default function Admin() {
                 
                 {/* Search, Filter, Sort Control Bar - Only show for Approved materials */}
                 {materialFilter === "Approved" && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    {/* Search */}
-                    <div className="relative">
+                  <div className="relative grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" style={{ position: 'relative', zIndex: 9999 }}>
+                    {/* Search - full width on first row */}
+                    <div className="relative col-span-2 md:col-span-4">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search size={16} className="text-white/50" />
                       </div>
@@ -587,12 +569,34 @@ export default function Admin() {
                         className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none text-sm"
                       />
                     </div>
-                    
-                    {/* Filter by Subject */}
+                    {/* Semester */}
+                    <select
+                      value={filterSem}
+                      onChange={(e) => setFilterSem(e.target.value)}
+                      className="glass-card px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none text-sm"
+                    >
+                      <option value="All" className="bg-[#0a0a0a]">All Sem</option>
+                      {(semesters || []).map(sem => (
+                        <option key={sem.id} value={sem.id} className="bg-[#0a0a0a]">{sem.name}</option>
+                      ))}
+                    </select>
+                    {/* Category */}
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="glass-card px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none text-sm"
+                    >
+                      <option value="All" className="bg-[#0a0a0a]">All Types</option>
+                      <option value="Notes" className="bg-[#0a0a0a]">Notes</option>
+                      <option value="Practicals" className="bg-[#0a0a0a]">Practicals</option>
+                      <option value="IMP" className="bg-[#0a0a0a]">IMP</option>
+                      <option value="Assignment" className="bg-[#0a0a0a]">Assignment</option>
+                    </select>
+                    {/* Subject */}
                     <select
                       value={filterSubject}
                       onChange={(e) => setFilterSubject(e.target.value)}
-                      className="glass-card px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none text-sm"
+                      className="glass-card px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none text-sm"
                     >
                       <option value="All" className="bg-[#0a0a0a]">All Subjects</option>
                       {uniqueSubjects.map(subjectId => {
@@ -604,22 +608,11 @@ export default function Admin() {
                         );
                       })}
                     </select>
-                    
-                    {/* Sort */}
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="glass-card px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none text-sm"
-                    >
-                      <option value="title" className="bg-[#0a0a0a]">Newest First</option>
-                      <option value="oldest" className="bg-[#0a0a0a]">Oldest First</option>
-                      <option value="most_views" className="bg-[#0a0a0a]">Most Views</option>
-                    </select>
                   </div>
                 )}
               </div>
               
-              <div className="space-y-4">
+              <div className="relative space-y-4" style={{ position: 'relative', zIndex: 1 }}>
                 {materialFilter === "Pending" 
                   ? getPendingMaterials().map((material) => {
                       const semester = getSemesterById(material.semId);
@@ -669,12 +662,7 @@ export default function Admin() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const result = rejectMaterial(material.id);
-                                  if (result.success) {
-                                    toast.success("Material rejected successfully!");
-                                  }
-                                }}
+                                onClick={() => setItemToReject(material.id)}
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 font-bold hover:bg-rose-500/15 transition-colors"
                               >
                                 <XCircle size={16} />
@@ -737,12 +725,7 @@ export default function Admin() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const result = deleteMaterial(material.id);
-                                  if (result.success) {
-                                    toast.success("Material deleted successfully!");
-                                  }
-                                }}
+                                onClick={() => setItemToDelete(material.id)}
                                 className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 font-bold hover:bg-rose-500/15 transition-colors min-w-[36px] sm:min-w-[auto]"
                               >
                                 <Trash2 size={16} />
@@ -1386,6 +1369,84 @@ export default function Admin() {
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors"
                 >
                   Yes, Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {itemToDelete && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-red-500/30 w-full max-w-sm p-6 rounded-xl shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-3 bg-red-500/10 rounded-full text-red-500">
+                <Trash2 size={32} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">Delete Material?</h3>
+                <p className="text-zinc-400 text-sm">
+                  Are you sure you want to delete this? This action cannot be undone and the link will break.
+                </p>
+              </div>
+              <div className="flex gap-3 w-full mt-2">
+                <button
+                  type="button"
+                  onClick={() => setItemToDelete(null)}
+                  className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const result = await deleteMaterial(itemToDelete);
+                    if (result?.success) toast.success("Material deleted successfully!");
+                    else if (result?.error) toast.error(result.error);
+                    setItemToDelete(null);
+                  }}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-bold"
+                >
+                  Yes, Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {itemToReject && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-red-500/30 w-full max-w-sm p-6 rounded-xl shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-3 bg-red-500/10 rounded-full text-red-500">
+                <XCircle size={32} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">Reject Material?</h3>
+                <p className="text-zinc-400 text-sm">
+                  Are you sure you want to reject this upload? This cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3 w-full mt-2">
+                <button
+                  type="button"
+                  onClick={() => setItemToReject(null)}
+                  className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const result = await rejectMaterial(itemToReject);
+                    if (result?.success) toast.success("Material rejected successfully!");
+                    else if (result?.error) toast.error(result.error);
+                    setItemToReject(null);
+                  }}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-bold"
+                >
+                  Yes, Reject
                 </button>
               </div>
             </div>

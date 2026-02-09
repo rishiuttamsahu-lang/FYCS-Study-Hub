@@ -1,4 +1,4 @@
-import { User, LogOut, ExternalLink, Clock, Trash2, Settings, Download, X } from "lucide-react";
+import { User, LogOut, ExternalLink, Clock, Trash2, Settings, Download, X, Sparkles } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useState, useEffect } from "react";
 import { updateProfile } from "firebase/auth";
@@ -10,6 +10,7 @@ export default function Profile() {
   const [recentHistory, setRecentHistory] = useState([]);
   const [downloadHistory, setDownloadHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("recent"); // "recent" | "downloads" | "settings"
+  const [showClearModal, setShowClearModal] = useState(false);
   
   // Edit Profile states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -202,7 +203,7 @@ export default function Profile() {
               {recentHistory.length > 0 && (
                 <button
                   type="button"
-                  onClick={clearRecentHistory}
+                  onClick={() => setShowClearModal(true)}
                   className="text-xs text-white/50 hover:text-red-400 transition-colors flex items-center gap-1"
                 >
                   <Trash2 size={14} />
@@ -257,7 +258,7 @@ export default function Profile() {
               {downloadHistory.length > 0 && (
                 <button
                   type="button"
-                  onClick={clearDownloadHistory}
+                  onClick={() => setShowClearModal(true)}
                   className="text-xs text-white/50 hover:text-red-400 transition-colors flex items-center gap-1"
                 >
                   <Trash2 size={14} />
@@ -319,16 +320,6 @@ export default function Profile() {
                   <div className="text-xs text-white/50">Update your profile information</div>
                 </div>
                 <Settings size={18} className="text-white/50" />
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
-                <div>
-                  <div className="font-medium text-white">App Version</div>
-                  <div className="text-xs text-white/50">v1.0.0</div>
-                </div>
-                <div className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
-                  Latest
-                </div>
               </div>
               
               <div className="pt-4 border-t border-zinc-800">
@@ -407,6 +398,46 @@ export default function Profile() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showClearModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-700/50 w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 relative overflow-hidden">
+            {/* Decorative Background Glow */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+            <div className="flex flex-col items-center text-center gap-4 mt-2">
+              <div className="p-4 bg-zinc-800 rounded-full text-purple-400 mb-1 ring-1 ring-purple-500/30">
+                <Sparkles size={32} strokeWidth={1.5} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">Time for a Fresh Start?</h3>
+                <p className="text-zinc-400 text-sm leading-relaxed">
+                  This will wipe your entire viewing history. <br />
+                  It&apos;s like it never happened. ✨
+                </p>
+              </div>
+              <div className="flex gap-3 w-full mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowClearModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all font-medium border border-zinc-700"
+                >
+                  Nah, keep it
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearAllData();
+                    setShowClearModal(false);
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl transition-all font-bold shadow-lg shadow-purple-500/20"
+                >
+                  Yes, Clear All
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
