@@ -1,17 +1,48 @@
 import { FileText, Search, BookOpen, GraduationCap, Download, ArrowUpDown, Check } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
+import { useData } from "../context/DataContext";
 import MaterialCard from "../components/MaterialCard";
 
 export default function Library() {
-  const { materials, subjects, semesters, getSubjectById, getSemesterById } = useApp();
+  const { subjects, semesters, getSubjectById, getSemesterById } = useApp();
+  const { libraryMaterials, fetchLibraryData, isLibraryLoaded } = useData();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [sortBy, setSortBy] = useState("title"); // Default to A-Z
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  // Fetch library data on mount using global cache
+  useEffect(() => {
+    fetchLibraryData();
+  }, [fetchLibraryData]);
+
+  // Defer heavy rendering to unblock navigation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 10);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
+  // Skeleton Card Component
+  const SkeletonCard = () => (
+    <div className="glass-card p-4 animate-pulse">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 bg-zinc-800 rounded-lg flex-shrink-0"></div>
+        <div className="flex-1">
+          <div className="h-4 bg-zinc-800 rounded w-3/4 mb-2"></div>
+          <div className="h-3 bg-zinc-800 rounded w-1/2 mb-1"></div>
+          <div className="h-3 bg-zinc-800 rounded w-2/3"></div>
+        </div>
+      </div>
+    </div>
+  );
+
   // Helper function to convert Google Drive view links to direct download links
   const convertToDownloadLink = (viewLink) => {
     if (!viewLink) return viewLink;
@@ -47,20 +78,20 @@ export default function Library() {
     return viewLink;
   };
 
-  // Get unique types from materials
+  // Get unique types from library materials
   const allTypes = useMemo(() => {
     const types = new Set();
-    materials.forEach(material => {
+    libraryMaterials.forEach(material => {
       if (material.type) {
         types.add(material.type);
       }
     });
     return Array.from(types).sort();
-  }, [materials]);
+  }, [libraryMaterials]);
 
   // Filter and sort materials based on search term, filters, and sort option
   const filteredMaterials = useMemo(() => {
-    let result = materials.filter(material => {
+    let result = libraryMaterials.filter(material => {
       // Filter by search term (title or subject name)
       const matchesSearch = !searchTerm || 
         material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,7 +122,44 @@ export default function Library() {
     });
 
     return result;
-  }, [materials, searchTerm, selectedSemester, selectedType, getSubjectById, sortBy]);
+  }, [libraryMaterials, searchTerm, selectedSemester, selectedType, getSubjectById, sortBy]);
+
+  // Show skeleton UI only if data hasn't been loaded yet
+  if (!isLibraryLoaded) {
+    return (
+      <div className="p-5 pt-8 max-w-4xl mx-auto">
+        {/* Header Skeleton */}
+        <div className="mb-4 text-center">
+          <div className="h-8 bg-zinc-800 rounded w-48 mx-auto mb-2 animate-pulse"></div>
+          <div className="h-4 bg-zinc-800 rounded w-80 mx-auto animate-pulse"></div>
+        </div>
+
+        {/* Controls Section Skeleton */}
+        <div className="glass-card p-4 mb-4">
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <div className="flex-1 h-10 bg-zinc-800 rounded-xl animate-pulse"></div>
+              <div className="w-12 h-10 bg-zinc-800 rounded-xl animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-10 bg-zinc-800 rounded-xl animate-pulse"></div>
+              <div className="h-10 bg-zinc-800 rounded-xl animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Results Count Skeleton */}
+        <div className="mb-2 h-4 bg-zinc-800 rounded w-64 animate-pulse"></div>
+
+        {/* Materials Grid Skeleton */}
+        <div className="space-y-4">
+          {[...Array(8)].map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-5 pt-8 max-w-4xl mx-auto">
@@ -201,7 +269,7 @@ export default function Library() {
       {/* Results Count */}
       <div className="mb-2 flex items-center justify-between">
         <p className="text-white/70 text-xs">
-          Showing <span className="font-bold text-[#FFD700]">{filteredMaterials.length}</span> of {materials.filter(m => m.status === "Approved").length} approved materials
+          Showing <span className="font-bold text-[#FFD700]">{filteredMaterials.length}</span> of {libraryMaterials.length} approved materials
         </p>
       </div>
 

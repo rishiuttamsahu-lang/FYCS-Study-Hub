@@ -1,12 +1,27 @@
 import { BookOpen, Download, FileText, GraduationCap, Layers, Lock, Circle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { useData } from "../context/DataContext";
+import { useEffect } from "react";
 import dbLogo from "../assets/image.png";
 import MaterialCard from "../components/MaterialCard";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { semesters, subjects, getRecentMaterials, getSubjectById, getSemesterById, isAdmin } = useApp();
+  const { semesters, getSubjectById, getSemesterById, isAdmin } = useApp();
+  const { homeData, fetchHomeData, isHomeLoaded } = useData();
+
+  // Fetch data on mount - will only fetch if not already loaded
+  useEffect(() => {
+    fetchHomeData();
+  }, [fetchHomeData]);
+
+  // Debugging log
+  console.log("🏠 Home Page Data Received:", homeData);
+  
+  // Use cached data or empty arrays as fallback
+  const subjects = homeData?.subjects || [];
+  const recentMaterials = homeData?.recents || [];
 
   const semestersVm = semesters.map((s) => ({
     id: s.id,
@@ -15,7 +30,11 @@ const Home = () => {
     locked: s.id === '3' || s.id === '4', // Lock semesters 3 and 4
   }));
 
-  const recentApproved = getRecentMaterials(10);
+  // Use cached recent materials
+  const recentApproved = recentMaterials.slice(0, 10);
+  
+  // Debug: Log the recent materials
+  console.log("📊 Recent Materials for Display:", recentApproved);
   
   // Helper function to check if material is new (within 24 hours)
   const isNewMaterial = (material) => {
@@ -30,6 +49,15 @@ const Home = () => {
     return createdAt > twentyFourHoursAgo;
   };
   
+  // Skeleton Card Component
+  const SkeletonCard = () => (
+    <div className="animate-pulse bg-zinc-800 rounded-xl h-40 w-full p-4">
+      <div className="bg-zinc-700 rounded-xl w-9 h-9 mb-3"></div>
+      <div className="bg-zinc-700 rounded h-4 w-3/4 mb-2"></div>
+      <div className="bg-zinc-700 rounded h-3 w-1/2"></div>
+    </div>
+  );
+
   // Helper function to convert Google Drive view links to direct download links
   const convertToDownloadLink = (viewLink) => {
     if (!viewLink) return viewLink;
@@ -64,6 +92,58 @@ const Home = () => {
     // If it's not a Google Drive link, return the original link
     return viewLink;
   };
+
+  // Show skeleton loader only if data hasn't been loaded yet
+  if (!isHomeLoaded) {
+    return (
+      <div className="p-5 pt-10 max-w-md mx-auto">
+        {/* Header Skeleton */}
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 bg-zinc-800 rounded-full mx-auto mb-4 animate-pulse"></div>
+          <div className="h-8 bg-zinc-800 rounded w-48 mx-auto mb-2 animate-pulse"></div>
+          <div className="h-4 bg-zinc-800 rounded w-64 mx-auto animate-pulse"></div>
+        </div>
+
+        {/* Quick Section Title Skeleton */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-4 h-4 bg-zinc-800 rounded animate-pulse"></div>
+          <div className="h-3 bg-zinc-800 rounded w-24 animate-pulse"></div>
+        </div>
+
+        {/* Semesters Grid Skeleton */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+
+        {/* Materials Section Skeleton */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-zinc-800 rounded animate-pulse"></div>
+            <div className="h-3 bg-zinc-800 rounded w-20 animate-pulse"></div>
+          </div>
+          <div className="h-4 bg-zinc-800 rounded w-16 animate-pulse"></div>
+        </div>
+
+        {/* Materials List Skeleton */}
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="glass-card p-4 animate-pulse">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-zinc-800 rounded-lg flex-shrink-0"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-zinc-800 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-zinc-800 rounded w-1/2 mb-1"></div>
+                  <div className="h-3 bg-zinc-800 rounded w-2/3"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-5 pt-10 max-w-md mx-auto">
@@ -137,7 +217,7 @@ const Home = () => {
       </div>
 
       <div className="space-y-4">
-        {recentApproved.length > 0 ? (
+        {recentApproved && recentApproved.length > 0 ? (
           recentApproved.map((m) => (
             <MaterialCard 
               key={m.id} 
@@ -153,7 +233,7 @@ const Home = () => {
           <div className="glass-card p-8 text-center">
             <div className="text-white/50 mb-2">No materials found</div>
             <div className="text-sm text-white/40">
-              Be the first to upload!
+              {isHomeLoaded ? "No materials available yet" : "Loading materials..."}
             </div>
             {isAdmin && (
               <button

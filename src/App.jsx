@@ -1,27 +1,107 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { Sparkles, Bot, X } from "lucide-react";
 
 import { useApp } from "./context/AppContext";
+import { DataProvider } from "./context/DataContext";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Admin from "./pages/Admin";
 import Home from "./pages/Home";
-import Library from "./pages/Library";
 import Login from "./pages/Login";
+import Library from "./pages/Library";
 import Materials from "./pages/Materials";
-import Profile from "./pages/Profile";
-import Subjects from "./pages/Subjects";
-import Upload from "./pages/Upload";
 import BannedPage from "./pages/BannedPage";
+
+// Lazy load heavy components
+const Admin = lazy(() => import('./pages/Admin'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Subjects = lazy(() => import('./pages/Subjects'));
+const Upload = lazy(() => import('./pages/Upload'));
+
+
+// Global App Skeleton Component
+function AppSkeleton() {
+  return (
+    <div className="h-screen bg-[#0a0a0a] text-white overflow-hidden">
+      {/* Navbar Skeleton */}
+      <div className="h-16 w-full bg-zinc-950 border-b border-zinc-800 flex items-center px-4 space-x-4">
+        <div className="w-8 h-8 rounded-full bg-zinc-800 animate-pulse"></div>
+        <div className="h-4 bg-zinc-800 rounded w-24 animate-pulse"></div>
+        <div className="flex-1"></div>
+        <div className="h-6 w-6 bg-zinc-800 rounded-full animate-pulse"></div>
+      </div>
+      
+      {/* Main Content Area */}
+      <div className="p-5 pt-6 max-w-md mx-auto">
+        {/* Hero Section Skeleton */}
+        <div className="h-48 w-full bg-zinc-900/50 rounded-3xl animate-pulse mb-6"></div>
+        
+        {/* Quick Section Title Skeleton */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-4 h-4 bg-zinc-800 rounded animate-pulse"></div>
+          <div className="h-3 bg-zinc-800 rounded w-24 animate-pulse"></div>
+        </div>
+        
+        {/* Grid Skeleton */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-zinc-900/30 rounded-xl animate-pulse"></div>
+          ))}
+        </div>
+        
+        {/* Materials Section Skeleton */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-zinc-800 rounded animate-pulse"></div>
+            <div className="h-3 bg-zinc-800 rounded w-20 animate-pulse"></div>
+          </div>
+          <div className="h-4 bg-zinc-800 rounded w-16 animate-pulse"></div>
+        </div>
+        
+        {/* Materials List Skeleton */}
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-zinc-900/20 border border-zinc-800/50 rounded-2xl p-4 animate-pulse">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-zinc-800 rounded-lg flex-shrink-0"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-zinc-800 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-zinc-800 rounded w-1/2 mb-1"></div>
+                  <div className="h-3 bg-zinc-800 rounded w-2/3"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const { user, loading } = useApp();
   const [isUserBanned, setIsUserBanned] = useState(false);
   const [userDataLoading, setUserDataLoading] = useState(true);
+
+  // Prefetch heavy pages in background after initial load
+  useEffect(() => {
+    const preloadRoutes = async () => {
+      // Wait for the user to settle on the Home page
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
+      // Start downloading other pages in the background
+      import('./pages/Library');
+      import('./pages/Subjects');
+      import('./pages/Profile');
+      import('./pages/Admin');
+      import('./pages/Upload');
+    };
+
+    preloadRoutes();
+  }, []);
 
   // Check if user is banned
   useEffect(() => {
@@ -55,11 +135,7 @@ function App() {
 
   // Loading state
   if (loading || userDataLoading) {
-    return (
-      <div className="h-screen bg-black text-white flex items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    );
+    return <AppSkeleton />;
   }
 
   // Show banned page if user is banned
@@ -74,7 +150,7 @@ function App() {
 
   // Logged in - return the router with all routes
   return (
-    <>
+    <DataProvider>
       <Toaster
         position="top-center"
         reverseOrder={false}
@@ -95,23 +171,29 @@ function App() {
         }
       />
       <div className="bg-[#0a0a0a] text-white pb-24 relative">
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/semester/:semId" element={<Subjects />} />
-        <Route path="/semester/:semId/:subjectId" element={<Materials />} />
-        <Route path="/library" element={<Library />} />
-        <Route path="/upload" element={<ProtectedRoute requiredRole="admin"><Upload /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-white">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+          </div>
+        }>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/semester/:semId" element={<Subjects />} />
+            <Route path="/semester/:semId/:subjectId" element={<Materials />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/upload" element={<ProtectedRoute requiredRole="admin"><Upload /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
 
       <Navbar />
       
       {/* Floating AI Assistant Button */}
       <FloatingAIButton />
     </div>
-    </>
+    </DataProvider>
   );
 }
 

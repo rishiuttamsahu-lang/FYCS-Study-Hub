@@ -84,8 +84,10 @@ export default function Profile() {
             onClick={async () => {
               try {
                 await login();
+                // Navigation will happen automatically via auth state change
               } catch (error) {
                 console.error('Login error:', error);
+                toast.error('Login failed. Please try again.');
               }
             }}
             className="w-full py-3 rounded-xl bg-white/10 text-white font-bold flex items-center justify-center gap-2 hover:bg-white/20 border border-white/20 transition-colors"
