@@ -33,6 +33,7 @@ export default function Admin() {
   const [filterSubject, setFilterSubject] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [filterSem, setFilterSem] = useState("All");
+  const [sortOrder, setSortOrder] = useState("newest");
   const [newSubject, setNewSubject] = useState({
     name: "",
     semesterId: "1",
@@ -92,12 +93,14 @@ export default function Admin() {
     user.name?.toLowerCase().includes(userSearchTerm.toLowerCase())
   );
   
-  // Safety check for stats calculation
+  // Safety check for stats calculation - filter out corrupted/empty documents
+  const validMaterials = (materials || []).filter(m => m?.status === 'Approved' || m?.status === 'Pending');
+  
   const safeStats = {
     totalViews: ((materials || []).filter(m => m?.status === 'Approved') || []).reduce((sum, material) => sum + (material?.views || 0), 0),
     totalDownloads: ((materials || []).filter(m => m?.status === 'Approved') || []).reduce((sum, material) => sum + (material?.downloads || 0), 0),
     pendingRequests: ((materials || []).filter(m => m?.status === 'Pending') || []).length,
-    totalMaterials: (materials || []).length,
+    totalMaterials: validMaterials.length,
     approvedMaterials: ((materials || []).filter(m => m?.status === 'Approved') || []).length,
     totalSubjects: (subjects || []).length,
     totalSemesters: (semesters || []).length
@@ -115,7 +118,20 @@ export default function Admin() {
       if (filterSubject !== "All" && material.subjectId !== filterSubject) return false;
       return true;
     })
-    .sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { sensitivity: "base" }));
+    .sort((a, b) => {
+      if (sortOrder === "newest") {
+        const dateA = a.createdAt?.seconds || a.createdAt || 0;
+        const dateB = b.createdAt?.seconds || b.createdAt || 0;
+        return dateB - dateA;
+      } else if (sortOrder === "oldest") {
+        const dateA = a.createdAt?.seconds || a.createdAt || 0;
+        const dateB = b.createdAt?.seconds || b.createdAt || 0;
+        return dateA - dateB;
+      } else if (sortOrder === "az") {
+        return (a.title || "").localeCompare(b.title || "");
+      }
+      return 0;
+    });
   
   // Format numbers
   const formatNumber = (num) => {
@@ -607,6 +623,17 @@ export default function Admin() {
                           </option>
                         );
                       })}
+                    </select>
+                    
+                    {/* Sort */}
+                    <select 
+                      value={sortOrder} 
+                      onChange={(e) => setSortOrder(e.target.value)}
+                      className="glass-card px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none text-sm"
+                    >
+                      <option value="newest" className="bg-[#0a0a0a]">Sort: Newest First</option>
+                      <option value="oldest" className="bg-[#0a0a0a]">Sort: Oldest First</option>
+                      <option value="az" className="bg-[#0a0a0a]">Sort: A-Z</option>
                     </select>
                   </div>
                 )}

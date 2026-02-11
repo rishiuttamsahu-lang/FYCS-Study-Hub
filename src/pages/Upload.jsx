@@ -104,15 +104,13 @@ export default function Upload() {
       });
       
       if (result.success) {
-        // Reset form
-        setForm({
+        // Reset form - preserve semester, subject, and type selections
+        setForm(prevForm => ({
+          ...prevForm,
           title: "",
-          semester: "",
-          type: "Notes",
-          subject: "",
           driveLink: "",
           uploadDate: new Date().toLocaleDateString(),
-        });
+        }));
         
         toast.success("Material submitted successfully! Pending approval.");
       } else {
