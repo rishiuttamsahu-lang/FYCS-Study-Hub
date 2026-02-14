@@ -198,6 +198,7 @@ export default function Library() {
                 type="button"
                 onClick={() => setShowSortMenu(!showSortMenu)}
                 className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50 text-zinc-400 hover:text-white transition-colors"
+                aria-label="Sort materials"
                 title="Sort materials"
               >
                 <ArrowUpDown size={18} />

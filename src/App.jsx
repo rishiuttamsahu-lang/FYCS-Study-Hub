@@ -7,20 +7,19 @@ import { Sparkles, Bot, X } from "lucide-react";
 
 import { useApp } from "./context/AppContext";
 import { DataProvider } from "./context/DataContext";
-import Navbar from "./components/Navbar";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Library from "./pages/Library";
-import Materials from "./pages/Materials";
-import BannedPage from "./pages/BannedPage";
 
-
-// Lazy load heavy components
+// Lazy load ALL main page components for route-level code splitting
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Library = lazy(() => import('./pages/Library'));
+const Materials = lazy(() => import('./pages/Materials'));
+const BannedPage = lazy(() => import('./pages/BannedPage'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Subjects = lazy(() => import('./pages/Subjects'));
 const Upload = lazy(() => import('./pages/Upload'));
+const Navbar = lazy(() => import('./components/Navbar'));
+const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
 
 
 // Global App Skeleton Component
@@ -87,22 +86,7 @@ function App() {
   const [isUserBanned, setIsUserBanned] = useState(false);
   const [userDataLoading, setUserDataLoading] = useState(true);
 
-  // Prefetch heavy pages in background after initial load
-  useEffect(() => {
-    const preloadRoutes = async () => {
-      // Wait for the user to settle on the Home page
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      
-      // Start downloading other pages in the background
-      import('./pages/Library');
-      import('./pages/Subjects');
-      import('./pages/Profile');
-      import('./pages/Admin');
-      import('./pages/Upload');
-    };
-
-    preloadRoutes();
-  }, []);
+  // No background prefetching needed - React.lazy handles code splitting automatically
 
   // Check if user is banned
   useEffect(() => {
@@ -141,12 +125,28 @@ function App() {
 
   // Show banned page if user is banned
   if (user && isUserBanned) {
-    return <BannedPage />;
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
+      }>
+        <BannedPage />
+      </Suspense>
+    );
   }
 
   // Not logged in
   if (!user) {
-    return <Login />;
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
+      }>
+        <Login />
+      </Suspense>
+    );
   }
 
   // Logged in - return the router with all routes
@@ -171,12 +171,12 @@ function App() {
           }
         }
       />
-      <div className="bg-[#0a0a0a] text-white pb-24 relative">
-        <Suspense fallback={
-          <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-          </div>
-        }>
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
+      }>
+        <div className="bg-[#0a0a0a] text-white pb-24 relative">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/semester/:semId" element={<Subjects />} />
@@ -187,15 +187,13 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </Suspense>
 
-      <Navbar />
-      
-      {/* Floating AI Assistant Button */}
-      <FloatingAIButton />
-      
-
-    </div>
+          <Navbar />
+          
+          {/* Floating AI Assistant Button */}
+          <FloatingAIButton />
+        </div>
+      </Suspense>
     </DataProvider>
   );
 }
@@ -259,6 +257,7 @@ function FloatingAIButton() {
                   <button
                     onClick={closeModal}
                     className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors"
+                    aria-label="Close AI assistant modal"
                   >
                     <X size={16} className="text-white" />
                   </button>

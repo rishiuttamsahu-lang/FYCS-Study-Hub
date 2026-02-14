@@ -412,6 +412,7 @@ export default function Profile() {
                 type="button"
                 onClick={() => setIsEditingProfile(false)}
                 className="text-white/50 hover:text-white transition-colors"
+                aria-label="Close edit profile modal"
               >
                 <X size={24} />
               </button>
@@ -517,6 +518,7 @@ export default function Profile() {
                   type="button"
                   onClick={() => setIsFeedbackOpen(false)}
                   className="text-white/50 hover:text-white transition-colors"
+                  aria-label="Close feedback modal"
                 >
                   <X size={24} />
                 </button>
