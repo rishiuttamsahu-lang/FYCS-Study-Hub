@@ -277,7 +277,7 @@ export default function Upload() {
             <input
               value={form.uploadDate}
               readOnly
-              className="w-full bg-transparent text-sm outline-hidden text-zinc-500"
+              className="w-full bg-transparent text-sm outline-hidden text-zinc-400"
             />
           </div>
         </label>

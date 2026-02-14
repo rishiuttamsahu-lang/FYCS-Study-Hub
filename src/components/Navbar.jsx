@@ -30,7 +30,7 @@ const Navbar = () => {
             className={`flex flex-col items-center gap-1 transition-colors ${
               isActive(item.path)
                 ? "text-[#FFD700]"
-                : "text-white/45 hover:text-white/80"
+                : "text-zinc-300 hover:text-white/80"
             }`}
           >
             {item.icon}

@@ -176,7 +176,7 @@ function App() {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
         </div>
       }>
-        <div className="bg-[#0a0a0a] text-white pb-24 relative">
+        <main className="bg-[#0a0a0a] text-white pb-24 relative">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/semester/:semId" element={<Subjects />} />
@@ -192,7 +192,7 @@ function App() {
           
           {/* Floating AI Assistant Button */}
           <FloatingAIButton />
-        </div>
+        </main>
       </Suspense>
     </DataProvider>
   );
@@ -231,6 +231,7 @@ function FloatingAIButton() {
           <button
             onClick={toggleModal}
             className="fixed bottom-24 right-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-200 flex items-center gap-2"
+            aria-label="Open Assignment AI assistant"
           >
             <Sparkles size={20} />
             <span className="hidden sm:inline font-medium text-sm">Assignment AI</span>

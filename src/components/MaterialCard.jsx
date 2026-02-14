@@ -241,7 +241,7 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
             )}
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <div className="text-xs text-white/40">
+            <div className="text-xs text-zinc-400">
               {material.type}
             </div>
             {getSubjectById && material.subjectId && (
@@ -249,7 +249,7 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
                 {getSubjectAbbreviation(getSubjectById(material.subjectId)?.name || "Unknown")}
               </span>
             )}
-            <span className="text-xs text-zinc-500 whitespace-nowrap">
+            <span className="text-xs text-zinc-400 whitespace-nowrap">
               • {formatDate(material.createdAt || material.date)}
             </span>
           </div>
@@ -271,6 +271,7 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
             onClick={handleDownloadClick}
             className="hidden md:flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
             title="Download"
+            aria-label="Download material"
           >
             <Download size={18} />
           </button>

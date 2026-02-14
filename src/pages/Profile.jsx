@@ -261,7 +261,7 @@ export default function Profile() {
         {activeTab === "recent" && (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg text-white">Recent</h3>
+              <h2 className="font-bold text-lg text-white">Recent</h2>
               {recentHistory.length > 0 && (
                 <button
                   type="button"
@@ -276,7 +276,7 @@ export default function Profile() {
             
             <div className="glass-card">
               {recentHistory.length === 0 ? (
-                <div className="text-center py-8 text-white/40">
+                <div className="text-center py-8 text-zinc-400">
                   No recent history.
                 </div>
               ) : (
@@ -293,7 +293,7 @@ export default function Profile() {
                         <h4 className="text-sm text-white/90 truncate">
                           {(item.title && item.title.length > 40) ? item.title.substring(0, 37) + "..." : (item.title || "Untitled")}
                         </h4>
-                        <div className="text-[10px] text-white/40 mt-1">
+                        <div className="text-[10px] text-zinc-400 mt-1">
                           Viewed: {new Date(item.viewedAt).toLocaleDateString()}
                         </div>
                       </div>
@@ -331,7 +331,7 @@ export default function Profile() {
             
             <div className="glass-card">
               {downloadHistory.length === 0 ? (
-                <div className="text-center py-8 text-white/40">
+                <div className="text-center py-8 text-zinc-400">
                   No download history.
                 </div>
               ) : (
@@ -348,7 +348,7 @@ export default function Profile() {
                         <h4 className="text-sm text-white/90 truncate">
                           {(item.title && item.title.length > 40) ? item.title.substring(0, 37) + "..." : (item.title || "Untitled")}
                         </h4>
-                        <div className="text-[10px] text-white/40 mt-1">
+                        <div className="text-[10px] text-zinc-400 mt-1">
                           Downloaded: {new Date(item.downloadedAt).toLocaleDateString()}
                         </div>
                       </div>

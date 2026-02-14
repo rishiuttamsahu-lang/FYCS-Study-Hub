@@ -1,0 +1,1 @@
+import{a as u,j as e,N as t}from"./index-NIf_5wet.js";const o=({children:r,requiredRole:s=null})=>{const{user:i,isAdmin:n,loading:a}=u();return a?e.jsx("div",{className:"h-screen bg-black text-white flex items-center justify-center",children:e.jsx("div",{children:"Loading..."})}):i?s==="admin"&&!n?e.jsx(t,{to:"/",replace:!0}):r:e.jsx(t,{to:"/",replace:!0})};export{o as default};

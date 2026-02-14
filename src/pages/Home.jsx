@@ -183,12 +183,12 @@ const Home = () => {
                 <Circle size={8} className="absolute -top-0.5 -right-0.5 text-green-500 fill-current" />
               )}
             </div>
-            <h3 className="font-bold text-sm mb-1 flex items-center gap-1">
+            <h2 className="font-bold text-sm mb-1 flex items-center gap-1">
               {sem.title}
               {isSem2 && !isLocked && (
                 <span className="text-[8px] text-green-500 bg-green-500/10 px-1 py-0.5 rounded">LIVE</span>
               )}
-            </h3>
+            </h2>
             {isLocked ? (
               <span className="inline-block px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] rounded-full whitespace-nowrap">
                 Coming Soon

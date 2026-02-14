@@ -76,7 +76,7 @@ export default function BannedPage() {
             
             {/* Support Info */}
             <div className="mt-6 text-center">
-              <p className="text-zinc-500 text-xs">
+              <p className="text-zinc-400 text-xs">
                 For assistance, contact: 
                 <span className="text-orange-400 font-medium ml-1">support@fycs-study-hub.edu</span>
               </p>

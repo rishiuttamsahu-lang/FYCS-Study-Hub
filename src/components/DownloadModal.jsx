@@ -28,7 +28,7 @@ export default function DownloadModal({ isOpen, onClose, onConfirm, fileName }) 
           <p className="text-zinc-400 text-sm truncate mb-2">{fileName}</p>
           
           {/* Warning */}
-          <p className="text-xs text-zinc-500 mb-6">Download will start immediately.</p>
+          <p className="text-xs text-zinc-400 mb-6">Download will start immediately.</p>
           
           {/* Buttons */}
           <div className="space-y-3">

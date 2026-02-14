@@ -1186,6 +1186,7 @@ export default function Admin() {
                 type="button"
                 onClick={() => setEditingMaterial(null)}
                 className="text-white/50 hover:text-white transition-colors"
+                aria-label="Close edit material modal"
               >
                 <XCircle size={24} />
               </button>
@@ -1283,6 +1284,7 @@ export default function Admin() {
                 type="button"
                 onClick={() => setEditingSubject(null)}
                 className="text-white/50 hover:text-white transition-colors"
+                aria-label="Close edit subject modal"
               >
                 <XCircle size={24} />
               </button>

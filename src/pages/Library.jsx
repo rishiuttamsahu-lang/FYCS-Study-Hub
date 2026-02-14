@@ -289,7 +289,7 @@ export default function Library() {
           <div className="glass-card p-12 text-center">
             <FileText size={32} className="mx-auto mb-4 text-white/30" />
             <div className="font-semibold text-white mb-2">No materials found</div>
-            <div className="text-sm text-white/40">
+            <div className="text-sm text-zinc-400">
               Try adjusting your search or filter criteria
             </div>
           </div>
