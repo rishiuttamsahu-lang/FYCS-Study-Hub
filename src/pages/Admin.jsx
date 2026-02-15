@@ -1,11 +1,11 @@
-import { BarChart2, Book, CheckCircle, Clock, Code, Download, Edit3, Eye, FileText, Flag, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle, AlertTriangle } from "lucide-react";
+import { BarChart2, Book, CheckCircle, Clock, Code, Download, Edit3, Eye, FileText, Flag, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle, AlertTriangle, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { useApp } from "../context/AppContext";
 import AdminReports from "../components/admin/AdminReports";
-import { doc, updateDoc, deleteDoc, writeBatch, collection, getDocs } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, writeBatch, collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 
 const tabs = [
@@ -48,6 +48,28 @@ export default function Admin() {
     type: "Notes",
     link: ""
   });
+  
+  // State for real-time visitor count
+  const [todayVisitors, setTodayVisitors] = useState(0);
+  
+  // Real-time listener for today's visitor count
+  useEffect(() => {
+    // Get today's date in 'YYYY-MM-DD' format
+    const today = new Date().toLocaleDateString('en-CA');
+    const statRef = doc(db, 'analytics', today);
+    
+    // Real-time listener
+    const unsubscribe = onSnapshot(statRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setTodayVisitors(docSnap.data().visitors || 0);
+      } else {
+        setTodayVisitors(0);
+      }
+    });
+    
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, []);
   
   const navigate = useNavigate();
   const { 
@@ -505,12 +527,14 @@ export default function Admin() {
                   <div className="text-2xl font-extrabold">{formatNumber(safeStats.totalViews)}</div>
                 </div>
                 
-                <div className="glass-card p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-white/50 text-xs uppercase tracking-wider font-bold">Total Downloads</div>
-                    <Download size={20} className="text-white/70" />
+                <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-4 flex flex-col justify-center hover:border-cyan-500/30 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-zinc-400 text-xs sm:text-sm font-bold tracking-wider uppercase flex items-center gap-1.5">
+                      Today's Visitors
+                    </p>
+                    <Users size={16} className="text-cyan-400" />
                   </div>
-                  <div className="text-2xl font-extrabold">{formatNumber(safeStats.totalDownloads)}</div>
+                  <h3 className="text-3xl font-bold text-white">{todayVisitors}</h3>
                 </div>
                 
                 <div className="glass-card p-5 border border-amber-500/30 bg-amber-500/5">

@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, lazy, Suspense } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, increment } from "firebase/firestore";
 import { db } from "./firebase";
 import { Sparkles, Bot, X, Loader2 } from "lucide-react";
 
@@ -118,6 +118,25 @@ function App() {
     
     checkBanStatus();
   }, [user?.uid]);
+
+  // Track daily visitor
+  useEffect(() => {
+    const trackDailyVisitor = async () => {
+      try {
+        const today = new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD' format based on local time
+        const lastVisit = localStorage.getItem('lastVisitDate');
+        
+        if (lastVisit !== today) {
+          localStorage.setItem('lastVisitDate', today);
+          const statRef = doc(db, 'analytics', today);
+          await setDoc(statRef, { visitors: increment(1) }, { merge: true });
+        }
+      } catch (error) {
+        console.error("Analytics error:", error);
+      }
+    };
+    trackDailyVisitor();
+  }, []);
 
   // Loading state
   if (loading || userDataLoading) {
