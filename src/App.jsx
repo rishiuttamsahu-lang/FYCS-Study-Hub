@@ -3,10 +3,11 @@ import { Toaster } from "react-hot-toast";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
-import { Sparkles, Bot, X } from "lucide-react";
+import { Sparkles, Bot, X, Loader2 } from "lucide-react";
 
 import { useApp } from "./context/AppContext";
 import { DataProvider } from "./context/DataContext";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 // Lazy load ALL main page components for route-level code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -126,11 +127,8 @@ function App() {
   // Show banned page if user is banned
   if (user && isUserBanned) {
     return (
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
-      }>
+      <Suspense fallback={<LoadingSpinner />}
+      >
         <BannedPage />
       </Suspense>
     );
@@ -139,11 +137,8 @@ function App() {
   // Not logged in
   if (!user) {
     return (
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
-      }>
+      <Suspense fallback={<LoadingSpinner />}
+      >
         <Login />
       </Suspense>
     );
@@ -171,11 +166,7 @@ function App() {
           }
         }
       />
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
-      }>
+      <Suspense fallback={<LoadingSpinner />}>
         <main className="bg-[#0a0a0a] text-white pb-24 relative">
           <Routes>
             <Route path="/" element={<Home />} />
