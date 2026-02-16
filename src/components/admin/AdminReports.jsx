@@ -81,19 +81,19 @@ export default function AdminReports() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <Flag className="text-red-500" size={28} />
-          <h1 className="text-2xl font-bold">User Reports</h1>
-          <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <Flag className="text-red-500 w-6 h-6 md:w-7 md:h-7" />
+          <h1 className="text-xl md:text-2xl font-bold">User Reports</h1>
+          <span className="bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full text-xs md:text-sm">
             {reports.filter((r) => r.status !== "resolved").length} unresolved
           </span>
         </div>
 
         {reports.length === 0 ? (
-          <div className="bg-[#1a1a1a] rounded-xl p-12 text-center">
-            <CheckCircle className="mx-auto text-green-500 mb-4" size={48} />
-            <h2 className="text-xl font-semibold mb-2">No Reports Yet</h2>
-            <p className="text-white/55">All materials are working correctly!</p>
+          <div className="bg-[#1a1a1a] rounded-xl p-6 md:p-10 text-center">
+            <CheckCircle className="mx-auto text-green-500 mb-3 w-10 h-10 md:w-12 md:h-12" />
+            <h2 className="text-lg md:text-xl font-semibold mb-2">No Reports Yet</h2>
+            <p className="text-sm md:text-base text-white/55">All materials are working correctly!</p>
           </div>
         ) : (
           <div className="grid gap-4">

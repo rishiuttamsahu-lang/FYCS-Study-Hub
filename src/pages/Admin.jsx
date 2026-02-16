@@ -1,4 +1,4 @@
-import { BarChart2, Book, CheckCircle, Clock, Code, Download, Edit3, Eye, FileText, Flag, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle, AlertTriangle, Users } from "lucide-react";
+import { BarChart2, Book, CheckCircle, Clock, Code, Crown, Download, Edit3, Eye, FileText, Flag, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle, AlertTriangle, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -16,6 +16,9 @@ const tabs = [
   { id: "users", label: "Users", icon: <User size={16} /> },
   { id: "settings", label: "Settings", icon: <Settings size={16} /> },
 ];
+
+// Super Admin email - protected from all actions
+const SUPER_ADMIN_EMAIL = "rishiuttamsahu@gmail.com";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("analytics");
@@ -216,7 +219,13 @@ export default function Admin() {
     }
   };
   
-  const promoteUser = async (userId) => {
+  const promoteUser = async (userId, userEmail) => {
+    // Super Admin protection
+    if (userEmail === SUPER_ADMIN_EMAIL) {
+      toast.error("Action denied: Super Admin cannot be modified.");
+      return;
+    }
+    
     // Show compact confirmation popup
     const result = await Swal.fire({
       title: 'Promote to Admin?',
@@ -239,7 +248,7 @@ export default function Admin() {
         cancelButton: "bg-[#2a2a2a] hover:bg-[#3a3a3a] px-5 py-2 rounded-[10px] text-[11px] font-bold text-white transition-all"
       }
     });
-
+  
     if (result.isConfirmed) {
       try {
         await updateDoc(doc(db, "users", userId), { role: "admin" });
@@ -251,7 +260,13 @@ export default function Admin() {
     }
   };
   
-  const demoteUser = async (userId) => {
+  const demoteUser = async (userId, userEmail) => {
+    // Super Admin protection
+    if (userEmail === SUPER_ADMIN_EMAIL) {
+      toast.error("Action denied: Super Admin cannot be modified.");
+      return;
+    }
+    
     // Show compact confirmation popup
     const result = await Swal.fire({
       title: 'Demote to Student?',
@@ -274,7 +289,7 @@ export default function Admin() {
         cancelButton: "bg-[#2a2a2a] hover:bg-[#3a3a3a] px-5 py-2 rounded-[10px] text-[11px] font-bold text-white transition-all"
       }
     });
-
+  
     if (result.isConfirmed) {
       try {
         await updateDoc(doc(db, "users", userId), { role: "student" });
@@ -287,6 +302,12 @@ export default function Admin() {
   };
   
   const handleToggleBan = async (user) => {
+    // Super Admin protection
+    if (user.email === SUPER_ADMIN_EMAIL) {
+      toast.error("Action denied: Super Admin cannot be modified.");
+      return;
+    }
+    
     const isCurrentlyBanned = user.isBanned || false;
     const action = isCurrentlyBanned ? "Unban" : "Ban";
     const confirmText = isCurrentlyBanned 
@@ -317,7 +338,7 @@ export default function Admin() {
         cancelButton: "bg-[#2a2a2a] hover:bg-[#3a3a3a] px-5 py-2 rounded-[10px] text-[11px] font-bold text-white transition-all"
       }
     });
-
+  
     if (result.isConfirmed) {
       try {
         await updateDoc(doc(db, "users", user.id), { isBanned: !isCurrentlyBanned });
@@ -329,7 +350,13 @@ export default function Admin() {
     }
   };
   
-  const handleUnban = async (userId) => {
+  const handleUnban = async (userId, userEmail) => {
+    // Super Admin protection
+    if (userEmail === SUPER_ADMIN_EMAIL) {
+      toast.error("Action denied: Super Admin cannot be modified.");
+      return;
+    }
+    
     // Show compact confirmation popup
     const result = await Swal.fire({
       title: 'Unban User?',
@@ -352,7 +379,7 @@ export default function Admin() {
         cancelButton: "bg-[#2a2a2a] hover:bg-[#3a3a3a] px-5 py-2 rounded-[10px] text-[11px] font-bold text-white transition-all"
       }
     });
-
+  
     if (result.isConfirmed) {
       try {
         await updateDoc(doc(db, "users", userId), { isBanned: false });
@@ -998,7 +1025,16 @@ export default function Admin() {
                     {filteredUsers.length > 0 ? (
                       filteredUsers.map(user => (
                         <tr key={`user-${user.id}`} className="border-b border-white/5 hover:bg-white/2">
-                          <td className="p-4 font-medium">{user.displayName || user.name}</td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{user.displayName || user.name}</span>
+                              {user.email === SUPER_ADMIN_EMAIL && (
+                                <span className="inline-flex items-center px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs font-bold rounded-full">
+                                  <Crown size={12} className="mr-1" /> Super Admin
+                                </span>
+                              )}
+                            </div>
+                          </td>
                           <td className="p-4 text-white/70">{user.email}</td>
                           <td className="p-4">
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
@@ -1026,46 +1062,54 @@ export default function Admin() {
                           </td>
                           <td className="p-4">
                             <div className="flex gap-2">
-                              {user.role === "student" ? (
-                                <button
-                                  type="button"
-                                  onClick={() => promoteUser(user.id)}
-                                  className="flex items-center gap-1 px-3 py-1 rounded-lg bg-purple-500/15 text-purple-300 text-sm font-bold hover:bg-purple-500/25 transition-colors"
-                                >
-                                  <Shield size={14} />
-                                  Promote
-                                </button>
+                              {user.email !== SUPER_ADMIN_EMAIL ? (
+                                <div className="flex items-center gap-2">
+                                  {user.role === "student" ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => promoteUser(user.id, user.email)}
+                                      className="flex items-center gap-1 px-3 py-1 rounded-lg bg-purple-500/15 text-purple-300 text-sm font-bold hover:bg-purple-500/25 transition-colors"
+                                    >
+                                      <Shield size={14} />
+                                      Promote
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => demoteUser(user.id, user.email)}
+                                      className="flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 text-sm font-bold hover:bg-amber-500/25 transition-colors"
+                                    >
+                                      <User size={14} />
+                                      Demote
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleBan(user)}
+                                    className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-bold transition-colors ${
+                                      user.isBanned 
+                                        ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
+                                        : "bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
+                                    }`}
+                                  >
+                                    {user.isBanned ? (
+                                      <>
+                                        <CheckCircle size={14} />
+                                        Unban
+                                      </>
+                                    ) : (
+                                      <>
+                                        <XCircle size={14} />
+                                        Ban
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
                               ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => demoteUser(user.id)}
-                                  className="flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 text-sm font-bold hover:bg-amber-500/25 transition-colors"
-                                >
-                                  <User size={14} />
-                                  Demote
-                                </button>
+                                <span className="text-yellow-500 bg-yellow-500/10 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/20 flex items-center gap-1 w-fit">
+                                  👑 Creator
+                                </span>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => handleToggleBan(user)}
-                                className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-bold transition-colors ${
-                                  user.isBanned 
-                                    ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
-                                    : "bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
-                                }`}
-                              >
-                                {user.isBanned ? (
-                                  <>
-                                    <CheckCircle size={14} />
-                                    Unban
-                                  </>
-                                ) : (
-                                  <>
-                                    <XCircle size={14} />
-                                    Ban
-                                  </>
-                                )}
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1092,7 +1136,14 @@ export default function Admin() {
                     <div key={`user-${user.id}`} className="glass-card p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="font-bold text-white text-sm">{user.displayName || user.name}</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-bold text-white text-sm">{user.displayName || user.name}</h3>
+                            {user.email === SUPER_ADMIN_EMAIL && (
+                              <span className="inline-flex items-center px-2 py-1 bg-yellow-500/20 text-yellow-300 text-[10px] font-bold rounded-full">
+                                <Crown size={10} className="mr-1" /> Super Admin
+                              </span>
+                            )}
+                          </div>
                           <p className="text-white/70 text-xs mt-1 truncate max-w-[200px]">{user.email}</p>
                           <div className="flex items-center gap-2 mt-2">
                             <span className={`inline-block px-2 py-1 rounded-full text-[10px] font-bold ${
@@ -1116,44 +1167,52 @@ export default function Admin() {
                       </div>
                       
                       <div className="flex gap-2">
-                        {user.role === "student" ? (
-                          <button
-                            type="button"
-                            onClick={() => promoteUser(user.id)}
-                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-purple-500/15 text-purple-300 text-xs font-bold hover:bg-purple-500/25 transition-colors"
-                          >
-                            <Shield size={12} />
-                            Promote
-                          </button>
+                        {user.email !== SUPER_ADMIN_EMAIL ? (
+                          <div className="flex items-center gap-2 w-full">
+                            {user.role === "student" ? (
+                              <button
+                                type="button"
+                                onClick={() => promoteUser(user.id, user.email)}
+                                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-purple-500/15 text-purple-300 text-xs font-bold hover:bg-purple-500/25 transition-colors"
+                              >
+                                <Shield size={12} />
+                                Promote
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => demoteUser(user.id, user.email)}
+                                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 text-xs font-bold hover:bg-amber-500/25 transition-colors"
+                              >
+                                <User size={12} />
+                                Demote
+                              </button>
+                            )}
+                            
+                            {user.isBanned ? (
+                              <button
+                                type="button"
+                                onClick={() => handleUnban(user.id, user.email)}
+                                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 transition-colors"
+                              >
+                                <CheckCircle size={12} />
+                                Unban
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleBan(user)}
+                                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 text-xs font-bold hover:bg-rose-500/25 transition-colors"
+                              >
+                                <XCircle size={12} />
+                                Ban
+                              </button>
+                            )}
+                          </div>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => demoteUser(user.id)}
-                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 text-xs font-bold hover:bg-amber-500/25 transition-colors"
-                          >
-                            <User size={12} />
-                            Demote
-                          </button>
-                        )}
-                        
-                        {user.isBanned ? (
-                          <button
-                            type="button"
-                            onClick={() => handleUnban(user.id)}
-                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 transition-colors"
-                          >
-                            <CheckCircle size={12} />
-                            Unban
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleBan(user)}
-                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 text-xs font-bold hover:bg-rose-500/25 transition-colors"
-                          >
-                            <XCircle size={12} />
-                            Ban
-                          </button>
+                          <span className="text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full text-xs font-bold border border-yellow-500/20 flex items-center justify-center gap-1 w-full">
+                            👑 Creator
+                          </span>
                         )}
                       </div>
                     </div>
