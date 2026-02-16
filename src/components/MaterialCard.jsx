@@ -295,9 +295,9 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
           {/* 1. Left: Uploader Name */}
           <span className="flex items-center gap-1 text-zinc-300">
             <User size={12} /> by {
-              (!material.uploaderName || material.uploaderName === 'Student' || material.uploaderName === 'Admin') 
-              ? 'Rishikesh' 
-              : material.uploaderName
+              material.uploadedBy?.split(' ')[0] || 
+              material.uploaderName || 
+              'Admin'
             }
           </span>
 
