@@ -11,7 +11,7 @@ export default function Library() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("");
   const [selectedType, setSelectedType] = useState("");
-  const [sortBy, setSortBy] = useState("title"); // Default to A-Z
+  const [sortBy, setSortBy] = useState("newest"); // Default to newest first
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
