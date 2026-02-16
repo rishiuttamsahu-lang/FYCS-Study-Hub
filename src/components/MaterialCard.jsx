@@ -126,21 +126,33 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
       navigate(`/semester/${material.semId}/${material.subjectId}?tab=${tabParam}`);
     } else {
       try {
-        // Update database with increment
-        await updateDoc(doc(db, "materials", material.id), { 
-          views: increment(1) 
-        });
-        
-        // Add to recent history
-        addToRecentHistory(material);
-        
-        // Optimistic update: increment view count locally
-        setViewCount(prev => prev + 1);
-        
-        if (onIncrementView) {
-          onIncrementView(material.id);
-        }
+        // Open the file link immediately for good UX
         window.open(material.link, "_blank", "noopener,noreferrer");
+
+        // Check localStorage to see if this user already viewed this specific material
+        const viewedMaterials = JSON.parse(localStorage.getItem('viewedMaterials') || '[]');
+
+        // If they haven't viewed it yet, increment the db and save to localStorage
+        if (!viewedMaterials.includes(material.id)) {
+          // Add to localStorage
+          viewedMaterials.push(material.id);
+          localStorage.setItem('viewedMaterials', JSON.stringify(viewedMaterials));
+
+          // Increment in Firestore
+          await updateDoc(doc(db, "materials", material.id), { 
+            views: increment(1) 
+          });
+
+          // Add to recent history
+          addToRecentHistory(material);
+
+          // Optimistic update: increment view count locally
+          setViewCount(prev => prev + 1);
+
+          if (onIncrementView) {
+            onIncrementView(material.id);
+          }
+        }
       } catch (error) {
         console.error("Error updating view count:", error);
         // Still open the link even if DB update fails
