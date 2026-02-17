@@ -1,12 +1,16 @@
-import { ArrowLeft, Book } from "lucide-react";
+import { ArrowLeft, Book, Search, X } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { useState } from "react";
 
 export default function Subjects() {
   const navigate = useNavigate();
   const { semId } = useParams();
   
   const { subjects, getSemesterById, getSubjectsBySemester, getMaterialsBySubject } = useApp();
+  
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Safety check: Ensure subjects data exists
   if (!subjects) {
@@ -70,15 +74,44 @@ export default function Subjects() {
       </div>
 
       {/* Subject List Header */}
-      <div className="flex items-center gap-2 mb-4 text-white/50 uppercase text-xs tracking-widest font-bold">
-        <Book size={14} />
-        <span>Subject List</span>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2 text-sm font-bold text-zinc-400 tracking-wider">
+          <Book size={14} />
+          <span>SUBJECT LIST</span>
+        </div>
+        <button
+          onClick={() => {
+            setIsSearchOpen(!isSearchOpen);
+            if (isSearchOpen) setSearchQuery(''); // Clear search on close
+          }}
+          className="text-zinc-400 hover:text-yellow-400 p-1 transition-colors"
+        >
+          {isSearchOpen ? <X size={18} /> : <Search size={18} />}
+        </button>
       </div>
+
+      {isSearchOpen && (
+        <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search subjects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-10 pr-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50"
+              autoFocus
+            />
+          </div>
+        </div>
+      )}
 
       {/* Subjects Grid */}
       <div className="space-y-3">
         {semesterSubjects && semesterSubjects.length > 0 ? (
-          semesterSubjects.map((subject) => {
+          semesterSubjects.filter(subject => 
+            subject.name.toLowerCase().includes(searchQuery.toLowerCase())
+          ).map((subject) => {
             // Get approved materials count for this subject
             const approvedCount = getMaterialsBySubject(subject.id)?.length || 0;
             
