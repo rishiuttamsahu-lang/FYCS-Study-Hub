@@ -1,4 +1,4 @@
-// Mock Database for FYCS Study Hub
+// Mock Database for CS Study Hub
 // This simulates a real database with relational data
 
 export const mockData = {

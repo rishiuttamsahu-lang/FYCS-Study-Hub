@@ -513,7 +513,7 @@ export default function Admin() {
             Admin Dashboard
           </h1>
           <p className="text-white/55 text-xs md:text-sm mt-1 md:mt-2">
-            Manage all aspects of FYCS Study Hub
+            Manage all aspects of CS Study Hub
           </p>
         </div>
 

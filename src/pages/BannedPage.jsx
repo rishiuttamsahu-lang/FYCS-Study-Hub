@@ -56,7 +56,7 @@ export default function BannedPage() {
             <div className="flex flex-col gap-4 mb-6">
               {/* Contact Admin Button */}
               <a
-                href="mailto:support@fycs-study-hub.edu"
+                href="mailto:support@cs-study-hub.edu"
                 className="w-full py-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold flex items-center justify-center gap-3 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300"
               >
                 <Mail size={20} />
@@ -78,7 +78,7 @@ export default function BannedPage() {
             <div className="mt-6 text-center">
               <p className="text-zinc-400 text-xs">
                 For assistance, contact: 
-                <span className="text-orange-400 font-medium ml-1">support@fycs-study-hub.edu</span>
+                <span className="text-orange-400 font-medium ml-1">support@cs-study-hub.edu</span>
               </p>
             </div>
           </div>

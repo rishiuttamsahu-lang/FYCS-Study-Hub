@@ -105,7 +105,7 @@ export default function Profile() {
   
       // Step 3: Join emails with commas. Create mailto link
       const joinedEmails = adminEmails.join(',');
-      const mailtoLink = `mailto:${joinedEmails}?subject=FYCS Study Hub Feedback&body=${encodeURIComponent(feedbackMessage)}`;
+      const mailtoLink = `mailto:${joinedEmails}?subject=CS Study Hub Feedback&body=${encodeURIComponent(feedbackMessage)}`;
   
       // Step 4: Trigger the email
       window.location.href = mailtoLink;
