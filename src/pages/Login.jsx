@@ -49,7 +49,7 @@ export default function Login() {
               <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-600/30 to-blue-500/30 border border-white/20 flex items-center justify-center shadow-lg shadow-purple-500/20 backdrop-blur-sm">
                 <img 
                   src="/my.png" 
-                  alt="CS Hub Logo"
+                  alt="BNN CS Study Hub Logo"
                   className="w-16 h-16 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
                 />
               </div>
@@ -57,12 +57,12 @@ export default function Login() {
             
             {/* Heading */}
             <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              CS Study Hub
+              BNN CS Study Hub
             </h1>
             
             {/* Subtext */}
             <p className="text-zinc-400 text-sm mb-10">
-              Your central hub for notes, practicals, important materials, and assignments.
+              Your central hub for BNN computer science students.
             </p>
             
             {/* Login Button */}
