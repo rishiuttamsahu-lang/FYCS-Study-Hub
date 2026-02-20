@@ -48,7 +48,7 @@ export default function Login() {
             <div className="flex justify-center mb-8">
               <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-600/30 to-blue-500/30 border border-white/20 flex items-center justify-center shadow-lg shadow-purple-500/20 backdrop-blur-sm">
                 <img 
-                  src="/my.png" 
+                  src="/logo.png" 
                   alt="BNN CS Study Hub Logo"
                   className="w-16 h-16 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
                 />
