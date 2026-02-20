@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useData } from "../context/DataContext";
 import { useEffect } from "react";
-import dbLogo from "../assets/image.png";
+import dbLogo from "/logo.png";
 import MaterialCard from "../components/MaterialCard";
 
 const Home = () => {

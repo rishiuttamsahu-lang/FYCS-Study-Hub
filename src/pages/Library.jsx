@@ -270,7 +270,7 @@ export default function Library() {
       {/* Results Count */}
       <div className="mb-2 flex items-center justify-between">
         <p className="text-white/70 text-xs">
-          Showing <span className="font-bold text-[#FFD700]">{filteredMaterials.length}</span> of {libraryMaterials.length} approved materials
+          Showing <span className="font-bold text-[#FFD700]">{filteredMaterials.length}</span> of <span className="font-bold text-[#FFD700]">{libraryMaterials.filter(material => material.status === "Approved").length}</span> approved materials
         </p>
       </div>
 

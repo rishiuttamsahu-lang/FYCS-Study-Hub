@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import { db } from '../firebase'; 
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 
 const DataContext = createContext();
 
@@ -21,8 +21,7 @@ export const DataProvider = ({ children }) => {
       // 1. Try fetching from 'materials' (lowercase) with proper ordering
       const materialsQuery = query(
         collection(db, "materials"), 
-        orderBy("createdAt", "desc"), 
-        limit(10)
+        orderBy("createdAt", "desc")
       );
       const snap1 = await getDocs(materialsQuery);
       console.log(`📂 Collection 'materials': Found ${snap1.size} items`);
@@ -30,8 +29,7 @@ export const DataProvider = ({ children }) => {
       // 2. Try fetching from 'Materials' (Capitalized) - Common mistake
       const materialsQuery2 = query(
         collection(db, "Materials"), 
-        orderBy("createdAt", "desc"), 
-        limit(10)
+        orderBy("createdAt", "desc")
       );
       const snap2 = await getDocs(materialsQuery2);
       console.log(`📂 Collection 'Materials': Found ${snap2.size} items`);
@@ -39,8 +37,7 @@ export const DataProvider = ({ children }) => {
       // 3. Try fetching from 'notes'
       const notesQuery = query(
         collection(db, "notes"), 
-        orderBy("createdAt", "desc"), 
-        limit(10)
+        orderBy("createdAt", "desc")
       );
       const snap3 = await getDocs(notesQuery);
       console.log(`📂 Collection 'notes': Found ${snap3.size} items`);
