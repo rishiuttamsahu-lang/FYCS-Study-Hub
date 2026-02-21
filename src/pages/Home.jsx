@@ -93,53 +93,13 @@ const Home = () => {
     return viewLink;
   };
 
-  // Show skeleton loader only if data hasn't been loaded yet
+  // Show loading spinner immediately for better UX
   if (!isHomeLoaded) {
     return (
-      <div className="p-5 pt-10 max-w-md mx-auto">
-        {/* Header Skeleton */}
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-zinc-800 rounded-full mx-auto mb-4 animate-pulse"></div>
-          <div className="h-8 bg-zinc-800 rounded w-48 mx-auto mb-2 animate-pulse"></div>
-          <div className="h-4 bg-zinc-800 rounded w-64 mx-auto animate-pulse"></div>
-        </div>
-
-        {/* Quick Section Title Skeleton */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-4 h-4 bg-zinc-800 rounded animate-pulse"></div>
-          <div className="h-3 bg-zinc-800 rounded w-24 animate-pulse"></div>
-        </div>
-
-        {/* Semesters Grid Skeleton */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          {[...Array(4)].map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-
-        {/* Materials Section Skeleton */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-zinc-800 rounded animate-pulse"></div>
-            <div className="h-3 bg-zinc-800 rounded w-20 animate-pulse"></div>
-          </div>
-          <div className="h-4 bg-zinc-800 rounded w-16 animate-pulse"></div>
-        </div>
-
-        {/* Materials List Skeleton */}
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="glass-card p-4 animate-pulse">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-zinc-800 rounded-lg flex-shrink-0"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-zinc-800 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-zinc-800 rounded w-1/2 mb-1"></div>
-                  <div className="h-3 bg-zinc-800 rounded w-2/3"></div>
-                </div>
-              </div>
-            </div>
-          ))}
+      <div className="flex justify-center items-center min-h-screen bg-[#0a0a0a]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700] mx-auto mb-4"></div>
+          <p className="text-white/70 text-sm">Loading homepage...</p>
         </div>
       </div>
     );

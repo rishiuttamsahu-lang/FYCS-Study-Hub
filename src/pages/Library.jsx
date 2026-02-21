@@ -14,17 +14,21 @@ export default function Library() {
   const [sortBy, setSortBy] = useState("newest"); // Default to newest first
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
 
   // Fetch library data on mount using global cache
   useEffect(() => {
-    fetchLibraryData();
+    setLocalLoading(true);
+    fetchLibraryData().finally(() => {
+      setLocalLoading(false);
+    });
   }, [fetchLibraryData]);
 
   // Defer heavy rendering to unblock navigation
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsReady(true);
-    }, 10);
+    }, 50); // Increased to 50ms for better performance
     
     return () => clearTimeout(timer);
   }, []);
@@ -124,38 +128,13 @@ export default function Library() {
     return result;
   }, [libraryMaterials, searchTerm, selectedSemester, selectedType, getSubjectById, sortBy]);
 
-  // Show skeleton UI only if data hasn't been loaded yet
-  if (!isLibraryLoaded) {
+  // Show loading spinner immediately for better UX
+  if (localLoading || !isLibraryLoaded) {
     return (
-      <div className="p-5 pt-8 max-w-4xl mx-auto">
-        {/* Header Skeleton */}
-        <div className="mb-4 text-center">
-          <div className="h-8 bg-zinc-800 rounded w-48 mx-auto mb-2 animate-pulse"></div>
-          <div className="h-4 bg-zinc-800 rounded w-80 mx-auto animate-pulse"></div>
-        </div>
-
-        {/* Controls Section Skeleton */}
-        <div className="glass-card p-4 mb-4">
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <div className="flex-1 h-10 bg-zinc-800 rounded-xl animate-pulse"></div>
-              <div className="w-12 h-10 bg-zinc-800 rounded-xl animate-pulse"></div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="h-10 bg-zinc-800 rounded-xl animate-pulse"></div>
-              <div className="h-10 bg-zinc-800 rounded-xl animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Results Count Skeleton */}
-        <div className="mb-2 h-4 bg-zinc-800 rounded w-64 animate-pulse"></div>
-
-        {/* Materials Grid Skeleton */}
-        <div className="space-y-4">
-          {[...Array(8)].map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
+      <div className="flex justify-center items-center min-h-screen bg-[#0a0a0a]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700] mx-auto mb-4"></div>
+          <p className="text-white/70 text-sm">Loading library materials...</p>
         </div>
       </div>
     );

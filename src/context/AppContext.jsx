@@ -42,6 +42,9 @@ export const AppProvider = ({ children }) => {
   
   // Real-time listeners for materials and subjects
   useEffect(() => {
+    let materialsLoaded = false;
+    let subjectsLoaded = false;
+    
     const unsubscribeMaterials = onSnapshot(
       query(collection(db, "materials"), orderBy("createdAt", "desc")),
       (snapshot) => {
@@ -50,24 +53,22 @@ export const AppProvider = ({ children }) => {
           ...doc.data()
         }));
         setMaterials(materialsList);
-        // Set loading to false after initial data load
-        if (loading) {
+        materialsLoaded = true;
+        // Set loading to false after both data loads complete
+        if (materialsLoaded && subjectsLoaded && loading) {
           setLoading(false);
         }
       },
       (error) => {
         console.error("Error listening to materials: ", error);
+        materialsLoaded = true;
         // Still set loading to false even if there's an error
-        if (loading) {
+        if (materialsLoaded && subjectsLoaded && loading) {
           setLoading(false);
         }
       }
     );
     
-    return () => unsubscribeMaterials();
-  }, [loading]);
-  
-  useEffect(() => {
     const unsubscribeSubjects = onSnapshot(
       collection(db, "subjects"),
       (snapshot) => {
@@ -76,21 +77,26 @@ export const AppProvider = ({ children }) => {
           ...doc.data()
         }));
         setSubjects(subjectsList);
-        // Set loading to false after initial data load
-        if (loading) {
+        subjectsLoaded = true;
+        // Set loading to false after both data loads complete
+        if (materialsLoaded && subjectsLoaded && loading) {
           setLoading(false);
         }
       },
       (error) => {
         console.error("Error listening to subjects: ", error);
+        subjectsLoaded = true;
         // Still set loading to false even if there's an error
-        if (loading) {
+        if (materialsLoaded && subjectsLoaded && loading) {
           setLoading(false);
         }
       }
     );
     
-    return () => unsubscribeSubjects();
+    return () => {
+      unsubscribeMaterials();
+      unsubscribeSubjects();
+    };
   }, [loading]);
   
   // Real-time listener for users

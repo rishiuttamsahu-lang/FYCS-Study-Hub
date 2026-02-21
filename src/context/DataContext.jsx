@@ -16,71 +16,31 @@ export const DataProvider = ({ children }) => {
     if (isLibraryLoaded) return;
     
     try {
-      console.log("🕵️‍♂️ DETECTIVE MODE: Looking for data...");
+      // Fetch all data in parallel for better performance
+      const [materialsSnap, subjectsSnap] = await Promise.all([
+        getDocs(query(collection(db, "materials"), orderBy("createdAt", "desc"))),
+        getDocs(collection(db, "subjects"))
+      ]);
 
-      // 1. Try fetching from 'materials' (lowercase) with proper ordering
-      const materialsQuery = query(
-        collection(db, "materials"), 
-        orderBy("createdAt", "desc")
-      );
-      const snap1 = await getDocs(materialsQuery);
-      console.log(`📂 Collection 'materials': Found ${snap1.size} items`);
+      // Process materials
+      const materialsData = materialsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // Process subjects
+      const subjectsData = subjectsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // 2. Try fetching from 'Materials' (Capitalized) - Common mistake
-      const materialsQuery2 = query(
-        collection(db, "Materials"), 
-        orderBy("createdAt", "desc")
-      );
-      const snap2 = await getDocs(materialsQuery2);
-      console.log(`📂 Collection 'Materials': Found ${snap2.size} items`);
-
-      // 3. Try fetching from 'notes'
-      const notesQuery = query(
-        collection(db, "notes"), 
-        orderBy("createdAt", "desc")
-      );
-      const snap3 = await getDocs(notesQuery);
-      console.log(`📂 Collection 'notes': Found ${snap3.size} items`);
-
-      // MERGE ALL FOUND DATA and sort again to maintain order
-      let allDocs = [
-        ...snap1.docs.map(d => ({ id: d.id, ...d.data() })),
-        ...snap2.docs.map(d => ({ id: d.id, ...d.data() })),
-        ...snap3.docs.map(d => ({ id: d.id, ...d.data() }))
-      ];
-
-      // Sort all merged docs by date descending to ensure proper order
-      allDocs.sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || 0);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || 0);
-        return dateB - dateA; // Newest first
-      });
-
-      console.log(`🎉 TOTAL RAW ITEMS FOUND: ${allDocs.length}`);
-
-      if (allDocs.length === 0) {
-        alert("⚠️ Database Connected but NO Data Found! Check Collection Name in Firebase Console.");
-      }
-
-      // 4. Set Library Data (No Filter, Just Show It)
-      setLibraryMaterials(allDocs);
+      // Set Library Data
+      setLibraryMaterials(materialsData);
       setIsLibraryLoaded(true);
 
-      // 5. Set Home Data - Take the 5 most recent
+      // Set Home Data
       setHomeData({ 
-        subjects: [], // Fetching subjects below
-        recents: allDocs.slice(0, 5) 
+        subjects: subjectsData,
+        recents: materialsData.slice(0, 5) 
       });
-
-      // 6. Fetch Subjects (Since we know this works)
-      const subSnap = await getDocs(collection(db, "subjects"));
-      const subs = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setHomeData(prev => ({ ...prev, subjects: subs }));
       setIsHomeLoaded(true);
 
     } catch (error) {
-      console.error("🔥 CRITICAL ERROR:", error);
-      alert("Error: " + error.message);
+      console.error("🔥 Data fetch error:", error);
       setIsHomeLoaded(true);
       setIsLibraryLoaded(true);
     }

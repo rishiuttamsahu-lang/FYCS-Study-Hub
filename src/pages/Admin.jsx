@@ -101,6 +101,7 @@ export default function Admin() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700] mx-auto mb-4"></div>
           <h2 className="text-xl mb-2">Loading Admin Dashboard...</h2>
           <p className="text-white/55">Please wait while we fetch the data.</p>
         </div>

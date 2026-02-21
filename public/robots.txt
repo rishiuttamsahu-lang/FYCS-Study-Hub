@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
 
-
-Sitemap: https://fycs-study-hub.vercel.app/sitemap.xml
+Sitemap: https://cs-study-hub.vercel.app/sitemap.xml
