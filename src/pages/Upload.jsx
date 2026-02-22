@@ -3,6 +3,8 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useApp } from "../context/AppContext";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -52,6 +54,9 @@ export default function Upload() {
 
   // Check if form is valid
   const isFormValid = form.title && form.semester && form.subject && form.driveLink;
+  
+  // Loading state for duplicate check
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
   function onChange(key) {
     return (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -93,7 +98,89 @@ export default function Upload() {
     }
     
     try {
-      // Add material through context (async)
+      // Set loading state for duplicate check
+      setIsCheckingDuplicate(true);
+      
+      // Fetch all materials for comprehensive duplicate check
+      const querySnapshot = await getDocs(collection(db, "materials"));
+      
+      // Normalize user input for comparison
+      const normalizedInputTitle = form.title.toLowerCase().trim();
+      
+      // Extract filename from Google Drive link if possible
+      let inputFileName = "";
+      const driveLink = form.driveLink.trim();
+      if (driveLink) {
+        try {
+          // Try to extract filename from Google Drive URL
+          const urlObj = new URL(driveLink);
+          const pathParts = urlObj.pathname.split('/');
+          // Look for filename in the URL path
+          const fileNamePart = pathParts.find(part => part.includes('.') && !part.startsWith('d'));
+          if (fileNamePart) {
+            inputFileName = fileNamePart.toLowerCase().trim();
+          }
+        } catch (urlError) {
+          // If URL parsing fails, try to extract from the link text
+          const fileNameMatch = driveLink.match(/[^/]+\.[^/]+$/);
+          if (fileNameMatch) {
+            inputFileName = fileNameMatch[0].toLowerCase().trim();
+          }
+        }
+      }
+      
+      // Check for duplicates in existing materials
+      let isDuplicate = false;
+      querySnapshot.forEach((doc) => {
+        const dbData = doc.data();
+        
+        // Check title duplication (case-insensitive and trimmed)
+        const dbTitle = dbData.title ? dbData.title.toLowerCase().trim() : "";
+        if (dbTitle === normalizedInputTitle) {
+          isDuplicate = true;
+          return;
+        }
+        
+        // Check file name duplication if we have a filename to compare
+        if (inputFileName) {
+          // Check if the database has a fileName field or extract from link
+          const dbFileName = (dbData.fileName || "").toLowerCase().trim();
+          const dbLink = (dbData.link || "").toLowerCase().trim();
+          
+          // Try to extract filename from database link
+          let dbExtractedFileName = "";
+          if (dbLink) {
+            try {
+              const dbUrlObj = new URL(dbLink);
+              const dbPathParts = dbUrlObj.pathname.split('/');
+              const dbFileNamePart = dbPathParts.find(part => part.includes('.') && !part.startsWith('d'));
+              if (dbFileNamePart) {
+                dbExtractedFileName = dbFileNamePart.toLowerCase().trim();
+              }
+            } catch (dbUrlError) {
+              const dbFileNameMatch = dbLink.match(/[^/]+\.[^/]+$/);
+              if (dbFileNameMatch) {
+                dbExtractedFileName = dbFileNameMatch[0].toLowerCase().trim();
+              }
+            }
+          }
+          
+          // Compare filenames
+          if (dbFileName === inputFileName || dbExtractedFileName === inputFileName) {
+            isDuplicate = true;
+            return;
+          }
+        }
+      });
+      
+      // If duplicate found, show warning and stop upload
+      if (isDuplicate) {
+        toast.error("🚨 Wait! A material with this exact Title or File Name has already been uploaded by someone else.");
+        setIsCheckingDuplicate(false);
+        return;
+      }
+      
+      // No duplicates found, proceed with upload
       const result = await addMaterial({
         title: form.title,
         semId: form.semester,
@@ -121,6 +208,9 @@ export default function Upload() {
       console.error("Upload Error Details:", error);
       const msg = error?.message || error?.toString() || "An unknown error occurred";
       toast.error("Error submitting material: " + msg);
+    } finally {
+      // Always reset loading state
+      setIsCheckingDuplicate(false);
     }
   }
 
@@ -286,14 +376,22 @@ export default function Upload() {
         <button 
           type="submit" 
           className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
-            isFormValid 
+            isFormValid && !isCheckingDuplicate
               ? "btn-primary" 
               : "bg-white/10 text-white/30 cursor-not-allowed"
           }`}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isCheckingDuplicate}
         >
-          {isFormValid ? "Publish Material" : "Fill all required fields"}
-          <CloudUpload size={18} />
+          {isCheckingDuplicate 
+            ? "Checking for duplicates..." 
+            : isFormValid 
+              ? "Publish Material" 
+              : "Fill all required fields"}
+          {isCheckingDuplicate ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          ) : (
+            <CloudUpload size={18} />
+          )}
         </button>
       </form>
       ) : (
