@@ -189,7 +189,8 @@ export const AppProvider = ({ children }) => {
   }, [user?.uid]);
   
   // RBAC - Role-Based Access Control
-  const isAdmin = user?.email === "rishiuttamsahu@gmail.com" || userRole === "admin";
+  const CREATOR_EMAILS = ["rishiuttamsahu@gmail.com", "piyushgupta122006@gmail.com"];
+  const isAdmin = CREATOR_EMAILS.includes(user?.email) || userRole === "admin";
   
   // Derived state - Calculate statistics dynamically
   const stats = useMemo(() => {

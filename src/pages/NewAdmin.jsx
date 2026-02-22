@@ -27,7 +27,7 @@ const tabs = [
 ];
 
 // Super Admin email - protected from all actions
-const SUPER_ADMIN_EMAIL = "rishiuttamsahu@gmail.com";
+const CREATOR_EMAILS = ["rishiuttamsahu@gmail.com", "piyushgupta122006@gmail.com"];
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("analytics");
@@ -230,7 +230,7 @@ export default function Admin() {
   
   const promoteUser = async (userId, userEmail) => {
     // Super Admin protection
-    if (userEmail === SUPER_ADMIN_EMAIL) {
+    if (CREATOR_EMAILS.includes(userEmail)) {
       toast.error("Action denied: Super Admin cannot be modified.");
       return;
     }
@@ -271,7 +271,7 @@ export default function Admin() {
   
   const demoteUser = async (userId, userEmail) => {
     // Super Admin protection
-    if (userEmail === SUPER_ADMIN_EMAIL) {
+    if (CREATOR_EMAILS.includes(userEmail)) {
       toast.error("Action denied: Super Admin cannot be modified.");
       return;
     }
@@ -312,7 +312,7 @@ export default function Admin() {
   
   const handleToggleBan = async (user) => {
     // Super Admin protection
-    if (user.email === SUPER_ADMIN_EMAIL) {
+    if (CREATOR_EMAILS.includes(user.email)) {
       toast.error("Action denied: Super Admin cannot be modified.");
       return;
     }
@@ -361,7 +361,7 @@ export default function Admin() {
   
   const handleUnban = async (userId, userEmail) => {
     // Super Admin protection
-    if (userEmail === SUPER_ADMIN_EMAIL) {
+    if (CREATOR_EMAILS.includes(userEmail)) {
       toast.error("Action denied: Super Admin cannot be modified.");
       return;
     }
@@ -1037,7 +1037,7 @@ export default function Admin() {
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{user.displayName || user.name}</span>
-                              {user.email === SUPER_ADMIN_EMAIL && (
+                              {CREATOR_EMAILS.includes(user.email) && (
                                 <span className="inline-flex items-center px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs font-bold rounded-full">
                                   <Crown size={12} className="mr-1" /> Super Admin
                                 </span>
@@ -1071,7 +1071,7 @@ export default function Admin() {
                           </td>
                           <td className="p-4">
                             <div className="flex gap-2">
-                              {user.email !== SUPER_ADMIN_EMAIL ? (
+                              {!CREATOR_EMAILS.includes(user.email) ? (
                                 <div className="flex items-center gap-2">
                                   {user.role === "student" ? (
                                     <button
@@ -1147,7 +1147,7 @@ export default function Admin() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-bold text-white text-sm">{user.displayName || user.name}</h3>
-                            {user.email === SUPER_ADMIN_EMAIL && (
+                            {CREATOR_EMAILS.includes(user.email) && (
                               <span className="inline-flex items-center px-2 py-1 bg-yellow-500/20 text-yellow-300 text-[10px] font-bold rounded-full">
                                 <Crown size={10} className="mr-1" /> Super Admin
                               </span>
@@ -1176,7 +1176,7 @@ export default function Admin() {
                       </div>
                       
                       <div className="flex gap-2">
-                        {user.email !== SUPER_ADMIN_EMAIL ? (
+                        {!CREATOR_EMAILS.includes(user.email) ? (
                           <div className="flex items-center gap-2 w-full">
                             {user.role === "student" ? (
                               <button
