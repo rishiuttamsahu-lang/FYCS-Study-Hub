@@ -129,53 +129,60 @@ export default function Upload() {
         }
       }
       
-      // Check for duplicates in existing materials
+      // Get the subject name for better user feedback
+      const selectedSubject = subjects.find(s => s.id === form.subject);
+      const subjectName = selectedSubject ? selectedSubject.name : "this subject";
+      
+      // Check for duplicates in existing materials (scoped by subject)
       let isDuplicate = false;
       querySnapshot.forEach((doc) => {
         const dbData = doc.data();
         
-        // Check title duplication (case-insensitive and trimmed)
-        const dbTitle = dbData.title ? dbData.title.toLowerCase().trim() : "";
-        if (dbTitle === normalizedInputTitle) {
-          isDuplicate = true;
-          return;
-        }
-        
-        // Check file name duplication if we have a filename to compare
-        if (inputFileName) {
-          // Check if the database has a fileName field or extract from link
-          const dbFileName = (dbData.fileName || "").toLowerCase().trim();
-          const dbLink = (dbData.link || "").toLowerCase().trim();
-          
-          // Try to extract filename from database link
-          let dbExtractedFileName = "";
-          if (dbLink) {
-            try {
-              const dbUrlObj = new URL(dbLink);
-              const dbPathParts = dbUrlObj.pathname.split('/');
-              const dbFileNamePart = dbPathParts.find(part => part.includes('.') && !part.startsWith('d'));
-              if (dbFileNamePart) {
-                dbExtractedFileName = dbFileNamePart.toLowerCase().trim();
-              }
-            } catch (dbUrlError) {
-              const dbFileNameMatch = dbLink.match(/[^/]+\.[^/]+$/);
-              if (dbFileNameMatch) {
-                dbExtractedFileName = dbFileNameMatch[0].toLowerCase().trim();
-              }
-            }
-          }
-          
-          // Compare filenames
-          if (dbFileName === inputFileName || dbExtractedFileName === inputFileName) {
+        // ONLY check for duplicates IF the subject is the exact same
+        if (dbData.subjectId === form.subject) {
+          // Check title duplication (case-insensitive and trimmed)
+          const dbTitle = dbData.title ? dbData.title.toLowerCase().trim() : "";
+          if (dbTitle === normalizedInputTitle) {
             isDuplicate = true;
             return;
+          }
+          
+          // Check file name duplication if we have a filename to compare
+          if (inputFileName) {
+            // Check if the database has a fileName field or extract from link
+            const dbFileName = (dbData.fileName || "").toLowerCase().trim();
+            const dbLink = (dbData.link || "").toLowerCase().trim();
+            
+            // Try to extract filename from database link
+            let dbExtractedFileName = "";
+            if (dbLink) {
+              try {
+                const dbUrlObj = new URL(dbLink);
+                const dbPathParts = dbUrlObj.pathname.split('/');
+                const dbFileNamePart = dbPathParts.find(part => part.includes('.') && !part.startsWith('d'));
+                if (dbFileNamePart) {
+                  dbExtractedFileName = dbFileNamePart.toLowerCase().trim();
+                }
+              } catch (dbUrlError) {
+                const dbFileNameMatch = dbLink.match(/[^/]+\.[^/]+$/);
+                if (dbFileNameMatch) {
+                  dbExtractedFileName = dbFileNameMatch[0].toLowerCase().trim();
+                }
+              }
+            }
+            
+            // Compare filenames
+            if (dbFileName === inputFileName || dbExtractedFileName === inputFileName) {
+              isDuplicate = true;
+              return;
+            }
           }
         }
       });
       
       // If duplicate found, show warning and stop upload
       if (isDuplicate) {
-        toast.error("🚨 Wait! A material with this exact Title or File Name has already been uploaded by someone else.");
+        toast.error(`🚨 Wait! This material already exists in the "${subjectName}" subject. Check the Library!`);
         setIsCheckingDuplicate(false);
         return;
       }
