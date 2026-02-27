@@ -37,7 +37,7 @@ export default function Materials() {
   
   // Search and Sort states
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("newest"); // newest, oldest, a-z
+  const [sortBy, setSortBy] = useState("a-z"); // newest, oldest, a-z
   const [showSortMenu, setShowSortMenu] = useState(false);
   
   // Get materials for this subject
