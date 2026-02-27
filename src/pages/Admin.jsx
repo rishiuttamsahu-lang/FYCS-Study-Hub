@@ -1,11 +1,11 @@
-import { BarChart2, Book, CheckCircle, Clock, Code, Crown, Download, Edit3, Eye, FileText, Flag, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle, AlertTriangle, Users } from "lucide-react";
+import { BarChart2, Book, CheckCircle, Clock, Code, Crown, Download, Edit3, Eye, FileText, Flag, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle, AlertTriangle, Users, Send, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { useApp } from "../context/AppContext";
 import AdminReports from "../components/admin/AdminReports";
-import { doc, updateDoc, deleteDoc, writeBatch, collection, getDocs, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, writeBatch, collection, getDocs, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 
 const tabs = [
@@ -32,6 +32,39 @@ export default function Admin() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToReject, setItemToReject] = useState(null);
+  const [unresolvedCount, setUnresolvedCount] = useState(0);
+  const [showReportDot, setShowReportDot] = useState(false);
+  
+  // Fetch unresolved reports count
+  useEffect(() => {
+    const q = query(collection(db, 'reports'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unresolved = snapshot.docs.filter(doc => {
+        const data = doc.data();
+        return data.status !== 'resolved';
+      }).length;
+      
+      setUnresolvedCount(unresolved);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+  
+  // Update showReportDot when unresolvedCount changes
+  useEffect(() => {
+    if (unresolvedCount > 0) {
+      setShowReportDot(true);
+    }
+  }, [unresolvedCount]);
+  
+  // Hide the report dot when Reports tab becomes active
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      setShowReportDot(false);
+      // Update the last checked timestamp to clear the bottom nav badge
+      localStorage.setItem('lastCheckedReports', Date.now());
+    }
+  }, [activeTab]);
   
   // Search, Filter, Sort states for Approved Materials
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,6 +87,29 @@ export default function Admin() {
   
   // State for real-time visitor count
   const [todayVisitors, setTodayVisitors] = useState(0);
+  
+  // State for notifications
+  const [notificationEmail, setNotificationEmail] = useState("");
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  
+  // State for sent notifications
+  const [sentNotifications, setSentNotifications] = useState([]);
+  
+  useEffect(() => {
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setSentNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsubscribe();
+  }, []);
+  
+  const handleDeleteGlobal = async (id) => {
+    if(window.confirm("Delete this notification for everyone?")) {
+      await deleteDoc(doc(db, 'notifications', id));
+    }
+  };
+  const [isSending, setIsSending] = useState(false);
   
   // Real-time listener for today's visitor count
   useEffect(() => {
@@ -496,6 +552,38 @@ export default function Admin() {
     setShowResetModal(true);
   };
 
+  const handleSendNotification = async () => {
+    if (!notificationTitle.trim() || !notificationMessage.trim()) {
+      toast.error("Please fill in both title and message");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const notificationData = {
+        targetEmail: notificationEmail.trim() || 'ALL',
+        title: notificationTitle.trim(),
+        message: notificationMessage.trim(),
+        createdAt: serverTimestamp(),
+        readBy: []
+      };
+      
+      await addDoc(collection(db, "notifications"), notificationData);
+      
+      toast.success("Notification sent successfully!");
+      
+      // Clear form
+      setNotificationEmail("");
+      setNotificationTitle("");
+      setNotificationMessage("");
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      toast.error("Error sending notification: " + error.message);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <>
       <div className="p-5 pt-8 max-w-4xl mx-auto bg-[#0a0a0a]/50 backdrop-blur-sm rounded-xl">
@@ -525,7 +613,12 @@ export default function Admin() {
                       : "bg-white/0 text-white/70 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  {tab.icon}
+                  <div className="relative">
+                    {tab.icon}
+                    {tab.id === 'reports' && showReportDot && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0a0a0a]"></span>
+                    )}
+                  </div>
                   <span className="hidden md:inline">{tab.label}</span>
                 </button>
               );
@@ -1234,21 +1327,85 @@ export default function Admin() {
           {/* Settings Tab */}
           {activeTab === "settings" && (
             <div className="space-y-6">
+              <div className="glass-card p-3 sm:p-4">
+                <h3 className="font-bold text-sm sm:text-base mb-2 sm:mb-3 text-white/90">📢 Send Notification</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-white/70 text-xs sm:text-sm mb-1">Target User Email (leave blank for ALL)</label>
+                    <input
+                      type="email"
+                      value={notificationEmail}
+                      onChange={(e) => setNotificationEmail(e.target.value)}
+                      className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none text-sm"
+                      placeholder="user@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/70 text-xs sm:text-sm mb-1">Notification Title</label>
+                    <input
+                      type="text"
+                      value={notificationTitle}
+                      onChange={(e) => setNotificationTitle(e.target.value)}
+                      className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none text-sm"
+                      placeholder="Notification title"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/70 text-xs sm:text-sm mb-1">Message</label>
+                    <textarea
+                      value={notificationMessage}
+                      onChange={(e) => setNotificationMessage(e.target.value)}
+                      rows="2"
+                      className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none resize-y text-sm"
+                      placeholder="Notification message"
+                      required
+                    ></textarea>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendNotification}
+                    disabled={isSending}
+                    className="w-full btn-primary px-3 py-2 sm:px-4 sm:py-3 font-bold flex items-center justify-center gap-2 text-sm"
+                  >
+                    {isSending ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        Send
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              {/* Sent Notifications Section */}
               <div className="glass-card p-4 md:p-6">
-                <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-white/90">System Information</h3>
-                <div className="space-y-2 md:space-y-3">
-                  <div className="flex justify-between items-center py-1.5 md:py-2 border-b border-white/10">
-                    <span className="text-white/50 text-sm md:text-base">Platform Version</span>
-                    <span className="font-mono font-bold text-sm md:text-base">1.0.0</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-white/10">
-                    <span className="text-white/50">Total Materials</span>
-                    <span className="font-bold">{(materials || []).length}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-white/50">Registered Users</span>
-                    <span className="font-bold">{(users || []).length}</span>
-                  </div>
+                <h3 className="font-bold text-base md:text-lg mb-4 text-white/90">📋 Sent Notifications</h3>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {sentNotifications.length > 0 ? (
+                    sentNotifications.map((notif) => (
+                      <div key={notif.id} className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-white text-sm truncate">{notif.title}</h4>
+                          <p className="text-xs text-white/50 truncate">To: {notif.targetEmail}</p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteGlobal(notif.id)}
+                          className="ml-2 p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors"
+                          title="Delete notification"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-white/50 text-center py-4">No notifications sent yet</p>
+                  )}
                 </div>
               </div>
               

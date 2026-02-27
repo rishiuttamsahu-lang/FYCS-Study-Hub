@@ -1,10 +1,65 @@
 import { Home, Layers, Shield, Upload, User, Library } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { useState, useEffect } from "react";
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 const Navbar = () => {
   const location = useLocation();
   const { isAdmin, user } = useApp();
+  const [hasUnread, setHasUnread] = useState(false);
+  const [unresolvedCount, setUnresolvedCount] = useState(0);
+  
+  useEffect(() => {
+    // Ensure you use your actual user variable (user.email or currentUser.email)
+    const currentUserEmail = user?.email || user?.email; 
+    if (!currentUserEmail) {
+      setHasUnread(false);
+      return;
+    }
+
+    const q = query(collection(db, 'notifications'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unreadExists = snapshot.docs.some(doc => {
+        const data = doc.data();
+        
+        const isTarget = data.targetEmail === 'ALL' || data.targetEmail === currentUserEmail;
+        const isDeleted = data.deletedBy && data.deletedBy.includes(currentUserEmail);
+        const isRead = data.readBy && data.readBy.includes(user.uid); // Use uid for readBy check
+        
+        // It is unread ONLY if it's meant for the user, AND not deleted, AND not read.
+        return isTarget && !isDeleted && !isRead; 
+      });
+      
+      setHasUnread(unreadExists);
+    });
+
+    return () => unsubscribe();
+  }, [user?.email, user?.uid]); // Re-run if user email changes
+  
+  // Fetch unresolved reports count
+  useEffect(() => {
+    if (!isAdmin) {
+      setUnresolvedCount(0);
+      return;
+    }
+    
+    const q = query(collection(db, 'reports'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lastChecked = localStorage.getItem('lastCheckedReports') || 0;
+      const unreadExists = snapshot.docs.some(doc => {
+        const data = doc.data();
+        const isUnresolved = data.status !== 'resolved';
+        const isNew = data.createdAt?.toMillis() > Number(lastChecked);
+        return isUnresolved && isNew;
+      });
+      
+      setUnresolvedCount(unreadExists ? 1 : 0); // Set to 1 if there are unread reports, 0 otherwise
+    });
+    
+    return () => unsubscribe();
+  }, [isAdmin]);
   
   // Build nav items conditionally
   const navItems = [
@@ -33,7 +88,17 @@ const Navbar = () => {
                 : "text-zinc-300 hover:text-white/80"
             }`}
           >
-            {item.icon}
+            <div className="relative">
+              {item.icon}
+              {item.path === "/profile" && hasUnread && (
+                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black"></span>
+              )}
+              {item.path === "/admin" && unresolvedCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border border-black">
+                  {unresolvedCount}
+                </span>
+              )}
+            </div>
             <span className="text-[10px] font-medium">{item.label}</span>
           </Link>
         ))}

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
 import { Flag, CheckCircle, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 
 export default function AdminReports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resolvingId, setResolvingId] = useState(null);
 
   useEffect(() => {
     fetchReports();
@@ -32,7 +33,13 @@ export default function AdminReports() {
   };
 
   const handleResolve = async (id) => {
+    // Set the resolving ID at the beginning
+    setResolvingId(id);
+    
     try {
+      // Get the full report data first
+      const report = reports.find(r => r.id === id);
+      
       const reportRef = doc(db, "reports", id);
       await updateDoc(reportRef, { status: "resolved" });
       setReports((prev) =>
@@ -40,8 +47,27 @@ export default function AdminReports() {
           report.id === id ? { ...report, status: "resolved" } : report
         )
       );
+      
+      // Only send notification if we know who reported it
+      if (report?.reporterEmail && report.reporterEmail !== 'Unknown') {
+        try {
+          await addDoc(collection(db, 'notifications'), {
+            targetEmail: report.reporterEmail, // Targeted only to this user
+            title: 'Report Resolved ✅',
+            message: `Resolved: "${report.materialTitle}". Check it out!`,
+            createdAt: serverTimestamp(),
+            readBy: [],
+            deletedBy: []
+          });
+        } catch (notifError) {
+          console.error("Failed to send resolution notification:", notifError);
+        }
+      }
     } catch (error) {
       console.error("Error resolving report:", error);
+    } finally {
+      // Reset the resolving ID in the finally block
+      setResolvingId(null);
     }
   };
 
@@ -98,91 +124,76 @@ export default function AdminReports() {
         ) : (
           <div className="grid gap-4">
             {reports.map((report) => (
-              <div
-                key={report.id}
-                className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 hover:border-[#3a3a3a] transition-colors"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-white">
-                        {report.materialTitle || "Unknown Material"}
-                      </h3>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          report.status === "resolved"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-red-500/20 text-red-400"
-                        }`}
-                      >
-                        {report.status === "resolved" ? "Resolved" : "Unread"}
-                      </span>
-                    </div>
+              <div key={report.id} className="p-4 sm:p-5 border border-zinc-800 rounded-xl bg-[#0f0f0f] flex flex-col gap-3.5">
 
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-white/70">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle size={16} className="text-yellow-500" />
-                        <span>
-                          {report.reason === "Broken Link"
-                            ? "Broken Link"
-                            : report.reason?.startsWith("Other:")
-                            ? report.reason
-                            : report.reason || "Unknown issue"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white/50">•</span>
-                        <span>{formatDate(report.createdAt)}</span>
-                      </div>
-                      {report.reporterEmail && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-white/50">•</span>
-                          <span className="text-white/50">Reported by: {report.reporterEmail}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                {/* Row 1: Title & Action Button */}
+                <div className="flex justify-between items-start gap-4">
+                  <h3 className="text-lg font-bold text-white leading-tight">{report.materialTitle || "Unknown Material"}</h3>
+                  
+                  <button 
+                    onClick={() => handleDelete(report.id)}
+                    className="flex-shrink-0 px-3 py-1.5 text-sm bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-2 border border-red-500/20">
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
 
-                  <div className="flex items-center gap-3">
+                {/* Meta Information Container (Vertically Stacked) */}
+                <div className="flex flex-col gap-2.5">
+                  
+                  {/* Row 2: Status Badge & Date */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`px-2 py-1 text-xs rounded-md border ${report.status === "resolved" ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
+                      {report.status === "resolved" ? 'Resolved' : 'Unresolved'}
+                    </span>
+                    <span className="text-xs text-zinc-500 font-medium">
+                      • {formatDate(report.createdAt)}
+                    </span>
                     {report.status !== "resolved" && (
-                      <button
+                      <button 
                         onClick={() => handleResolve(report.id)}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <CheckCircle size={16} />
-                        Mark Resolved
+                        disabled={resolvingId === report.id}
+                        className="px-2.5 py-1 text-xs bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-md transition-colors flex items-center gap-1 border border-green-500/20 ml-auto">
+                        {resolvingId === report.id ? (
+                          <div className="flex items-center gap-2">
+                            <svg className="animate-spin h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Resolving...
+                          </div>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-3 h-3" />
+                            ✅ Resolve
+                          </>
+                        )}
                       </button>
                     )}
-                    <button
-                      onClick={() => handleDelete(report.id)}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      <Trash2 size={16} />
-                      Delete
-                    </button>
                   </div>
-                </div>
-                
-                <div className="mt-4">
-                  <div className="mt-3 bg-zinc-800/40 border border-zinc-700/50 rounded-lg p-3">
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-2 text-sm">
-                      <span className="text-zinc-400 flex items-center gap-1 shrink-0 mt-0.5">
-                        📍 Location:
-                      </span>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-yellow-400 font-medium px-2 py-0.5 bg-yellow-400/10 rounded-md whitespace-nowrap">
-                          Sem {report.semester || 'N/A'}
-                        </span>
-                        <span className="text-zinc-400">➔</span>
-                        <span className="text-white font-medium leading-snug">
-                          {report.subject || 'N/A'}
-                        </span>
-                      </div>
-                    </div>
+
+                  {/* Row 3: Reporter */}
+                  <div className="text-sm text-zinc-400 flex items-center gap-1.5 overflow-hidden w-full">
+                    <span className="flex-shrink-0">👤 Reported by:</span>
+                    <span className="text-zinc-300 font-medium truncate" title={report.reporterName || 'Anonymous Student'}>
+                      {report.reporterName || 'Anonymous Student'}
+                    </span>
                   </div>
-                  <p className="text-xs text-zinc-400 mt-1 italic">
-                    * Go to the Materials tab and filter by this semester/subject to edit or delete this file.
+
+                  {/* Row 4: Location */}
+                  <p className="text-sm text-zinc-400 flex items-center gap-1.5">
+                    📍 {report.semester || 'N/A'} → {report.subject || 'N/A'}
                   </p>
+
+                  {/* Row 5: Reason */}
+                  <p className="text-yellow-500 text-sm font-medium flex items-center gap-1.5">
+                    ⚠️ {report.reason === "Broken Link"
+                      ? "Broken Link"
+                      : report.reason?.startsWith("Other:")
+                      ? report.reason
+                      : report.reason || "Unknown issue"}
+                  </p>
+
                 </div>
               </div>
             ))}

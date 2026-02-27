@@ -6,7 +6,7 @@ import { db } from "../firebase";
 import { createPortal } from 'react-dom';
 
 export default function MaterialCard({ material, onIncrementView, convertToDownloadLink, navigateToSubject = false, navigate, isNewMaterial, getSubjectById, onEdit }) {
-  const { isAdmin } = useApp();
+  const { isAdmin, user } = useApp();
   
   // Local state for optimistic updates
   const [viewCount, setViewCount] = useState(material.views || 0);
@@ -214,7 +214,9 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
         semester: material.semester || material.semId || 'Unknown Semester',
         reason: finalReason,
         status: 'unread',
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        reporterName: user?.displayName || user?.name || 'Anonymous Student',
+        reporterEmail: user?.email || 'Unknown'
       });
       
       setIsSuccess(true);

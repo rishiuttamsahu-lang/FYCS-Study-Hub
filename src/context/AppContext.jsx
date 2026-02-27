@@ -402,7 +402,15 @@ export const AppProvider = ({ children }) => {
   const getSubjectsBySemester = (semId) => {
     return subjects.filter(subject => Number(subject.semId) === Number(semId));
   };
-
+  
+  // State for tracking if admin is viewing reports
+  const [isViewingReports, setIsViewingReports] = useState(false);
+  
+  // Function to set viewing reports status
+  const setViewingReports = (status) => {
+    setIsViewingReports(status);
+  };
+  
   // Context value
   const contextValue = {
     // State
