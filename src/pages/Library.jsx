@@ -1,5 +1,5 @@
 import { FileText, Search, BookOpen, GraduationCap, Download, ArrowUpDown, Check } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import { useData } from "../context/DataContext";
 import MaterialCard from "../components/MaterialCard";
@@ -15,6 +15,18 @@ export default function Library() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [localLoading, setLocalLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(15);
+  const observer = useRef();
+
+  const lastElementRef = useCallback((node) => {
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount((prev) => prev + 15);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, []);
 
   // Fetch library data on mount using global cache
   useEffect(() => {
@@ -23,6 +35,11 @@ export default function Library() {
       setLocalLoading(false);
     });
   }, [fetchLibraryData]);
+
+  // Reset visible count when search or filters change
+  useEffect(() => {
+    setVisibleCount(15);
+  }, [searchTerm, selectedSemester, selectedType, sortBy]);
 
   // Defer heavy rendering to unblock navigation
   useEffect(() => {
@@ -249,21 +266,44 @@ export default function Library() {
       {/* Results Count */}
       <div className="mb-2 flex items-center justify-between">
         <p className="text-white/70 text-xs">
-          Showing <span className="font-bold text-[#FFD700]">{filteredMaterials.length}</span> of <span className="font-bold text-[#FFD700]">{libraryMaterials.filter(material => material.status === "Approved").length}</span> approved materials
+          Showing <span className="font-bold text-[#FFD700]">{Math.min(visibleCount, filteredMaterials.length)}</span> of <span className="font-bold text-[#FFD700]">{filteredMaterials.length}</span> filtered materials
         </p>
       </div>
 
       {/* Materials Grid */}
       <div className="space-y-4">
         {filteredMaterials.length > 0 ? (
-          filteredMaterials.map((material) => (
-            <MaterialCard 
-              key={material.id} 
-              material={material} 
-              convertToDownloadLink={convertToDownloadLink}
-              getSubjectById={getSubjectById}
-            />
-          ))
+          <>
+            {filteredMaterials.slice(0, visibleCount).map((material, index) => {
+              if (index === filteredMaterials.slice(0, visibleCount).length - 1 && index < filteredMaterials.length - 1) {
+                // Apply the ref to the last visible element
+                return (
+                  <div key={material.id} ref={lastElementRef}>
+                    <MaterialCard 
+                      material={material} 
+                      convertToDownloadLink={convertToDownloadLink}
+                      getSubjectById={getSubjectById}
+                    />
+                  </div>
+                );
+              } else {
+                return (
+                  <MaterialCard 
+                    key={material.id} 
+                    material={material} 
+                    convertToDownloadLink={convertToDownloadLink}
+                    getSubjectById={getSubjectById}
+                  />
+                );
+              }
+            })}
+            {visibleCount < filteredMaterials.length && (
+              <div ref={lastElementRef} className="w-full py-8 flex justify-center items-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-500"></div>
+                <span className="ml-3 text-zinc-400 text-sm">Loading more...</span>
+              </div>
+            )}
+          </>
         ) : (
           <div className="glass-card p-12 text-center">
             <FileText size={32} className="mx-auto mb-4 text-white/30" />
