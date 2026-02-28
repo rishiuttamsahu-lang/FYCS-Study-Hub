@@ -1,4 +1,4 @@
-import { Home, Layers, Shield, Upload, User, Library } from "lucide-react";
+import { Home, Layers, Shield, Upload, User, Library, Loader2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useState, useEffect } from "react";
@@ -10,6 +10,12 @@ const Navbar = () => {
   const { isAdmin, user } = useApp();
   const [hasUnread, setHasUnread] = useState(false);
   const [unresolvedCount, setUnresolvedCount] = useState(0);
+  const [loadingPath, setLoadingPath] = useState(null);
+
+  // Automatically reset the loading spinner once the route successfully changes
+  useEffect(() => {
+    setLoadingPath(null);
+  }, [location.pathname]);
   
   useEffect(() => {
     // Ensure you use your actual user variable (user.email or currentUser.email)
@@ -75,6 +81,14 @@ const Navbar = () => {
     return location.pathname.startsWith(path);
   };
 
+  // Non-blocking click handler
+  const handleTabClick = (path) => {
+    // Only show loader if we are actually navigating to a different page
+    if (location.pathname !== path) {
+      setLoadingPath(path);
+    }
+  };
+
   return (
     <nav className="glass-nav px-2 py-3">
       <div className="flex justify-around items-center max-w-md mx-auto">
@@ -82,6 +96,7 @@ const Navbar = () => {
           <Link 
             key={item.path} 
             to={item.path} 
+            onClick={() => handleTabClick(item.path)}
             className={`flex flex-col items-center gap-1 transition-colors ${
               isActive(item.path)
                 ? "text-[#FFD700]"
@@ -89,11 +104,15 @@ const Navbar = () => {
             }`}
           >
             <div className="relative">
-              {item.icon}
-              {item.path === "/profile" && hasUnread && (
+              {loadingPath === item.path ? (
+                <Loader2 className="animate-spin text-[#FFD700]" size={22} />
+              ) : (
+                item.icon
+              )}
+              {item.path === "/profile" && hasUnread && !loadingPath && (
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black"></span>
               )}
-              {item.path === "/admin" && unresolvedCount > 0 && (
+              {item.path === "/admin" && unresolvedCount > 0 && !loadingPath && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border border-black">
                   {unresolvedCount}
                 </span>
