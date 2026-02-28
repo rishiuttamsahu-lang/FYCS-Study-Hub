@@ -32,7 +32,7 @@ export default function Admin() {
 
   // 2. All Main States
   const [activeTab, setActiveTab] = useState("analytics");
-  const [materialFilter, setMaterialFilter] = useState("Pending"); // Pending | Approved
+  const [materialFilter, setMaterialFilter] = useState("Pending"); 
   const [showAddSubjectForm, setShowAddSubjectForm] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -77,20 +77,29 @@ export default function Admin() {
     if (node) materialsObserver.current.observe(node);
   }, []);
 
+  // Split Users Observer for Desktop and Mobile
   const [visibleUsersCount, setVisibleUsersCount] = useState(15);
-  const usersObserver = useRef();
-  const lastUserRef = useCallback((node) => {
-    if (usersObserver.current) usersObserver.current.disconnect();
-    usersObserver.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setVisibleUsersCount((prev) => prev + 15);
-      }
+  
+  const desktopObserver = useRef();
+  const mobileObserver = useRef();
+
+  const desktopUserRef = useCallback((node) => {
+    if (desktopObserver.current) desktopObserver.current.disconnect();
+    desktopObserver.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) setVisibleUsersCount((prev) => prev + 15);
     });
-    if (node) usersObserver.current.observe(node);
+    if (node) desktopObserver.current.observe(node);
+  }, []);
+
+  const mobileUserRef = useCallback((node) => {
+    if (mobileObserver.current) mobileObserver.current.disconnect();
+    mobileObserver.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) setVisibleUsersCount((prev) => prev + 15);
+    });
+    if (node) mobileObserver.current.observe(node);
   }, []);
 
   // 4. UseEffects
-  // Fetch unresolved reports count
   useEffect(() => {
     const q = query(collection(db, 'reports'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -103,12 +112,10 @@ export default function Admin() {
     return () => unsubscribe();
   }, []);
   
-  // Update showReportDot when unresolvedCount changes
   useEffect(() => {
     if (unresolvedCount > 0) setShowReportDot(true);
   }, [unresolvedCount]);
   
-  // Hide the report dot when Reports tab becomes active
   useEffect(() => {
     if (activeTab === 'reports') {
       setShowReportDot(false);
@@ -116,17 +123,14 @@ export default function Admin() {
     }
   }, [activeTab]);
   
-  // Auto-reset visible materials count when search or filters change
   useEffect(() => {
     setVisibleMaterialsCount(15);
   }, [searchQuery, filterSubject, filterType, filterSem]);
   
-  // Auto-reset visible users count when search changes
   useEffect(() => {
     setVisibleUsersCount(15);
   }, [userSearchTerm]);
 
-  // Notifications Listener
   useEffect(() => {
     const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -135,7 +139,6 @@ export default function Admin() {
     return () => unsubscribe();
   }, []);
   
-  // Real-time listener for today's visitor count
   useEffect(() => {
     const today = new Date().toLocaleDateString('en-CA');
     const statRef = doc(db, 'analytics', today);
@@ -149,7 +152,7 @@ export default function Admin() {
     return () => unsubscribe();
   }, []);
 
-  // 5. Loading State Check (Crucial: Must be after all Hooks)
+  // 5. Loading State Check
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
@@ -162,7 +165,7 @@ export default function Admin() {
     );
   }
 
-  // 6. Data Calculations (Safe to run after loading check)
+  // 6. Data Calculations
   const uniqueUsers = (users || []).filter((u, index, self) =>
     index === self.findIndex((t) => (t.id === u.id || t.email === u.email))
   );
@@ -1035,10 +1038,9 @@ export default function Admin() {
                     {filteredUsers.length > 0 ? (
                       <>
                         {filteredUsers.slice(0, visibleUsersCount).map((user, index) => {
-                          const isLastItem = index === Math.min(visibleUsersCount, filteredUsers.length) - 1;
-                          const ref = isLastItem ? lastUserRef : null;
+                          // No ref here, we only place the ref on the loading row for desktop
                           return (
-                            <tr key={`user-${user.id}`} className="border-b border-white/5 hover:bg-white/2" ref={ref}>
+                            <tr key={`user-${user.id}`} className="border-b border-white/5 hover:bg-white/2">
                               <td className="p-4">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">{user.displayName || user.name}</span>
@@ -1121,8 +1123,9 @@ export default function Admin() {
                             </tr>
                           );
                         })}
+                        {/* THE DESKTOP OBSERVER IS PLACED HERE */}
                         {visibleUsersCount < filteredUsers.length && (
-                          <tr key="loading-indicator">
+                          <tr ref={desktopUserRef} key="loading-indicator">
                             <td colSpan="5" className="p-6">
                               <div className="w-full py-6 flex justify-center items-center">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-500"></div>
@@ -1150,10 +1153,9 @@ export default function Admin() {
                 {filteredUsers.length > 0 ? (
                   <>
                     {filteredUsers.slice(0, visibleUsersCount).map((user, index) => {
-                      const isLastItem = index === Math.min(visibleUsersCount, filteredUsers.length) - 1;
-                      const ref = isLastItem ? lastUserRef : null;
+                      // No ref here, placed on the loader instead
                       return (
-                        <div key={`user-${user.id}`} className="glass-card p-4" ref={ref}>
+                        <div key={`user-${user.id}`} className="glass-card p-4">
                           <div className="flex justify-between items-start mb-3">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
@@ -1234,8 +1236,9 @@ export default function Admin() {
                         </div>
                       );
                     })}
+                    {/* THE MOBILE OBSERVER IS PLACED HERE */}
                     {visibleUsersCount < filteredUsers.length && (
-                      <div className="w-full py-6 flex justify-center items-center">
+                      <div ref={mobileUserRef} className="w-full py-6 flex justify-center items-center">
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-500"></div>
                         <span className="ml-3 text-zinc-400 text-sm">Loading more...</span>
                       </div>
