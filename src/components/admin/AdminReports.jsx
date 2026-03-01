@@ -95,11 +95,9 @@ export default function AdminReports() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <Loader2 className="animate-spin" size={24} />
-          <span>Loading reports...</span>
-        </div>
+      <div className="w-full py-32 flex flex-col items-center justify-center glass-card rounded-xl">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FFD700] mb-4"></div>
+        <span className="text-white/60 font-medium">Loading reports...</span>
       </div>
     );
   }
