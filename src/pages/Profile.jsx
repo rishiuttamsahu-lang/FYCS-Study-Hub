@@ -7,8 +7,25 @@ import { auth, db } from "../firebase";
 import { toast } from "react-hot-toast";
 import { BiMessageDetail } from 'react-icons/bi';
 
+const SUBJECT_SHORT_NAMES = {
+  "Hindi": "Hindi",
+  "Time Table": "TT",
+  "Certificate/Index/Page": "Certificate",
+  "Certificate": "Certificate",
+  "Maths (Number Theory)": "Maths",
+  "Algorithm": "Algo",
+  "Python": "Python",
+  "Web Development": "WD",
+  "Marketing Mix-2 (MM-2)": "MM-2",
+  "OOPs (C++)": "OOPs",
+  "Human Resource Management (HRM)": "HRM",
+  "Co-Curriculum": "CC",
+  "Environmental Management & Sustainability": "EMSD",
+  "Environmental Management & Sustainable Development (EMSD)": "EMSD"
+};
+
 export default function Profile() {
-  const { user, login, logout, materials, toggleFavorite } = useApp();
+  const { user, login, logout, materials, toggleFavorite, getSubjectById } = useApp();
   const [recentHistory, setRecentHistory] = useState([]);
   const [downloadHistory, setDownloadHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("recent"); // "recent" | "downloads" | "settings"
@@ -484,41 +501,48 @@ export default function Profile() {
         {activeTab === "favorites" && (
           <div className="space-y-3">
             {favoriteMaterials.length > 0 ? (
-              favoriteMaterials.map((material) => (
-                <div key={material.id} className="glass-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 bg-white/5 p-2 rounded-lg">
-                      <FileText className="text-blue-400" size={20} />
+              favoriteMaterials.map((material) => {
+                const subject = getSubjectById ? getSubjectById(material.subjectId) : null;
+                const shortName = subject ? (SUBJECT_SHORT_NAMES[subject.name] || subject.name) : "Unknown";
+
+                return (
+                  <div key={material.id} className="glass-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 bg-white/5 p-2 rounded-lg">
+                        <FileText className="text-blue-400" size={20} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white/90 text-sm">{material.title}</h4>
+                        <p className="text-xs text-white/50 mt-1">
+                          {material.type} • {shortName}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-white/90 text-sm">{material.title}</h4>
-                      <p className="text-xs text-white/50 mt-1">{material.type}</p>
+                    
+                    <div className="flex items-center gap-2">
+                      <a 
+                        href={material.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="p-2 bg-blue-500/15 text-blue-300 rounded-xl hover:bg-blue-500/25 transition-colors"
+                        title="View Material"
+                      >
+                        <Upload size={16} />
+                      </a>
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toggleFavorite(material.id);
+                        }}
+                        className="p-2 bg-yellow-500/20 text-yellow-400 rounded-xl hover:bg-yellow-500/30 transition-colors"
+                        title="Remove from favorites"
+                      >
+                        <Bookmark size={16} fill="currentColor" />
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <a 
-                      href={material.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-2 bg-blue-500/15 text-blue-300 rounded-xl hover:bg-blue-500/25 transition-colors"
-                      title="View Material"
-                    >
-                      <Upload size={16} />
-                    </a>
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        toggleFavorite(material.id);
-                      }}
-                      className="p-2 bg-yellow-500/20 text-yellow-400 rounded-xl hover:bg-yellow-500/30 transition-colors"
-                      title="Remove from favorites"
-                    >
-                      <Bookmark size={16} fill="currentColor" />
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="p-8 text-center border-dashed border-2 border-white/10 rounded-xl glass-card">
                 <Bookmark className="mx-auto text-white/20 mb-3" size={32} />
@@ -639,8 +663,7 @@ export default function Profile() {
                 <h3 className="text-xl font-bold text-white mb-2">Time for a Fresh Start?</h3>
                 <p className="text-zinc-400 text-sm leading-relaxed">
                   This will wipe your entire viewing history. <br />
-                  It&apos;s like it never happened. ✨
-                </p>
+                  It&apos;s like it never happened.✨                  </p>
               </div>
               <div className="flex gap-3 w-full mt-4">
                 <button
@@ -783,4 +806,3 @@ export default function Profile() {
     </>
   );
 }
-
