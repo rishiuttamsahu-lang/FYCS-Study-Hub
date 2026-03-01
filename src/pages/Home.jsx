@@ -1,15 +1,22 @@
-import { BookOpen, Download, FileText, GraduationCap, Layers, Lock, Circle } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { BookOpen, Download, FileText, GraduationCap, Layers, Lock, Circle, Loader2 } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useData } from "../context/DataContext";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import dbLogo from "/logo.png";
 import MaterialCard from "../components/MaterialCard";
 
 const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [loadingCard, setLoadingCard] = useState(null);
   const { semesters, getSubjectById, getSemesterById, isAdmin } = useApp();
   const { homeData, fetchHomeData, isHomeLoaded } = useData();
+
+  // Reset the loading spinner when navigation completes
+  useEffect(() => {
+    setLoadingCard(null);
+  }, [location.pathname]);
 
   // Fetch data on mount - will only fetch if not already loaded
   useEffect(() => {
@@ -126,16 +133,30 @@ const Home = () => {
           const isLocked = sem.locked;
           const isSem2 = sem.id === '2'; // For the ongoing semester emphasis
           
+          const handleCardClick = (e, path, id) => {
+            e.preventDefault();
+            if (isLocked) return;
+            setLoadingCard(id);
+            // Small delay allows the DOM to paint the spinner before React blocks the thread
+            setTimeout(() => {
+              navigate(path);
+            }, 10);
+          };
+
           return (
           <button
             key={sem.id}
             type="button"
-            onClick={!isLocked ? () => navigate(`/semester/${sem.id}`) : undefined}
+            onClick={(e) => handleCardClick(e, `/semester/${sem.id}`, sem.id)}
             disabled={isLocked}
             className={`glass-card p-4 text-left transition-colors ${isLocked ? 'opacity-70 cursor-not-allowed' : 'hover:bg-white/5'} relative`}
           >
             <div className="bg-white/5 border border-white/10 w-9 h-9 rounded-xl flex items-center justify-center mb-3 relative">
-              <GraduationCap size={18} className="text-white/90" />
+              {loadingCard === sem.id ? (
+                <Loader2 className="animate-spin text-[#FFD700]" size={24} />
+              ) : (
+                <GraduationCap size={18} className="text-white/90" />
+              )}
               {isLocked && (
                 <Lock size={14} className="absolute -top-1 -right-1 text-amber-400" />
               )}

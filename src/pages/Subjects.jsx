@@ -1,16 +1,23 @@
-import { ArrowLeft, Book, Search, X } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Book, Search, X, Loader2 } from "lucide-react";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Subjects() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { semId } = useParams();
   
-  const { subjects, getSemesterById, getSubjectsBySemester, getMaterialsBySubject } = useApp();
-  
+  const [loadingSubject, setLoadingSubject] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const { subjects, getSemesterById, getSubjectsBySemester, getMaterialsBySubject } = useApp();
+
+  // Auto-reset the spinner when navigation completes
+  useEffect(() => {
+    setLoadingSubject(null);
+  }, [location.pathname]);
   
   // Safety check: Ensure subjects data exists
   if (!subjects) {
@@ -115,11 +122,21 @@ export default function Subjects() {
             // Get approved materials count for this subject
             const approvedCount = getMaterialsBySubject(subject.id)?.length || 0;
             
+            const handleSubjectClick = (e, path, id) => {
+              e.preventDefault();
+              setLoadingSubject(id);
+              // Small delay allows DOM to paint the spinner before React blocks the thread
+              setTimeout(() => {
+                navigate(path);
+              }, 10);
+            };
+
             return (
-              <Link
+              <button
                 key={subject.id}
-                to={`/semester/${semId}/${subject.id}`}
-                className="glass-card w-full p-4 flex items-center gap-3 transition-all hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98]"
+                type="button"
+                onClick={(e) => handleSubjectClick(e, `/semester/${semId}/${subject.id}`, subject.id)}
+                className="glass-card w-full p-4 flex items-center gap-3 transition-all hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98] text-left"
               >
                 {/* Subject Icon */}
                 <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-extrabold text-xs text-white/85">
@@ -138,13 +155,17 @@ export default function Subjects() {
                   </div>
                 </div>
 
-                {/* Arrow */}
+                {/* Arrow/Spinner */}
                 <div className="text-white/40">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m9 18 6-6-6-6"/>
-                  </svg>
+                  {loadingSubject === subject.id ? (
+                    <Loader2 className="animate-spin text-[#FFD700]" size={20} />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                  )}
                 </div>
-              </Link>
+              </button>
             );
           })
         ) : (
