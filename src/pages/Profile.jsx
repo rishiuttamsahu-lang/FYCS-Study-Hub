@@ -1,4 +1,4 @@
-import { User, LogOut, ExternalLink, Clock, Trash2, Settings, Download, X, Sparkles, Bell } from "lucide-react";
+import { User, LogOut, ExternalLink, Clock, Trash2, Settings, Download, X, Sparkles, Bell, Bookmark, FileText, Upload } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useState, useEffect, useRef } from "react";
 import { updateProfile } from "firebase/auth";
@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 import { BiMessageDetail } from 'react-icons/bi';
 
 export default function Profile() {
-  const { user, login, logout } = useApp();
+  const { user, login, logout, materials, toggleFavorite } = useApp();
   const [recentHistory, setRecentHistory] = useState([]);
   const [downloadHistory, setDownloadHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("recent"); // "recent" | "downloads" | "settings"
@@ -32,6 +32,9 @@ export default function Profile() {
   // Refs for click outside functionality
   const dropdownRef = useRef(null);
   const bellRef = useRef(null);
+  
+  // Calculate favorite materials
+  const favoriteMaterials = materials.filter(m => user?.favorites?.includes(m.id));
   
   // Load both histories on component mount
   useEffect(() => {
@@ -393,16 +396,16 @@ export default function Profile() {
           
           <button
             type="button"
-            onClick={() => setActiveTab("downloads")}
+            onClick={() => setActiveTab("favorites")}
             className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === "downloads"
+              activeTab === "favorites"
                 ? "text-white border-b-2 border-yellow-400"
                 : "text-white/50 hover:text-white"
             }`}
           >
             <div className="flex items-center gap-2">
-              <Download size={14} />
-              Downloads
+              <Bookmark size={14} />
+              Favorites
             </div>
           </button>
           
@@ -478,58 +481,51 @@ export default function Profile() {
           </div>
         )}
 
-        {activeTab === "downloads" && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg text-white">Downloads</h3>
-              {downloadHistory.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowClearModal(true)}
-                  className="text-xs text-white/50 hover:text-red-400 transition-colors flex items-center gap-1"
-                >
-                  <Trash2 size={14} />
-                  Clear History
-                </button>
-              )}
-            </div>
-            
-            <div className="glass-card">
-              {downloadHistory.length === 0 ? (
-                <div className="text-center py-8 text-zinc-400">
-                  No download history.
-                </div>
-              ) : (
-                <div className="divide-y divide-zinc-800 max-h-80 overflow-y-auto">
-                  {downloadHistory.map((item, index) => (
-                    <div key={`${item.id}-${index}`} className="p-3 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="px-1.5 py-0.5 bg-zinc-800 text-gray-300 text-[10px] rounded whitespace-nowrap">
-                            {(item.subject && item.subject.length > 12) ? item.subject.substring(0, 9) + "..." : (item.subject || "N/A")}
-                          </span>
-                          <span className="text-[10px] text-white/50">{item.type}</span>
-                        </div>
-                        <h4 className="text-sm text-white/90 truncate">
-                          {(item.title && item.title.length > 40) ? item.title.substring(0, 37) + "..." : (item.title || "Untitled")}
-                        </h4>
-                        <div className="text-[10px] text-zinc-400 mt-1">
-                          Downloaded: {new Date(item.downloadedAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
-                        className="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
-                        title="Open material"
-                      >
-                        <ExternalLink size={14} />
-                      </button>
+        {activeTab === "favorites" && (
+          <div className="space-y-3">
+            {favoriteMaterials.length > 0 ? (
+              favoriteMaterials.map((material) => (
+                <div key={material.id} className="glass-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 bg-white/5 p-2 rounded-lg">
+                      <FileText className="text-blue-400" size={20} />
                     </div>
-                  ))}
+                    <div>
+                      <h4 className="font-bold text-white/90 text-sm">{material.title}</h4>
+                      <p className="text-xs text-white/50 mt-1">{material.type}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <a 
+                      href={material.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-2 bg-blue-500/15 text-blue-300 rounded-xl hover:bg-blue-500/25 transition-colors"
+                      title="View Material"
+                    >
+                      <Upload size={16} />
+                    </a>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleFavorite(material.id);
+                      }}
+                      className="p-2 bg-yellow-500/20 text-yellow-400 rounded-xl hover:bg-yellow-500/30 transition-colors"
+                      title="Remove from favorites"
+                    >
+                      <Bookmark size={16} fill="currentColor" />
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div className="p-8 text-center border-dashed border-2 border-white/10 rounded-xl glass-card">
+                <Bookmark className="mx-auto text-white/20 mb-3" size={32} />
+                <p className="text-white/50 font-medium">No saved materials yet</p>
+                <p className="text-white/30 text-xs mt-1">Items you bookmark in the library will appear here.</p>
+              </div>
+            )}
           </div>
         )}
 

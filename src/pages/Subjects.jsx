@@ -1,7 +1,7 @@
 import { ArrowLeft, Book, Search, X, Loader2 } from "lucide-react";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 
 export default function Subjects() {
   const navigate = useNavigate();
@@ -124,11 +124,13 @@ export default function Subjects() {
             
             const handleSubjectClick = (e, path, id) => {
               e.preventDefault();
-              setLoadingSubject(id);
-              // Small delay allows DOM to paint the spinner before React blocks the thread
-              setTimeout(() => {
-                navigate(path);
-              }, 10);
+              if (location.pathname !== path) {
+                setLoadingSubject(id);
+                // Use React 18 concurrent feature for smooth, non-blocking UI
+                startTransition(() => {
+                  navigate(path);
+                });
+              }
             };
 
             return (

@@ -2,7 +2,7 @@ import { BookOpen, Download, FileText, GraduationCap, Layers, Lock, Circle, Load
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useData } from "../context/DataContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import dbLogo from "/logo.png";
 import MaterialCard from "../components/MaterialCard";
 
@@ -136,11 +136,13 @@ const Home = () => {
           const handleCardClick = (e, path, id) => {
             e.preventDefault();
             if (isLocked) return;
-            setLoadingCard(id);
-            // Small delay allows the DOM to paint the spinner before React blocks the thread
-            setTimeout(() => {
-              navigate(path);
-            }, 10);
+            if (location.pathname !== path) {
+              setLoadingCard(id);
+              // Use React 18 concurrent feature for smooth, non-blocking UI
+              startTransition(() => {
+                navigate(path);
+              });
+            }
           };
 
           return (

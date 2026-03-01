@@ -1,4 +1,4 @@
-import { FileText, ExternalLink, Download, Edit3, Pencil, Flag, Eye, Calendar, User, CheckCircle } from "lucide-react";
+import { FileText, ExternalLink, Download, Edit3, Pencil, Flag, Eye, Calendar, User, CheckCircle, Bookmark, Loader2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useState } from "react";
 import { doc, updateDoc, increment, collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -6,11 +6,14 @@ import { db } from "../firebase";
 import { createPortal } from 'react-dom';
 
 export default function MaterialCard({ material, onIncrementView, convertToDownloadLink, navigateToSubject = false, navigate, isNewMaterial, getSubjectById, onEdit }) {
-  const { isAdmin, user } = useApp();
+  const { isAdmin, user, toggleFavorite } = useApp();
   
   // Local state for optimistic updates
   const [viewCount, setViewCount] = useState(material.views || 0);
   const [downloadCount, setDownloadCount] = useState(material.downloads || 0);
+  
+  // Loading state for favorite button
+  const [loadingFavId, setLoadingFavId] = useState(null);
   
   // Report issue state
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -271,7 +274,7 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
       </div>
 
       <div className="mt-4">
-        {/* Button Layout: Big View + Small Download Square */}
+        {/* Button Layout: Big View + Small Download Square + Bookmark */}
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -288,6 +291,31 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
             aria-label="Download material"
           >
             <Download size={18} />
+          </button>
+          <button
+            type="button"
+            disabled={loadingFavId === material.id}
+            onClick={async (e) => {
+              e.preventDefault();
+              setLoadingFavId(material.id); // Start spinner
+              await toggleFavorite(material.id); // Wait for operation
+              setLoadingFavId(null); // Stop spinner
+            }}
+            className={`p-2 sm:px-3 sm:py-2 rounded-xl border font-bold flex items-center justify-center transition-all ${
+              user?.favorites?.includes(material.id)
+                ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/30"
+                : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white"
+            } ${loadingFavId === material.id ? "opacity-50 cursor-not-allowed" : ""}`}
+            title={user?.favorites?.includes(material.id) ? "Remove from favorites" : "Save to favorites"}
+          >
+            {loadingFavId === material.id ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Bookmark 
+                size={18} 
+                fill={user?.favorites?.includes(material.id) ? "currentColor" : "none"} 
+              />
+            )}
           </button>
         </div>
 

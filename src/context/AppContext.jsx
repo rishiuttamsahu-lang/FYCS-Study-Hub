@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { db, auth, googleProvider } from '../firebase';
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy, where } from 'firebase/firestore';
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy, where, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-hot-toast';
 
@@ -128,44 +128,46 @@ export const AppProvider = ({ children }) => {
   
   // Authentication listener with user sync and ban flag
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        // Sync user with Firestore
-        const userDocRef = doc(db, "users", currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // Create a listener on the user's Firestore document
+        const userDocRef = doc(db, "users", firebaseUser.uid);
         
-        if (!userDocSnap.exists()) {
-          // Create user document if it doesn't exist
-          await setDoc(userDocRef, {
-            uid: currentUser.uid,
-            displayName: currentUser.displayName,
-            email: currentUser.email,
-            photoURL: currentUser.photoURL,
-            role: "student", // Default role
-            isBanned: false, // Default to not banned
-            createdAt: new Date()
-          });
-          setUserRole("student");
-          setUser(currentUser);
-        } else {
-          // Set role from existing document
-          const userData = userDocSnap.data();
-          setUserRole(userData.role || "student");
-          setUser(currentUser);
-        }
+        const unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            // Merge Firebase Auth data with Firestore data (including favorites, role, etc)
+            setUser({ ...firebaseUser, ...userData, id: firebaseUser.uid });
+            setUserRole(userData.role || "student");
+          } else {
+            // Create user document if it doesn't exist
+            setDoc(userDocRef, {
+              uid: firebaseUser.uid,
+              displayName: firebaseUser.displayName,
+              email: firebaseUser.email,
+              photoURL: firebaseUser.photoURL,
+              role: "student", // Default role
+              isBanned: false, // Default to not banned
+              favorites: [], // Initialize empty favorites array
+              createdAt: new Date()
+            });
+            setUser({ ...firebaseUser, id: firebaseUser.uid });
+            setUserRole("student");
+          }
+          setLoading(false);
+        });
+
+        // Cleanup doc listener when auth state changes
+        return () => unsubscribeDoc();
       } else {
         setUser(null);
         setUserRole(null);
-      }
-      
-      // Set loading to false after auth state is determined
-      if (loading) {
         setLoading(false);
       }
     });
     
     return () => unsubscribeAuth();
-  }, [loading]);
+  }, []);
   
   // Real-time role listener for current user
   useEffect(() => {
@@ -411,6 +413,42 @@ export const AppProvider = ({ children }) => {
     setIsViewingReports(status);
   };
   
+  // Toggle favorite function
+  const toggleFavorite = async (materialId) => {
+    if (!user) {
+      toast.error("Please login to save materials!");
+      return { success: false, error: "Not logged in" };
+    }
+
+    const currentFavorites = user.favorites || [];
+    const isFavorited = currentFavorites.includes(materialId);
+    
+    // Calculate new favorites array
+    const newFavorites = isFavorited 
+      ? currentFavorites.filter(id => id !== materialId) 
+      : [...currentFavorites, materialId];
+
+    // OPTIMISTIC UPDATE: Update local state instantly for snappy UI
+    setUser(prev => ({ ...prev, favorites: newFavorites }));
+
+    const userRef = doc(db, "users", user.uid || user.id);
+
+    try {
+      await updateDoc(userRef, {
+        favorites: isFavorited ? arrayRemove(materialId) : arrayUnion(materialId)
+      });
+      
+      toast.success(isFavorited ? "Removed from favorites" : "Saved to favorites!");
+      return { success: true };
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      // Revert local state if database fails
+      setUser(prev => ({ ...prev, favorites: currentFavorites }));
+      toast.error("Failed to update favorites");
+      return { success: false, error: error.message };
+    }
+  };
+  
   // Context value
   const contextValue = {
     // State
@@ -446,7 +484,10 @@ export const AppProvider = ({ children }) => {
     getPendingMaterials,
     getApprovedMaterials,
     getRecentMaterials,
-    getSubjectsBySemester
+    getSubjectsBySemester,
+    
+    // Favorites Function
+    toggleFavorite
   };
 
   return (
