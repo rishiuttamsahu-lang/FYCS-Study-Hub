@@ -28,7 +28,7 @@ export default function Profile() {
   const { user, login, logout, materials, toggleFavorite, getSubjectById } = useApp();
   const [recentHistory, setRecentHistory] = useState([]);
   const [downloadHistory, setDownloadHistory] = useState([]);
-  const [activeTab, setActiveTab] = useState("recent"); // "recent" | "downloads" | "settings"
+  const [activeTab, setActiveTab] = useState("recent");
   const [showClearModal, setShowClearModal] = useState(false);
   
   // Edit Profile states
@@ -46,14 +46,12 @@ export default function Profile() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   
-  // Refs for click outside functionality
+  // Refs for click outside
   const dropdownRef = useRef(null);
   const bellRef = useRef(null);
   
-  // Calculate favorite materials
   const favoriteMaterials = materials.filter(m => user?.favorites?.includes(m.id));
   
-  // Load both histories on component mount
   useEffect(() => {
     const recent = JSON.parse(localStorage.getItem('recentHistory') || '[]');
     const downloads = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
@@ -77,15 +75,10 @@ export default function Profile() {
         notificationList.push({ id: doc.id, ...data });
       });
       
-      // Sort by createdAt descending
       notificationList.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
-      
       setNotifications(notificationList);
       
-      // Filter out deleted notifications first
       const activeNotifs = notificationList.filter(n => !(n.deletedBy?.includes(user.email)));
-              
-      // Count unread notifications among active ones only
       const unread = activeNotifs.filter(n => !(n.readBy?.includes(user.uid))).length;
       setUnreadCount(unread);
     });
@@ -93,31 +86,19 @@ export default function Profile() {
     return () => unsubscribe();
   }, [user]);
   
-  // Function to mark notification as read
   const markAsRead = async (notificationId) => {
     if (!user) return;
-    
     try {
-      // Update the notification to add user's UID to readBy array
       const notificationRef = doc(db, 'notifications', notificationId);
       const notification = notifications.find(n => n.id === notificationId);
       
       if (notification && (!notification.readBy || !notification.readBy.includes(user.uid))) {
         const updatedReadBy = [...(notification.readBy || []), user.uid];
-        await updateDoc(notificationRef, {
-          readBy: updatedReadBy
-        });
+        await updateDoc(notificationRef, { readBy: updatedReadBy });
         
-        // Update local state
         setNotifications(prev => 
-          prev.map(n => 
-            n.id === notificationId 
-              ? { ...n, readBy: updatedReadBy }
-              : n
-          )
+          prev.map(n => n.id === notificationId ? { ...n, readBy: updatedReadBy } : n)
         );
-        
-        // Decrease unread count
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error) {
@@ -125,39 +106,26 @@ export default function Profile() {
     }
   };
   
-  // Function to mark all unread notifications as read
   const markAllAsRead = async () => {
     if (!user) return;
-    
-    // Filter out deleted notifications and get unread ones
     const activeNotifs = notifications.filter(n => !(n.deletedBy?.includes(user.email)));
     const unreadNotifs = activeNotifs.filter(n => !(n.readBy?.includes(user.uid)));
     
-    // Optimistically update local state
     setNotifications(prev => 
-      prev.map(n => 
-        unreadNotifs.some(unread => unread.id === n.id) 
-          ? { ...n, readBy: [...(n.readBy || []), user.uid] } 
-          : n
-      )
+      prev.map(n => unreadNotifs.some(unread => unread.id === n.id) 
+        ? { ...n, readBy: [...(n.readBy || []), user.uid] } : n)
     );
-    
-    // Update unread count
     setUnreadCount(0);
     
-    // Update each notification in the database
     for (const notif of unreadNotifs) {
       try {
-        await updateDoc(doc(db, 'notifications', notif.id), { 
-          readBy: arrayUnion(user.uid) 
-        });
+        await updateDoc(doc(db, 'notifications', notif.id), { readBy: arrayUnion(user.uid) });
       } catch (error) {
         console.error('Error marking notification as read:', error);
       }
     }
   };
   
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target) && 
@@ -165,23 +133,9 @@ export default function Profile() {
         setIsBellOpen(false);
       }
     };
-    
     document.addEventListener('mousedown', handleClickOutside);
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  
-  const clearRecentHistory = () => {
-    localStorage.removeItem('recentHistory');
-    setRecentHistory([]);
-  };
-  
-  const clearDownloadHistory = () => {
-    localStorage.removeItem('downloadHistory');
-    setDownloadHistory([]);
-  };
   
   const clearAllData = () => {
     localStorage.removeItem('recentHistory');
@@ -190,105 +144,56 @@ export default function Profile() {
     setDownloadHistory([]);
   };
   
-  // Helper to get initials
   const getInitials = (name) => name ? name.charAt(0).toUpperCase() : "U";
   
-  // Dismiss notification function
   const handleDismissNotification = async (notificationId, targetEmail) => {
-    // Optimistic state update - remove notification from UI immediately
     setNotifications((prev) => prev.filter((notif) => notif.id !== notificationId));
-    
-    // Replace 'user.email' with whatever your auth user variable is named
     const userEmail = user?.email || user?.email;
-    
     if (!userEmail) return;
-    
     try {
       if (targetEmail === 'ALL') {
-        const notifRef = doc(db, 'notifications', notificationId);
-        await updateDoc(notifRef, {
-          deletedBy: arrayUnion(userEmail)
-        });
+        await updateDoc(doc(db, 'notifications', notificationId), { deletedBy: arrayUnion(userEmail) });
       } else {
         await deleteDoc(doc(db, 'notifications', notificationId));
       }
     } catch (error) {
       console.error("Error dismissing notification:", error);
-      // Optionally, you could re-add the notification to the UI if the operation failed
-      // But for simplicity, we'll rely on the real-time listener to correct the state
     }
   };
   
-  // Handle profile update function
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    
     try {
-      // Update Firebase profile
-      await updateProfile(auth.currentUser, {
-        displayName: editName,
-        photoURL: editPhoto || null
-      });
-      
-      // Close modal
+      await updateProfile(auth.currentUser, { displayName: editName, photoURL: editPhoto || null });
       setIsEditingProfile(false);
-      
-      // Show success toast
       toast.success("Profile Updated Successfully!");
-      
-      // Refresh the page to reflect changes
       window.location.reload();
     } catch (error) {
-      console.error("Error updating profile:", error);
       toast.error("Error updating profile: " + error.message);
     }
   };
   
-  // Handle feedback submission
   const handleSendFeedback = async () => {
     if (!feedbackMessage.trim()) return;
-  
     setIsSendingFeedback(true);
-  
     try {
-      // Step 1: Add document to feedbacks collection
-      await addDoc(collection(db, 'feedbacks'), {
-        text: feedbackMessage,
-        createdAt: serverTimestamp(),
-        status: 'unread'
-      });
-  
-      // Step 2: Query the users collection where role == 'admin'
+      await addDoc(collection(db, 'feedbacks'), { text: feedbackMessage, createdAt: serverTimestamp(), status: 'unread' });
       const q = query(collection(db, 'users'), where('role', '==', 'admin'));
       const querySnapshot = await getDocs(q);
-        
       const adminEmails = [];
-      querySnapshot.forEach((doc) => {
-        const userData = doc.data();
-        if (userData.email) {
-          adminEmails.push(userData.email);
-        }
-      });
+      querySnapshot.forEach((doc) => { if (doc.data().email) adminEmails.push(doc.data().email); });
   
-      // Step 3: Join emails with commas. Create mailto link
       const joinedEmails = adminEmails.join(',');
-      const mailtoLink = `mailto:${joinedEmails}?subject=BNN CS Study Hub Feedback&body=${encodeURIComponent(feedbackMessage)}`;
-  
-      // Step 4: Trigger the email
-      window.location.href = mailtoLink;
-  
-      // Close modal, clear state, set isSendingFeedback(false)
+      window.location.href = `mailto:${joinedEmails}?subject=BNN CS Study Hub Feedback&body=${encodeURIComponent(feedbackMessage)}`;
       setIsFeedbackOpen(false);
       setFeedbackMessage('');
     } catch (error) {
-      console.error('Error sending feedback:', error);
       toast.error('Error sending feedback: ' + error.message);
     } finally {
       setIsSendingFeedback(false);
     }
   };
     
-  // If user is not logged in
   if (!user) {
     return (
       <div className="p-5 pt-4 max-w-md mx-auto">
@@ -296,17 +201,10 @@ export default function Profile() {
           <User size={48} className="mx-auto mb-4 text-white/30" />
           <div className="font-bold text-lg mb-2">Please Login</div>
           <div className="text-white/55 text-sm mb-6">You need to be logged in to view your profile.</div>
-          
           <button
             type="button"
             onClick={async () => {
-              try {
-                await login();
-                // Navigation will happen automatically via auth state change
-              } catch (error) {
-                console.error('Login error:', error);
-                toast.error('Login failed. Please try again.');
-              }
+              try { await login(); } catch (error) { toast.error('Login failed. Please try again.'); }
             }}
             className="w-full py-3 rounded-xl bg-white/10 text-white font-bold flex items-center justify-center gap-2 hover:bg-white/20 border border-white/20 transition-colors"
           >
@@ -320,24 +218,16 @@ export default function Profile() {
     );
   }
   
-  // User is logged in - show profile
   return (
     <>
       <main className="bg-black pt-4">
-        {/* HEADER BANNER - Clean solid black */}
-        <div className="h-25 bg-black">
-          {/* Empty banner space - clean and solid */}
-        </div>
+        <div className="h-25 bg-black"></div>
 
         <div className="px-5 pb-8 max-w-md mx-auto">
-          {/* OVERLAPPING PROFILE PIC */}
           <div className="-mt-16 mb-6 relative">
-            {/* Notification Bell */}
             <div className="absolute top-2 right-4 z-40">
               <button ref={bellRef} onClick={() => {
-                if (!isBellOpen && unreadCount > 0) {
-                  markAllAsRead();
-                }
+                if (!isBellOpen && unreadCount > 0) markAllAsRead();
                 setIsBellOpen(!isBellOpen);
               }} className="relative">
                 <Bell className="text-white" size={24} />
@@ -350,21 +240,14 @@ export default function Profile() {
             </div>
             
             {user.photoURL ? (
-              <img 
-                src={user.photoURL} 
-                alt={user.displayName} 
-                className="w-24 h-24 rounded-full border-[6px] border-zinc-900 object-cover"
-              />
+              <img src={user.photoURL} alt={user.displayName} className="w-24 h-24 rounded-full border-[6px] border-zinc-900 object-cover" />
             ) : (
               <div className="w-24 h-24 rounded-full border-[6px] border-zinc-900 bg-zinc-800 flex items-center justify-center">
-                <span className="text-3xl font-bold text-white">
-                  {getInitials(user.displayName)}
-                </span>
+                <span className="text-3xl font-bold text-white">{getInitials(user.displayName)}</span>
               </div>
             )}
           </div>
 
-        {/* USER INFO & ACTIONS */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white mb-1">{user.displayName || "User"}</h1>
           <p className="text-white/60 text-sm mb-4">{user.email}</p>
@@ -379,13 +262,7 @@ export default function Profile() {
             </button>
             <button
               type="button"
-              onClick={async () => {
-                try {
-                  await logout();
-                } catch (error) {
-                  console.error('Logout error:', error);
-                }
-              }}
+              onClick={async () => { try { await logout(); } catch (error) { console.error(error); } }}
               className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
             >
               <LogOut size={16} />
@@ -394,76 +271,52 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* TABBED NAVIGATION - Scrollable */}
         <div className="flex gap-4 mb-4 border-b border-zinc-800 overflow-x-auto whitespace-nowrap no-scrollbar pr-4">
           <button
-            type="button"
             onClick={() => setActiveTab("recent")}
             className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === "recent"
-                ? "text-white border-b-2 border-yellow-400"
-                : "text-white/50 hover:text-white"
+              activeTab === "recent" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
             }`}
           >
-            <div className="flex items-center gap-2">
-              <Clock size={14} />
-              Recent
-            </div>
+            <div className="flex items-center gap-2"><Clock size={14} />Recent</div>
           </button>
           
           <button
-            type="button"
             onClick={() => setActiveTab("favorites")}
             className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === "favorites"
-                ? "text-white border-b-2 border-yellow-400"
-                : "text-white/50 hover:text-white"
+              activeTab === "favorites" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
             }`}
           >
-            <div className="flex items-center gap-2">
-              <Bookmark size={14} />
-              Favorites
-            </div>
+            <div className="flex items-center gap-2"><Bookmark size={14} />Favorites</div>
           </button>
           
           <button
-            type="button"
             onClick={() => setActiveTab("settings")}
             className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === "settings"
-                ? "text-white border-b-2 border-yellow-400"
-                : "text-white/50 hover:text-white"
+              activeTab === "settings" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
             }`}
           >
-            <div className="flex items-center gap-2">
-              <Settings size={14} />
-              Settings
-            </div>
+            <div className="flex items-center gap-2"><Settings size={14} />Settings</div>
           </button>
         </div>
 
-        {/* CONTENT AREA */}
         {activeTab === "recent" && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-lg text-white">Recent</h2>
               {recentHistory.length > 0 && (
                 <button
-                  type="button"
                   onClick={() => setShowClearModal(true)}
                   className="text-xs text-white/50 hover:text-red-400 transition-colors flex items-center gap-1"
                 >
-                  <Trash2 size={14} />
-                  Clear History
+                  <Trash2 size={14} />Clear History
                 </button>
               )}
             </div>
             
             <div className="glass-card">
               {recentHistory.length === 0 ? (
-                <div className="text-center py-8 text-zinc-400">
-                  No recent history.
-                </div>
+                <div className="text-center py-8 text-zinc-400">No recent history.</div>
               ) : (
                 <div className="divide-y divide-zinc-800 max-h-80 overflow-y-auto">
                   {recentHistory.map((item, index) => (
@@ -483,10 +336,8 @@ export default function Profile() {
                         </div>
                       </div>
                       <button
-                        type="button"
                         onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
                         className="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
-                        title="Open material"
                       >
                         <ExternalLink size={14} />
                       </button>
@@ -525,17 +376,12 @@ export default function Profile() {
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="p-2 bg-blue-500/15 text-blue-300 rounded-xl hover:bg-blue-500/25 transition-colors"
-                        title="View Material"
                       >
                         <Upload size={16} />
                       </a>
                       <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          toggleFavorite(material.id);
-                        }}
+                        onClick={(e) => { e.preventDefault(); toggleFavorite(material.id); }}
                         className="p-2 bg-yellow-500/20 text-yellow-400 rounded-xl hover:bg-yellow-500/30 transition-colors"
-                        title="Remove from favorites"
                       >
                         <Bookmark size={16} fill="currentColor" />
                       </button>
@@ -556,7 +402,6 @@ export default function Profile() {
         {activeTab === "settings" && (
           <div className="glass-card p-6 max-w-full overflow-x-hidden">
             <h3 className="font-bold text-lg mb-6 text-white">Settings</h3>
-            
             <div className="space-y-4">
               <div 
                 className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg cursor-pointer hover:bg-zinc-800/50 transition-colors"
@@ -571,12 +416,10 @@ export default function Profile() {
               
               <div className="pt-4 border-t border-zinc-800">
                 <button
-                  type="button"
                   onClick={clearAllData}
                   className="w-full py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg font-medium hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Trash2 size={16} />
-                  Clear All Data
+                  <Trash2 size={16} />Clear All Data
                 </button>
                 <p className="text-xs text-white/50 mt-2 text-center">
                   This will remove all history and reset your profile
@@ -593,55 +436,36 @@ export default function Profile() {
           <div className="glass-card p-6 w-full max-w-md rounded-xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-white">Edit Profile</h3>
-              <button
-                type="button"
-                onClick={() => setIsEditingProfile(false)}
-                className="text-white/50 hover:text-white transition-colors"
-                aria-label="Close edit profile modal"
-              >
+              <button onClick={() => setIsEditingProfile(false)} className="text-white/50 hover:text-white transition-colors">
                 <X size={24} />
               </button>
             </div>
             
             <form onSubmit={handleUpdateProfile} className="space-y-4">
-              {/* Display Name */}
               <div>
                 <label className="block text-white/70 text-sm mb-2">Display Name</label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none"
-                  placeholder="Enter your display name"
+                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none"
                   required
                 />
               </div>
-              
-              {/* Profile Picture URL */}
               <div>
                 <label className="block text-white/70 text-sm mb-2">Profile Picture URL</label>
                 <input
                   type="url"
                   value={editPhoto}
                   onChange={(e) => setEditPhoto(e.target.value)}
-                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none"
-                  placeholder="https://example.com/image.jpg"
+                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none"
                 />
               </div>
-              
-              {/* Buttons */}
               <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors"
-                >
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors">
                   Save Changes
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingProfile(false)}
-                  className="flex-1 glass-card py-3 text-center font-bold rounded-xl border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
-                >
+                <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 glass-card py-3 font-bold rounded-xl border border-white/10 text-white/70 hover:bg-white/5">
                   Cancel
                 </button>
               </div>
@@ -650,10 +474,10 @@ export default function Profile() {
         </div>
       )}
 
+      {/* Clear History Modal */}
       {showClearModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-700/50 w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 relative overflow-hidden">
-            {/* Decorative Background Glow */}
+          <div className="bg-zinc-900 border border-zinc-700/50 w-full max-w-sm p-6 rounded-2xl shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
             <div className="flex flex-col items-center text-center gap-4 mt-2">
               <div className="p-4 bg-zinc-800 rounded-full text-purple-400 mb-1 ring-1 ring-purple-500/30">
@@ -662,25 +486,14 @@ export default function Profile() {
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Time for a Fresh Start?</h3>
                 <p className="text-zinc-400 text-sm leading-relaxed">
-                  This will wipe your entire viewing history. <br />
-                  It&apos;s like it never happened.✨                </p>
+                  This will wipe your entire viewing history. <br />It&apos;s like it never happened.✨
+                </p>
               </div>
               <div className="flex gap-3 w-full mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowClearModal(false)}
-                  className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all font-medium border border-zinc-700"
-                >
+                <button onClick={() => setShowClearModal(false)} className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all font-medium border border-zinc-700">
                   Nah, keep it
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearAllData();
-                    setShowClearModal(false);
-                  }}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl transition-all font-bold shadow-lg shadow-purple-500/20"
-                >
+                <button onClick={() => { clearAllData(); setShowClearModal(false); }} className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl transition-all font-bold shadow-lg shadow-purple-500/20">
                   Yes, Clear All
                 </button>
               </div>
@@ -693,43 +506,25 @@ export default function Profile() {
       {isFeedbackOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-700/50 w-full max-w-md p-6 rounded-2xl shadow-2xl relative overflow-hidden">
-            {/* Decorative Background Glow */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold text-white">Send Feedback</h3>
-                <button
-                  type="button"
-                  onClick={() => setIsFeedbackOpen(false)}
-                  className="text-white/50 hover:text-white transition-colors"
-                  aria-label="Close feedback modal"
-                >
+                <button onClick={() => setIsFeedbackOpen(false)} className="text-white/50 hover:text-white transition-colors">
                   <X size={24} />
                 </button>
               </div>
-              
               <textarea
                 value={feedbackMessage}
                 onChange={(e) => setFeedbackMessage(e.target.value)}
                 placeholder="Enter your feedback here..."
                 className="w-full h-40 p-3 bg-zinc-800 text-white rounded border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
               />
-              
               <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsFeedbackOpen(false)}
-                  disabled={isSendingFeedback}
-                  className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all font-medium border border-zinc-700 disabled:opacity-50"
-                >
+                <button onClick={() => setIsFeedbackOpen(false)} disabled={isSendingFeedback} className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all font-medium border border-zinc-700 disabled:opacity-50">
                   Cancel
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSendFeedback}
-                  disabled={isSendingFeedback || !feedbackMessage.trim()}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black rounded-xl transition-all font-bold shadow-lg shadow-yellow-500/20 disabled:opacity-50"
-                >
+                <button onClick={handleSendFeedback} disabled={isSendingFeedback || !feedbackMessage.trim()} className="flex-1 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black rounded-xl transition-all font-bold shadow-lg shadow-yellow-500/20 disabled:opacity-50">
                   {isSendingFeedback ? 'Sending...' : 'Send to Admins'}
                 </button>
               </div>
@@ -743,18 +538,14 @@ export default function Profile() {
         <div ref={dropdownRef} className="fixed top-20 right-5 z-50 w-80 max-h-96 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg overflow-hidden">
           <div className="p-4 bg-zinc-800 border-b border-zinc-700">
             <h3 className="font-bold text-white flex items-center gap-2">
-              <Bell size={18} />
-              Notifications
+              <Bell size={18} /> Notifications
             </h3>
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length > 0 ? (
               <div className="divide-y divide-zinc-800">
                 {notifications.map((notification) => {
-                  // Don't render if notification was dismissed by this user
-                  if (notification.deletedBy && notification.deletedBy.includes(user.email)) {
-                    return null;
-                  }
+                  if (notification.deletedBy && notification.deletedBy.includes(user.email)) return null;
                   
                   const isUnread = !notification.readBy || !notification.readBy.includes(user.uid);
                   return (
@@ -765,25 +556,18 @@ export default function Profile() {
                   >
                     <div className="flex items-start gap-2">
                       <h4 className="font-semibold text-white text-sm flex-1">{notification.title}</h4>
-                      {isUnread && (
-                        <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
-                      )}
+                      {isUnread && <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>}
                       <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDismissNotification(notification.id, notification.targetEmail);
-                        }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDismissNotification(notification.id, notification.targetEmail); }}
                         className="text-zinc-400 hover:text-white transition-colors"
                       >
                         <X size={16} />
                       </button>
                     </div>
+                    {/* The Crucial Animation Fix is Right Here! */}
                     <div className="relative overflow-hidden flex whitespace-nowrap pt-1 w-full">
-                      <div className="flex animate-marquee w-max">
-                        {/* Original text with right padding for gap between loops */}
+                      <div key={notification.id + (isBellOpen ? '-open' : '-closed')} className="flex animate-marquee [animation-delay:500ms] [animation-fill-mode:backwards] w-max">
                         <span className="text-sm text-zinc-400 pr-10">{notification.message}</span>
-                        {/* Duplicate text to create the seamless infinite loop */}
                         <span className="text-sm text-zinc-400 pr-10" aria-hidden="true">{notification.message}</span>
                       </div>
                     </div>
@@ -795,9 +579,7 @@ export default function Profile() {
                 }
               </div>
             ) : (
-              <div className="p-6 text-center text-zinc-500">
-                No notifications yet
-              </div>
+              <div className="p-6 text-center text-zinc-500">No notifications yet</div>
             )}
           </div>
         </div>
