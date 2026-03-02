@@ -1,9 +1,10 @@
-import { FileText, ExternalLink, Download, Edit3, Pencil, Flag, Eye, Calendar, User, CheckCircle, Bookmark, Loader2 } from "lucide-react";
+import { FileText, ExternalLink, Download, Edit3, Pencil, Flag, Eye, Calendar, User, CheckCircle, Bookmark, Loader2, Share2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useState } from "react";
 import { doc, updateDoc, increment, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { createPortal } from 'react-dom';
+import { toast } from "react-hot-toast";
 
 export default function MaterialCard({ material, onIncrementView, convertToDownloadLink, navigateToSubject = false, navigate, isNewMaterial, getSubjectById, onEdit }) {
   const { isAdmin, user, toggleFavorite } = useApp();
@@ -22,24 +23,47 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
   const [isReporting, setIsReporting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // Share handler function
+  const handleShare = async (material) => {
+    const shareData = {
+      title: `BNN CS Study Hub - ${material.title}`,
+      text: `Check out this ${material.type} for ${material.title} on BNN CS Study Hub!`,
+      url: material.link, 
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error sharing:", error);
+        }
+      }
+    } else {
+      // Fallback for desktop browsers that don't support Web Share API
+      try {
+        await navigator.clipboard.writeText(material.link);
+        toast.success("Link copied to clipboard!");
+      } catch (err) {
+        toast.error("Failed to copy link");
+      }
+    }
+  };
+
   // Helper function to format date
   const formatDate = (dateString) => {
     if (!dateString) return "Just now";
     
     try {
-      // Handle Firestore Timestamp objects
       if (dateString?.toDate) {
         return dateString.toDate().toLocaleDateString()
       }
-      // Handle ISO date strings
       else if (typeof dateString === 'string') {
         return new Date(dateString).toLocaleDateString()
       }
-      // Handle regular Date objects
       else if (dateString instanceof Date) {
         return dateString.toLocaleDateString()
       }
-      // Handle timestamp objects
       else {
         return new Date(dateString).toLocaleDateString()
       }
@@ -66,7 +90,6 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
       return abbreviations[subjectName];
     }
     
-    // Return a truncated version if no abbreviation is found
     if (subjectName.length > 15) {
       return subjectName.substring(0, 12) + "...";
     }
@@ -85,16 +108,9 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
       viewedAt: new Date().toISOString()
     };
     
-    // Get existing recent history
     const existingHistory = JSON.parse(localStorage.getItem('recentHistory') || '[]');
-    
-    // Remove duplicates (same ID)
     const filteredHistory = existingHistory.filter(item => item.id !== material.id);
-    
-    // Add new item to the top
-    const updatedHistory = [historyItem, ...filteredHistory].slice(0, 10); // Keep last 10 items
-    
-    // Save to localStorage
+    const updatedHistory = [historyItem, ...filteredHistory].slice(0, 10);
     localStorage.setItem('recentHistory', JSON.stringify(updatedHistory));
   };
 
@@ -109,47 +125,30 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
       downloadedAt: new Date().toISOString()
     };
     
-    // Get existing download history
     const existingHistory = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
-    
-    // Remove duplicates (same ID)
     const filteredHistory = existingHistory.filter(item => item.id !== material.id);
-    
-    // Add new item to the top
-    const updatedHistory = [historyItem, ...filteredHistory].slice(0, 10); // Keep last 10 items
-    
-    // Save to localStorage
+    const updatedHistory = [historyItem, ...filteredHistory].slice(0, 10);
     localStorage.setItem('downloadHistory', JSON.stringify(updatedHistory));
   };
 
   const handleViewClick = async () => {
     if (navigateToSubject && navigate) {
-      // Convert material type to lowercase for URL parameter
       const tabParam = material.type.toLowerCase();
       navigate(`/semester/${material.semId}/${material.subjectId}?tab=${tabParam}`);
     } else {
       try {
-        // Open the file link immediately for good UX
         window.open(material.link, "_blank", "noopener,noreferrer");
-
-        // Check localStorage to see if this user already viewed this specific material
         const viewedMaterials = JSON.parse(localStorage.getItem('viewedMaterials') || '[]');
 
-        // If they haven't viewed it yet, increment the db and save to localStorage
         if (!viewedMaterials.includes(material.id)) {
-          // Add to localStorage
           viewedMaterials.push(material.id);
           localStorage.setItem('viewedMaterials', JSON.stringify(viewedMaterials));
 
-          // Increment in Firestore
           await updateDoc(doc(db, "materials", material.id), { 
             views: increment(1) 
           });
 
-          // Add to recent history
           addToRecentHistory(material);
-
-          // Optimistic update: increment view count locally
           setViewCount(prev => prev + 1);
 
           if (onIncrementView) {
@@ -158,7 +157,6 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
         }
       } catch (error) {
         console.error("Error updating view count:", error);
-        // Still open the link even if DB update fails
         window.open(material.link, "_blank", "noopener,noreferrer");
       }
     }
@@ -166,38 +164,29 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
 
   const handleDownloadClick = async () => {
     try {
-      // Update database with increment
       await updateDoc(doc(db, "materials", material.id), { 
         downloads: increment(1) 
       });
       
-      // Add to download history
       addToDownloadHistory(material);
-      
-      // Optimistic update: increment download count locally
       setDownloadCount(prev => prev + 1);
       
       const downloadUrl = convertToDownloadLink(material.link);
-      
-      // Create a temporary anchor element and trigger download
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.setAttribute('download', ''); // Hint to browser to download
+      link.setAttribute('download', '');
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
       console.error("Error updating download count:", error);
-      // Still attempt download even if DB update fails
       const downloadUrl = convertToDownloadLink(material.link);
       window.open(downloadUrl, "_blank", "noopener,noreferrer");
     }
   };
 
-  // Handle report submission
   const handleSubmitReport = async () => {
-    // Validate "Other" reason if selected
     if (reportReason === 'Other' && !otherReason.trim()) {
       alert("Please specify the issue.");
       return;
@@ -206,7 +195,6 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
     setIsReporting(true);
     
     try {
-      // Define the final reason to save
       const finalReason = reportReason === 'Other' ? `Other: ${otherReason}` : reportReason;
       
       await addDoc(collection(db, 'reports'), {
@@ -274,7 +262,7 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
       </div>
 
       <div className="mt-4">
-        {/* Button Layout: Big View + Small Download Square + Bookmark */}
+        {/* Button Layout */}
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -297,9 +285,9 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
             disabled={loadingFavId === material.id}
             onClick={async (e) => {
               e.preventDefault();
-              setLoadingFavId(material.id); // Start spinner
-              await toggleFavorite(material.id); // Wait for operation
-              setLoadingFavId(null); // Stop spinner
+              setLoadingFavId(material.id);
+              await toggleFavorite(material.id);
+              setLoadingFavId(null);
             }}
             className={`p-2 sm:px-3 sm:py-2 rounded-xl border font-bold flex items-center justify-center transition-all ${
               user?.favorites?.includes(material.id)
@@ -317,12 +305,21 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
               />
             )}
           </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              handleShare(material);
+            }}
+            className="p-2 sm:px-3 sm:py-2 rounded-xl border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center min-w-[40px]"
+            title="Share material"
+          >
+            <Share2 size={18} />
+          </button>
         </div>
 
         {/* Unified Card Footer */}
         <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-1 mt-4 pt-3 border-t border-zinc-800/50 text-[11px] sm:text-xs text-zinc-400">
-          
-          {/* 1. Left: Uploader Name */}
           <span className="flex items-center gap-1 text-zinc-300">
             <User size={12} /> by {
               material.uploadedBy?.split(' ')[0] || 
@@ -331,7 +328,6 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
             }
           </span>
 
-          {/* 2. Center: Admin Stats (Only visible to Admin) */}
           {isAdmin && (
             <div className="flex items-center gap-2 sm:gap-3 font-medium mx-auto">
               <span className="flex items-center gap-1 text-blue-400" title="Views">
@@ -347,14 +343,12 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
             </div>
           )}
 
-          {/* 3. Right: Report Button */}
           <button 
             onClick={() => setIsReportModalOpen(true)}
             className="flex items-center gap-1 hover:text-red-400 transition-colors ml-auto sm:ml-0"
           >
             <Flag size={12} /> Report
           </button>
-
         </div>
 
         {/* Admin-only Edit Button */}
@@ -387,7 +381,6 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
               </div>
             ) : (
               <>
-                {/* Decorative Background Glow */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500" />
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-center">

@@ -506,20 +506,20 @@ export default function Profile() {
                 const shortName = subject ? (SUBJECT_SHORT_NAMES[subject.name] || subject.name) : "Unknown";
 
                 return (
-                  <div key={material.id} className="glass-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 bg-white/5 p-2 rounded-lg">
+                  <div key={material.id} className="glass-card p-3 sm:p-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="bg-white/5 p-2 rounded-lg shrink-0">
                         <FileText className="text-blue-400" size={20} />
                       </div>
-                      <div>
-                        <h4 className="font-bold text-white/90 text-sm">{material.title}</h4>
-                        <p className="text-xs text-white/50 mt-1">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-white/90 text-sm truncate">{material.title}</h4>
+                        <p className="text-xs text-white/50 mt-0.5 truncate">
                           {material.type} • {shortName}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <a 
                         href={material.link} 
                         target="_blank" 
@@ -663,7 +663,7 @@ export default function Profile() {
                 <h3 className="text-xl font-bold text-white mb-2">Time for a Fresh Start?</h3>
                 <p className="text-zinc-400 text-sm leading-relaxed">
                   This will wipe your entire viewing history. <br />
-                  It&apos;s like it never happened.✨                  </p>
+                  It&apos;s like it never happened.✨                </p>
               </div>
               <div className="flex gap-3 w-full mt-4">
                 <button
