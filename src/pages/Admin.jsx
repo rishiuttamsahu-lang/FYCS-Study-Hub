@@ -1314,18 +1314,31 @@ export default function Admin() {
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {sentNotifications.length > 0 ? (
                     sentNotifications.map((notif) => (
-                      <div key={notif.id} className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-white text-sm truncate">{notif.title}</h4>
-                          <p className="text-xs text-white/50 truncate">To: {notif.targetEmail}</p>
+                      <div key={notif.id} className="flex items-center justify-between p-3 bg-zinc-800/40 rounded-xl border border-zinc-700/50">
+                        <div className="min-w-0 flex-1 pr-4">
+                          <h4 className="font-bold text-sm text-white truncate">{notif.title}</h4>
+                          <p className="text-xs text-zinc-400 mt-0.5">To: {notif.targetEmail === 'ALL' ? 'Everyone' : notif.targetEmail}</p>
                         </div>
-                        <button
-                          onClick={() => handleDeleteGlobal(notif.id)}
-                          className="ml-2 p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-colors"
-                          title="Delete notification"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        
+                        <div className="flex items-center gap-3 shrink-0">
+                          {/* View Count Badge */}
+                          <div 
+                            className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-xs font-medium border border-blue-500/20"
+                            title={`${notif.readBy?.length || 0} users have read this`}
+                          >
+                            <Eye size={14} />
+                            <span>{notif.readBy?.length || 0}</span>
+                          </div>
+                          
+                          {/* Existing Delete Button */}
+                          <button
+                            onClick={() => handleDeleteGlobal(notif.id)}
+                            className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Delete Notification"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     ))
                   ) : (
