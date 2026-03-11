@@ -56,15 +56,6 @@ const Home = () => {
     return createdAt > twentyFourHoursAgo;
   };
   
-  // Skeleton Card Component
-  const SkeletonCard = () => (
-    <div className="animate-pulse bg-zinc-800 rounded-xl h-40 w-full p-4">
-      <div className="bg-zinc-700 rounded-xl w-9 h-9 mb-3"></div>
-      <div className="bg-zinc-700 rounded h-4 w-3/4 mb-2"></div>
-      <div className="bg-zinc-700 rounded h-3 w-1/2"></div>
-    </div>
-  );
-
   // Helper function to convert Google Drive view links to direct download links
   const convertToDownloadLink = (viewLink) => {
     if (!viewLink) return viewLink;
@@ -99,18 +90,6 @@ const Home = () => {
     // If it's not a Google Drive link, return the original link
     return viewLink;
   };
-
-  // Show loading spinner immediately for better UX
-  if (!isHomeLoaded) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-[#0a0a0a]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700] mx-auto mb-4"></div>
-          <p className="text-white/70 text-sm">Loading homepage...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-5 pt-10 max-w-md mx-auto">

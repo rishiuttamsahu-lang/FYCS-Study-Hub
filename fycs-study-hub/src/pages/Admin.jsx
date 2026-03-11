@@ -618,7 +618,7 @@ export default function Admin() {
                   </div>
                   <div>
                     <div className="text-white/50 mb-1">Registered Users</div>
-                    <div className="font-bold">{(users || []).length}</div>
+                    <div className="font-bold">{uniqueUsers.length}</div>
                   </div>
                 </div>
               </div>

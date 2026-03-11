@@ -214,6 +214,10 @@ export const AppProvider = ({ children }) => {
   const login = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      
+      // Force immediate state update for snappy UI
+      setUser(result.user);
+      
       return { success: true, user: result.user };
     } catch (error) {
       console.error('Login error:', error);

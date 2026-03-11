@@ -600,7 +600,14 @@ export default function Profile() {
                     </div>
                     {/* The Crucial Animation Fix is Right Here! */}
                     <div className="relative overflow-hidden flex whitespace-nowrap pt-1 w-full">
-                      <div key={notification.id + (isBellOpen ? '-open' : '-closed')} className="flex animate-marquee [animation-delay:500ms] [animation-fill-mode:backwards] w-max">
+                      <div 
+                        key={`marquee-${notification.id}-${isBellOpen ? 'open' : 'closed'}`} 
+                        className="flex animate-marquee w-max"
+                        style={{ 
+                          animationDelay: '0.7s', 
+                          animationFillMode: 'backwards' 
+                        }}
+                      >
                         <span className="text-sm text-zinc-400 pr-10">{notification.message}</span>
                         <span className="text-sm text-zinc-400 pr-10" aria-hidden="true">{notification.message}</span>
                       </div>
