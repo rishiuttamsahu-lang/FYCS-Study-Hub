@@ -1,8 +1,12 @@
-import { LockKeyhole, Mail, LogOut } from "lucide-react";
+import { LockKeyhole, Mail, LogOut, Loader2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { useState } from "react";
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function BannedPage() {
   const { logout } = useApp();
+  const [isContacting, setIsContacting] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -11,6 +15,37 @@ export default function BannedPage() {
       console.error("Error signing out:", error);
       // Fallback to hard refresh if logout fails
       window.location.href = "/";
+    }
+  };
+
+  const handleContactAdmin = async () => {
+    setIsContacting(true);
+    try {
+      // Fetch admins from database
+      const q = query(collection(db, 'users'), where('role', '==', 'admin'));
+      const querySnapshot = await getDocs(q);
+      const adminEmails = [];
+      querySnapshot.forEach((doc) => {
+        if (doc.data().email) adminEmails.push(doc.data().email);
+      });
+
+      // Creators fallback (ensure creators always get it)
+      const creatorEmails = ["rishiuttamsahu@gmail.com", "piyushgupta122006@gmail.com"];
+      
+      // Merge and remove duplicates
+      const allTargetEmails = [...new Set([...adminEmails, ...creatorEmails])];
+      const joinedEmails = allTargetEmails.join(',');
+      
+      const subject = encodeURIComponent("Account Unban Request - BNN CS Study Hub");
+      const body = encodeURIComponent("Hello Admins,\n\nMy account has been temporarily paused. Could you please review my status and restore my access?\n\nThank you.");
+      
+      window.location.href = `mailto:${joinedEmails}?subject=${subject}&body=${body}`;
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+      // Fallback to direct creator email
+      window.location.href = `mailto:rishiuttamsahu@gmail.com?subject=Account Unban Request - BNN CS Study Hub`;
+    } finally {
+      setIsContacting(false);
     }
   };
 
@@ -55,13 +90,17 @@ export default function BannedPage() {
             {/* Action Buttons */}
             <div className="flex flex-col gap-4 mb-6">
               {/* Contact Admin Button */}
-              <a
-                href="mailto:support@cs-study-hub.edu"
-                className="w-full py-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold flex items-center justify-center gap-3 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300"
+              <button
+                onClick={handleContactAdmin}
+                disabled={isContacting}
+                className="w-full py-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold flex items-center justify-center gap-3 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <Mail size={20} />
-                Contact Admin
-              </a>
+                {isContacting ? (
+                  <><Loader2 className="animate-spin" size={20} /> Contacting...</>
+                ) : (
+                  <><Mail size={20} /> Contact Admin</>
+                )}
+              </button>
               
               {/* Sign Out Button */}
               <button
@@ -77,8 +116,7 @@ export default function BannedPage() {
             {/* Support Info */}
             <div className="mt-6 text-center">
               <p className="text-zinc-400 text-xs">
-                For assistance, contact: 
-                <span className="text-orange-400 font-medium ml-1">support@cs-study-hub.edu</span>
+                For assistance, tap the Contact Admin button above.
               </p>
             </div>
           </div>

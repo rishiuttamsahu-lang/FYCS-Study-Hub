@@ -170,11 +170,19 @@ export default function Admin() {
     index === self.findIndex((t) => (t.id === u.id || t.email === u.email))
   );
 
-  const filteredUsers = uniqueUsers.filter(u => 
-    u.email?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-    u.displayName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-    u.name?.toLowerCase().includes(userSearchTerm.toLowerCase())
-  );
+  const filteredUsers = uniqueUsers
+    .filter(u => 
+      u.email?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      u.displayName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      u.name?.toLowerCase().includes(userSearchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      // Get timestamp from Firestore createdAt or fallback to Auth creationTime
+      const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (a.createdAt || Date.parse(a.metadata?.creationTime) || 0);
+      const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (b.createdAt || Date.parse(b.metadata?.creationTime) || 0);
+      
+      return timeB - timeA; // Newest first
+    });
   
   const validMaterials = (materials || []).filter(m => m?.status === 'Approved' || m?.status === 'Pending');
   

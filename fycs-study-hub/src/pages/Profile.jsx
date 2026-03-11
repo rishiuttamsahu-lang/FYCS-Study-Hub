@@ -5,6 +5,7 @@ import { updateProfile } from "firebase/auth";
 import { collection, addDoc, getDocs, query, where, serverTimestamp, updateDoc, doc, arrayUnion, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from "../firebase";
 import { toast } from "react-hot-toast";
+import Swal from "sweetalert2";
 import { BiMessageDetail } from 'react-icons/bi';
 
 const SUBJECT_SHORT_NAMES = {
@@ -45,6 +46,39 @@ export default function Profile() {
   const [isBellOpen, setIsBellOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Sign out handler with confirmation
+  const handleSignOut = async () => {
+    const result = await Swal.fire({
+      title: 'Sign Out?',
+      text: "Are you sure you want to log out of your account?",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Sign Out",
+      cancelButtonText: "Cancel",
+      buttonsStyling: false,
+      background: "#121212",
+      color: "#FFFFFF",
+      width: "280px",
+      padding: "0.8rem",
+      customClass: {
+        popup: "border border-[#4e4d4d] rounded-[15px] shadow-2xl",
+        title: "text-sm font-bold pt-2",
+        htmlContainer: "text-[10px] text-gray-400 opacity-80",
+        actions: "flex justify-center gap-3 mt-4 mb-2",
+        confirmButton: "bg-rose-500 hover:bg-rose-600 px-5 py-2 rounded-[10px] text-[11px] font-bold text-white",
+        cancelButton: "bg-[#2a2a2a] hover:bg-[#3a3a3a] px-5 py-2 rounded-[10px] text-[11px] font-bold text-white"
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await logout();
+      } catch (error) {
+        console.error('Logout error:', error);
+        toast.error('Failed to sign out. Please try again.');
+      }
+    }
+  };
   
   // Refs for click outside
   const dropdownRef = useRef(null);
@@ -262,7 +296,7 @@ export default function Profile() {
             </button>
             <button
               type="button"
-              onClick={async () => { try { await logout(); } catch (error) { console.error(error); } }}
+              onClick={handleSignOut}
               className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
             >
               <LogOut size={16} />
