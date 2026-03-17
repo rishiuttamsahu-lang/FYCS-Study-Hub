@@ -37,7 +37,7 @@ export default function Upload() {
     const accessToken = sessionStorage.getItem('google_access_token');
 
     if (!accessToken) {
-      toast.error("Session expire ho gaya, ek baar logout karke login karo");
+      toast.error("Session expired. Please log out and log in again");
       return;
     }
 
