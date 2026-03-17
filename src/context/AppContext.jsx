@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { db, auth, googleProvider } from '../firebase';
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy, where, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { toast } from 'react-hot-toast';
 
 // Create Context
@@ -214,6 +214,12 @@ export const AppProvider = ({ children }) => {
   const login = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      
+      // Save Google OAuth access token for Drive Picker
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        sessionStorage.setItem('google_access_token', credential.accessToken);
+      }
       
       // Force immediate state update for snappy UI
       setUser(result.user);
