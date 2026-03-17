@@ -38,7 +38,6 @@ export default function Admin() {
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [editingSubject, setEditingSubject] = useState(null);
   const [editSubjectName, setEditSubjectName] = useState("");
-  const [editSubjectIcon, setEditSubjectIcon] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToReject, setItemToReject] = useState(null);
@@ -236,7 +235,7 @@ export default function Admin() {
   const handleAddSubject = async (e) => {
     e.preventDefault();
     if (newSubject.name.trim()) {
-      const result = await addSubject(newSubject.name, newSubject.semesterId);
+      const result = await addSubject(newSubject.name, newSubject.semesterId, "Book");
       if (result.success) {
         setNewSubject({ name: "", semesterId: "1", icon: "Book" });
         setShowAddSubjectForm(false);
@@ -456,20 +455,17 @@ export default function Admin() {
   const handleEditSubjectClick = (subject) => {
     setEditingSubject(subject);
     setEditSubjectName(subject.name);
-    setEditSubjectIcon(subject.icon);
   };
   
   const handleUpdateSubject = async (e) => {
     e.preventDefault();
     try {
       await updateDoc(doc(db, "subjects", editingSubject.id), {
-        name: editSubjectName,
-        icon: editSubjectIcon
+        name: editSubjectName
       });
       toast.success("Subject Updated!");
       setEditingSubject(null);
       setEditSubjectName("");
-      setEditSubjectIcon("");
     } catch (error) {
       toast.error("Error updating subject: " + error.message);
     }
@@ -918,30 +914,6 @@ export default function Admin() {
                       </select>
                     </div>
                     
-                    <div>
-                      <label className="block text-white/50 text-sm mb-2">Icon</label>
-                      <select
-                        value={newSubject.icon}
-                        onChange={(e) => setNewSubject(prev => ({ ...prev, icon: e.target.value }))}
-                        className="w-full glass-card p-3 rounded-xl border border-white/10 bg-white/5 text-white focus:border-[#FFD700] focus:outline-none"
-                      >
-                        <option value="Book" className="bg-[#0a0a0a]">📚 Book</option>
-                        <option value="Code" className="bg-[#0a0a0a]">💻 Code</option>
-                        <option value="Sigma" className="bg-[#0a0a0a]">∑ Sigma</option>
-                        <option value="Cpu" className="bg-[#0a0a0a]">🖥️ CPU</option>
-                        <option value="Wrench" className="bg-[#0a0a0a]">🔧 Wrench</option>
-                        <option value="Brackets" className="bg-[#0a0a0a]">[ ] Brackets</option>
-                        <option value="Database" className="bg-[#0a0a0a]">🗄️ Database</option>
-                        <option value="Boxes" className="bg-[#0a0a0a]">📦 Boxes</option>
-                        <option value="Monitor" className="bg-[#0a0a0a]">🖥️ Monitor</option>
-                        <option value="Network" className="bg-[#0a0a0a]">🌐 Network</option>
-                        <option value="Coffee" className="bg-[#0a0a0a]">☕ Coffee</option>
-                        <option value="Globe" className="bg-[#0a0a0a]">🌍 Globe</option>
-                        <option value="Bot" className="bg-[#0a0a0a]">🤖 Bot</option>
-                        <option value="Image" className="bg-[#0a0a0a]">🖼️ Image</option>
-                      </select>
-                    </div>
-                    
                     <div className="flex gap-3 pt-2">
                       <button type="submit" className="flex-1 btn-primary py-3">Add Subject</button>
                       <button
@@ -971,7 +943,6 @@ export default function Admin() {
                           <div key={subject.id} className="glass-card p-3 md:p-4 flex items-center justify-between">
                             <div>
                               <div className="font-semibold">{subject.name}</div>
-                              <div className="text-xs text-white/50 mt-1">Icon: {subject.icon}</div>
                             </div>
                             <div className="flex gap-2">
                               <button
@@ -1479,30 +1450,6 @@ export default function Admin() {
                   className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-white/70 text-sm mb-2">Icon Name</label>
-                <select
-                  value={editSubjectIcon}
-                  onChange={(e) => setEditSubjectIcon(e.target.value)}
-                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none"
-                  required
-                >
-                  <option value="Book" className="bg-[#0a0a0a]">📚 Book</option>
-                  <option value="Code" className="bg-[#0a0a0a]">💻 Code</option>
-                  <option value="Sigma" className="bg-[#0a0a0a]">∑ Sigma</option>
-                  <option value="Cpu" className="bg-[#0a0a0a]">🖥️ CPU</option>
-                  <option value="Wrench" className="bg-[#0a0a0a]">🔧 Wrench</option>
-                  <option value="Brackets" className="bg-[#0a0a0a]">[ ] Brackets</option>
-                  <option value="Database" className="bg-[#0a0a0a]">🗄️ Database</option>
-                  <option value="Boxes" className="bg-[#0a0a0a]">📦 Boxes</option>
-                  <option value="Monitor" className="bg-[#0a0a0a]">🖥️ Monitor</option>
-                  <option value="Network" className="bg-[#0a0a0a]">🌐 Network</option>
-                  <option value="Coffee" className="bg-[#0a0a0a]">☕ Coffee</option>
-                  <option value="Globe" className="bg-[#0a0a0a]">🌍 Globe</option>
-                  <option value="Bot" className="bg-[#0a0a0a]">🤖 Bot</option>
-                  <option value="Image" className="bg-[#0a0a0a]">🖼️ Image</option>
-                </select>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors">

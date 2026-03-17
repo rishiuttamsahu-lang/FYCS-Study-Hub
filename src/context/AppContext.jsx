@@ -325,12 +325,12 @@ export const AppProvider = ({ children }) => {
   };
 
   // 5. Add new subject
-  const addSubject = async (name, semId) => {
+  const addSubject = async (name, semId, icon = "Book") => {
     try {
       const newSubject = {
         name: name.trim(),
         semId: Number(semId), // Force Number type for consistency
-        icon: "Book", // Default icon
+        icon: icon || "Book", // Default icon
         createdAt: new Date() // Useful for sorting
       };
       
