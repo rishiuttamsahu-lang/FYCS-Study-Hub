@@ -8,7 +8,7 @@ import { db } from "../firebase";
 
 export default function Upload() {
   const navigate = useNavigate();
-  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial } = useApp();
+  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial, refreshDriveToken } = useApp();
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'pending_admin'
   
   // Extract file ID from Google Drive URL
@@ -33,12 +33,23 @@ export default function Upload() {
   }
 
   // Google Drive Picker function
-  const openDrivePicker = () => {
-    const accessToken = sessionStorage.getItem('google_access_token');
+  const openDrivePicker = async () => {
+    let accessToken = sessionStorage.getItem('google_access_token');
 
+    // If no token, try to refresh it silently
     if (!accessToken) {
-      toast.error("Session expired. Please log out and log in again");
-      return;
+      toast.loading("Refreshing access token...", { id: "token-refresh" });
+      const refreshResult = await refreshDriveToken();
+      toast.dismiss("token-refresh");
+      
+      if (refreshResult.success) {
+        accessToken = refreshResult.token;
+        toast.success("Access token refreshed!");
+      } else {
+        // Only show user-friendly message, don't force logout
+        toast.error("Google Drive access expired. Please try again.");
+        return;
+      }
     }
 
     const PICKER_API_KEY = "AIzaSyCAFWXuoMSKhLFqr-i_Nh_yXNZ1nLycFts";

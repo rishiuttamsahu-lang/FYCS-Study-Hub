@@ -230,6 +230,32 @@ export const AppProvider = ({ children }) => {
       return { success: false, error: error.message };
     }
   };
+
+  // Function to silently refresh Google Drive token
+  const refreshDriveToken = async () => {
+    try {
+      if (!auth.currentUser) {
+        return { success: false, error: "No authenticated user" };
+      }
+      
+      // Force token refresh by getting current user
+      await auth.currentUser.getIdToken(true);
+      
+      // Sign in again to get fresh Google credentials
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      
+      if (credential?.accessToken) {
+        sessionStorage.setItem('google_access_token', credential.accessToken);
+        return { success: true, token: credential.accessToken };
+      }
+      
+      return { success: false, error: "Failed to get new access token" };
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return { success: false, error: error.message };
+    }
+  };
   
   const logout = async () => {
     try {
@@ -477,6 +503,7 @@ export const AppProvider = ({ children }) => {
     // Authentication functions
     login,
     logout,
+    refreshDriveToken,
     
     // Action Functions
     addMaterial,
