@@ -61,6 +61,11 @@
 }
 
 @layer utilities {
+  /* Custom mb-3 utility with custom spacing */
+  .mb-3 {
+    margin-bottom: calc(var(--spacing) * 2.5);
+  }
+
   /* Additional no-scrollbar utility for better compatibility */
   .no-scrollbar::-webkit-scrollbar {
     display: none;

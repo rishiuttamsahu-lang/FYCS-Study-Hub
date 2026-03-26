@@ -34,7 +34,8 @@ const Home = () => {
     id: s.id,
     title: s.name,
     subjects: subjects.filter((sub) => Number(sub.semId) === Number(s.id)).length,
-    locked: s.id === '3' || s.id === '4', // Lock semesters 3 and 4
+    locked: s.id === '4', // Lock only semester 4
+    academicYear: s.id === '1' || s.id === '2' ? '2025-26' : s.id === '3' ? '2026-27' : '',
   }));
 
   // Use cached recent materials
@@ -96,7 +97,7 @@ const Home = () => {
       {/* Header Section */}
       <div className="text-center mb-10">
         <img src={dbLogo} alt="BNN CS Study Hub Logo" className="w-16 h-16 object-contain mx-auto mb-4" />
-        <h1 className="text-3xl font-bold mb-1">BNN CS Study Hub</h1>
+        <h1 className="text-3xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">BNN CS Study Hub</h1>
         <p className="text-gray-400 text-xs">Your central hub for BNN computer science students</p>
       </div>
 
@@ -110,7 +111,7 @@ const Home = () => {
       <div className="grid grid-cols-2 gap-4 mb-8">
         {semestersVm.map((sem) => {
           const isLocked = sem.locked;
-          const isSem2 = sem.id === '2'; // For the ongoing semester emphasis
+          const isSem3 = sem.id === '3'; // For the ongoing semester emphasis
           
           const handleCardClick = (e, path, id) => {
             e.preventDefault();
@@ -130,24 +131,24 @@ const Home = () => {
             type="button"
             onClick={(e) => handleCardClick(e, `/semester/${sem.id}`, sem.id)}
             disabled={isLocked}
-            className={`glass-card p-4 text-left transition-colors ${isLocked ? 'opacity-70 cursor-not-allowed' : 'hover:bg-white/5'} relative`}
+            className={`glass-card p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-gray-500 max-w-[320px] ${isLocked ? 'opacity-70 cursor-not-allowed' : 'hover:bg-white/5'} relative`}
           >
-            <div className="bg-white/5 border border-white/10 w-9 h-9 rounded-xl flex items-center justify-center mb-3 relative">
+            <div className="bg-gray-800/50 p-2 rounded-full w-fit mb-3 relative">
               {loadingCard === sem.id ? (
-                <Loader2 className="animate-spin text-[#FFD700]" size={24} />
+                <Loader2 className="animate-spin text-[#FFD700]" size={18} />
               ) : (
-                <GraduationCap size={18} className="text-white/90" />
+                <GraduationCap size={16} className="text-white/90" />
               )}
               {isLocked && (
-                <Lock size={14} className="absolute -top-1 -right-1 text-amber-400" />
+                <Lock size={12} className="absolute -top-1 -right-1 text-amber-400" />
               )}
-              {isSem2 && !isLocked && (
-                <Circle size={8} className="absolute -top-0.5 -right-0.5 text-green-500 fill-current" />
+              {isSem3 && !isLocked && (
+                <Circle size={6} className="absolute -top-0.5 -right-0.5 text-green-500 fill-current animate-pulse" />
               )}
             </div>
-            <h2 className="font-bold text-sm mb-1 flex items-center gap-1">
+            <h2 className="font-bold text-sm mb-2 flex items-center gap-1">
               {sem.title}
-              {isSem2 && !isLocked && (
+              {isSem3 && !isLocked && (
                 <span className="text-[8px] text-green-500 bg-green-500/10 px-1 py-0.5 rounded">LIVE</span>
               )}
             </h2>
@@ -156,7 +157,14 @@ const Home = () => {
                 Coming Soon
               </span>
             ) : (
-              <p className="text-[10px] text-white/50">{sem.subjects} subjects available</p>
+              <div className="space-y-2">
+                <p className="text-[10px] text-white/50">{sem.subjects} subjects available</p>
+                {sem.academicYear && (
+                  <span className="text-xs px-2 py-1 bg-gray-800/50 text-gray-400 rounded-md inline-block">
+                    {sem.academicYear}
+                  </span>
+                )}
+              </div>
             )}
           </button>
           );
