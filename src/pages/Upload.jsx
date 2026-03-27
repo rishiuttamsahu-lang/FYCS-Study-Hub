@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useApp } from "../context/AppContext";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 
 export default function Upload() {
   const navigate = useNavigate();
-  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial, refreshDriveToken } = useApp();
+  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial } = useApp();
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'pending_admin'
+  const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
   
   // Extract file ID from Google Drive URL
   const extractFileId = (url) => {
@@ -32,56 +33,90 @@ export default function Upload() {
     return null;
   }
 
-  // Google Drive Picker function
-  const openDrivePicker = async () => {
-    let accessToken = sessionStorage.getItem('google_access_token');
-
-    // If no token, try to refresh it silently
-    if (!accessToken) {
-      toast.loading("Refreshing access token...", { id: "token-refresh" });
-      const refreshResult = await refreshDriveToken();
-      toast.dismiss("token-refresh");
-      
-      if (refreshResult.success) {
-        accessToken = refreshResult.token;
-        toast.success("Access token refreshed!");
-      } else {
-        // Only show user-friendly message, don't force logout
-        toast.error("Google Drive access expired. Please try again.");
-        return;
+  // Dynamically load Google scripts on mount
+  useEffect(() => {
+    const loadGapi = () => new Promise(res => {
+      if (window.gapi) { 
+        window.gapi.load('picker');
+        res(); 
+        return; 
       }
+      const s = document.createElement("script");
+      s.src = "https://apis.google.com/js/api.js";
+      s.async = true;
+      s.defer = true;
+      s.onload = () => {
+        window.gapi.load('picker'); // Pre-load the picker module
+        res();
+      };
+      document.head.appendChild(s);
+    });
+    
+    const loadGis = () => new Promise(res => {
+      if (window.google?.accounts?.oauth2) { res(); return; }
+      const s = document.createElement("script");
+      s.src = "https://accounts.google.com/gsi/client";
+      s.async = true;
+      s.defer = true;
+      s.onload = res;
+      document.head.appendChild(s);
+    });
+    
+    Promise.all([loadGapi(), loadGis()]).then(() => {
+      // Set a small delay to ensure everything is fully initialized
+      setTimeout(() => {
+        setIsGoogleApiLoaded(true);
+        console.log('✅ Google API fully loaded and ready');
+      }, 100);
+    });
+  }, []);
+
+  // Google Drive Picker with silent token approach
+  const openDrivePicker = () => {
+    const userEmail = auth.currentUser?.email;
+    if (!userEmail) {
+      toast.error("Please sign in first.");
+      return;
     }
 
-    const PICKER_API_KEY = "AIzaSyCAFWXuoMSKhLFqr-i_Nh_yXNZ1nLycFts";
+    // Safety check: Ensure Google Picker is fully loaded
+    if (!window.google || !window.google.picker) {
+      toast.error("Google Drive interface is still loading. Please try again in a few seconds.");
+      console.log('Google Picker not ready yet:', { google: !!window.google, picker: !!window.google?.picker });
+      return;
+    }
 
-    const loadPicker = () => new Promise((resolve) => {
-      if (window.google?.picker) { resolve(); return; }
-      const script = document.createElement("script");
-      script.src = "https://apis.google.com/js/api.js";
-      script.onload = () => window.gapi.load("picker", resolve);
-      document.body.appendChild(script);
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      scope: "https://www.googleapis.com/auth/drive.readonly",
+      login_hint: userEmail, // THIS IS THE MAGIC THAT SKIPS THE ACCOUNT CHOOSER
+      callback: (tokenResponse) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          showPicker(tokenResponse.access_token);
+        } else {
+          toast.error("Failed to get access token. Please try again.");
+        }
+      },
     });
+    client.requestAccessToken({ prompt: "" }); // prompt empty skips the chooser if possible
+  };
 
-    loadPicker().then(() => {
-      const picker = new window.google.picker.PickerBuilder()
-        .addView(window.google.picker.ViewId.DOCS)
-        .setOAuthToken(accessToken)
-        .setDeveloperKey(PICKER_API_KEY)
-        .setOrigin(window.location.protocol + '//' + window.location.host)
-        .setCallback((data) => {
-          if (data.action === window.google.picker.Action.PICKED) {
-            const file = data.docs[0];
-            const driveLink = `https://drive.google.com/file/d/${file.id}/view?usp=sharing`;
-            setForm((prev) => ({ ...prev, driveLink }));
-            toast.success(`✅ File selected: ${file.name}`);
-          }
-        })
-        .build();
-      picker.setVisible(true);
-    }).catch((error) => {
-      console.error("Error loading Drive Picker:", error);
-      toast.error("Failed to load Drive picker");
-    });
+  const showPicker = (accessToken) => {
+    const picker = new window.google.picker.PickerBuilder()
+      .addView(window.google.picker.ViewId.DOCS)
+      .setOAuthToken(accessToken)
+      .setDeveloperKey(import.meta.env.VITE_GOOGLE_API_KEY)
+      .setOrigin(window.location.protocol + '//' + window.location.host)
+      .setCallback((data) => {
+        if (data.action === window.google.picker.Action.PICKED) {
+          const file = data.docs[0];
+          const driveLink = `https://drive.google.com/file/d/${file.id}/view?usp=sharing`;
+          setForm((prev) => ({ ...prev, driveLink }));
+          toast.success(`✅ File selected: ${file.name}`);
+        }
+      })
+      .build();
+    picker.setVisible(true);
   };
 
   const types = useMemo(
@@ -414,17 +449,26 @@ export default function Upload() {
             <button
               type="button"
               onClick={openDrivePicker}
-              title="Pick from Google Drive"
-              className="flex-shrink-0 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all border border-white/20"
+              disabled={!isGoogleApiLoaded}
+              title={!isGoogleApiLoaded ? "Loading Google Drive..." : "Pick from Google Drive"}
+              className={`flex-shrink-0 p-1.5 rounded-lg transition-all border ${
+                !isGoogleApiLoaded 
+                  ? "bg-white/5 border-white/10 cursor-not-allowed opacity-50" 
+                  : "bg-white/10 hover:bg-white/20 border-white/20"
+              }`}
             >
-              <svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
-                <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
-                <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
-                <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
-                <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
-                <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
-                <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
-              </svg>
+              {!isGoogleApiLoaded ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                  <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                  <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                  <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                  <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                  <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                  <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                </svg>
+              )}
             </button>
           </div>
         </label>
