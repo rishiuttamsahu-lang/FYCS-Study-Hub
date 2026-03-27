@@ -19,6 +19,8 @@ const Admin = lazy(() => import('./pages/Admin'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Subjects = lazy(() => import('./pages/Subjects'));
 const Upload = lazy(() => import('./pages/Upload'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Navbar = lazy(() => import('./components/Navbar'));
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
 
@@ -195,6 +197,8 @@ function App() {
             <Route path="/upload" element={<ProtectedRoute requiredRole="admin"><Upload /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
 
