@@ -89,6 +89,10 @@ function App() {
   const [isUserBanned, setIsUserBanned] = useState(false);
   const [userDataLoading, setUserDataLoading] = useState(true);
 
+  // Get current path to allow public pages to bypass the login wall
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const isPublicRoute = currentPath === '/privacy' || currentPath === '/terms';
+
   // No background prefetching needed - React.lazy handles code splitting automatically
 
   // Check if user is banned
@@ -155,8 +159,8 @@ function App() {
     );
   }
 
-  // Not logged in
-  if (!user) {
+  // Not logged in (and not trying to view a public policy page)
+  if (!user && !isPublicRoute) {
     return (
       <Suspense fallback={<LoadingSpinner />}
       >

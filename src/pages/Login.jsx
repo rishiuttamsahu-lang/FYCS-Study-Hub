@@ -86,6 +86,16 @@ export default function Login() {
                 </>
               )}
             </button>
+            
+            {/* Public Links for Google Verification */}
+            <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-2 text-xs text-zinc-500">
+              <p>By signing in, you agree to our policies.</p>
+              <div className="flex gap-4">
+                <a href="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</a>
+                <span className="text-zinc-700">•</span>
+                <a href="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
