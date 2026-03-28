@@ -86,12 +86,12 @@ function AppSkeleton() {
 
 function App() {
   const { user, loading } = useApp();
+  const location = useLocation(); // Use React Router's reactive location
   const [isUserBanned, setIsUserBanned] = useState(false);
   const [userDataLoading, setUserDataLoading] = useState(true);
 
-  // Get current path to allow public pages to bypass the login wall
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-  const isPublicRoute = currentPath === '/privacy' || currentPath === '/terms';
+  // Reactively check if the user is on a public page
+  const isPublicRoute = location.pathname === '/privacy' || location.pathname === '/terms';
 
   // No background prefetching needed - React.lazy handles code splitting automatically
 
