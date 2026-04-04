@@ -1,4 +1,4 @@
-import { User, LogOut, ExternalLink, Clock, Trash2, Settings, Download, X, Sparkles, Bell, Bookmark, FileText, Upload } from "lucide-react";
+import { User, LogOut, ExternalLink, Clock, Trash2, Settings, Download, X, Sparkles, Bell, Bookmark, FileText, Upload, Github, Star } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useState, useEffect, useRef } from "react";
 import { updateProfile } from "firebase/auth";
@@ -617,14 +617,61 @@ export default function Profile() {
                     </div>
                   </div>
                   )})
-                }
+                } : (
+                  <div className="p-6 text-center text-zinc-500">No notifications yet</div>
+                )}
               </div>
-            ) : (
-              <div className="p-6 text-center text-zinc-500">No notifications yet</div>
-            )}
+            </div>
+          </div>
+        )}
+      
+      {/* Developer Support Card */}
+      <div className="mt-12 max-w-md w-full mx-auto bg-gradient-to-b from-zinc-900/40 to-black border border-white/5 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+        
+        {/* Subtle Background Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-purple-500/50 blur-xl"></div>
+
+        <div className="flex items-center gap-4 mb-5">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-800/80 flex items-center justify-center border border-white/10 shadow-inner">
+            <Github className="text-white w-7 h-7" />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-lg tracking-wide">Developed by Rishikesh</h3>
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              Creator & Owner
+            </div>
           </div>
         </div>
-      )}
+        
+        <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+          If this platform helped you in your studies, please consider supporting the project! Your stars and follows keep the motivation high. 
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* GitHub Profile Button */}
+          <a 
+            href="https://github.com/rishiuttamsahu-lang" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex-1 bg-white text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-200 hover:scale-[1.02] transition-all active:scale-95"
+          >
+            <Github className="w-4 h-4" />
+            Follow Me
+          </a>
+          
+          {/* Star Repo Button */}
+          <a 
+            href="https://github.com/rishiuttamsahu-lang/FYCS-Study-Hub" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex-1 bg-zinc-800/80 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 border border-zinc-700 hover:bg-zinc-700 hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(234,179,8,0.1)] active:scale-95"
+          >
+            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500/20" />
+            Star Repo
+          </a>
+        </div>
+      </div>
     </main>
     </>
   );
