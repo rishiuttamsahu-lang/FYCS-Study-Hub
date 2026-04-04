@@ -1,4 +1,4 @@
-import { User, LogOut, ExternalLink, Clock, Trash2, Settings, Download, X, Sparkles, Bell, Bookmark, FileText, Upload, Github, Star } from "lucide-react";
+import { User, LogOut, ExternalLink, Clock, Trash2, Settings, X, Sparkles, Bell, Bookmark, FileText, Upload } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useState, useEffect, useRef } from "react";
 import { updateProfile } from "firebase/auth";
@@ -28,7 +28,6 @@ const SUBJECT_SHORT_NAMES = {
 export default function Profile() {
   const { user, login, logout, materials, toggleFavorite, getSubjectById } = useApp();
   const [recentHistory, setRecentHistory] = useState([]);
-  const [downloadHistory, setDownloadHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("recent");
   const [showClearModal, setShowClearModal] = useState(false);
   
@@ -88,9 +87,7 @@ export default function Profile() {
   
   useEffect(() => {
     const recent = JSON.parse(localStorage.getItem('recentHistory') || '[]');
-    const downloads = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
     setRecentHistory(recent);
-    setDownloadHistory(downloads);
   }, []);
   
   // Fetch notifications
@@ -175,7 +172,6 @@ export default function Profile() {
     localStorage.removeItem('recentHistory');
     localStorage.removeItem('downloadHistory');
     setRecentHistory([]);
-    setDownloadHistory([]);
   };
   
   const getInitials = (name) => name ? name.charAt(0).toUpperCase() : "U";
@@ -254,7 +250,7 @@ export default function Profile() {
   
   return (
     <>
-      <main className="bg-black pt-4">
+      <main className="bg-black pt-4 min-h-screen">
         <div className="h-25 bg-black"></div>
 
         <div className="px-5 pb-8 max-w-md mx-auto">
@@ -282,188 +278,189 @@ export default function Profile() {
             )}
           </div>
 
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-1">{user.displayName || "User"}</h1>
-          <p className="text-white/60 text-sm mb-4">{user.email}</p>
-          
-          <div className="flex gap-2">
-            <button
-              onClick={() => setIsFeedbackOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm font-medium"
-            >
-              <BiMessageDetail />
-              Help & Feedback
-            </button>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <LogOut size={16} />
-              Sign Out
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-4 mb-4 border-b border-zinc-800 overflow-x-auto whitespace-nowrap no-scrollbar pr-4">
-          <button
-            onClick={() => setActiveTab("recent")}
-            className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === "recent" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
-            }`}
-          >
-            <div className="flex items-center gap-2"><Clock size={14} />Recent</div>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab("favorites")}
-            className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === "favorites" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
-            }`}
-          >
-            <div className="flex items-center gap-2"><Bookmark size={14} />Favorites</div>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === "settings" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
-            }`}
-          >
-            <div className="flex items-center gap-2"><Settings size={14} />Settings</div>
-          </button>
-        </div>
-
-        {activeTab === "recent" && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-lg text-white">Recent</h2>
-              {recentHistory.length > 0 && (
-                <button
-                  onClick={() => setShowClearModal(true)}
-                  className="text-xs text-white/50 hover:text-red-400 transition-colors flex items-center gap-1"
-                >
-                  <Trash2 size={14} />Clear History
-                </button>
-              )}
-            </div>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-white mb-1">{user.displayName || "User"}</h1>
+            <p className="text-white/60 text-sm mb-4">{user.email}</p>
             
-            <div className="glass-card">
-              {recentHistory.length === 0 ? (
-                <div className="text-center py-8 text-zinc-400">No recent history.</div>
-              ) : (
-                <div className="divide-y divide-zinc-800 max-h-80 overflow-y-auto">
-                  {recentHistory.map((item, index) => (
-                    <div key={`${item.id}-${index}`} className="p-3 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="px-1.5 py-0.5 bg-zinc-800 text-gray-300 text-[10px] rounded whitespace-nowrap">
-                            {(item.subject && item.subject.length > 12) ? item.subject.substring(0, 9) + "..." : (item.subject || "N/A")}
-                          </span>
-                          <span className="text-[10px] text-white/50">{item.type}</span>
-                        </div>
-                        <h4 className="text-sm text-white/90 truncate">
-                          {(item.title && item.title.length > 40) ? item.title.substring(0, 37) + "..." : (item.title || "Untitled")}
-                        </h4>
-                        <div className="text-[10px] text-zinc-400 mt-1">
-                          Viewed: {new Date(item.viewedAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
-                        className="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
-                      >
-                        <ExternalLink size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsFeedbackOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                <BiMessageDetail />
+                Help & Feedback
+              </button>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <LogOut size={16} />
+                Sign Out
+              </button>
             </div>
           </div>
-        )}
 
-        {activeTab === "favorites" && (
-          <div className="space-y-3">
-            {favoriteMaterials.length > 0 ? (
-              favoriteMaterials.map((material) => {
-                const subject = getSubjectById ? getSubjectById(material.subjectId) : null;
-                const shortName = subject ? (SUBJECT_SHORT_NAMES[subject.name] || subject.name) : "Unknown";
-
-                return (
-                  <div key={material.id} className="glass-card p-3 sm:p-4 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="bg-white/5 p-2 rounded-lg shrink-0">
-                        <FileText className="text-blue-400" size={20} />
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-bold text-white/90 text-sm truncate">{material.title}</h4>
-                        <p className="text-xs text-white/50 mt-0.5 truncate">
-                          {material.type} • {shortName}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 shrink-0">
-                      <a 
-                        href={material.link} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="p-2 bg-blue-500/15 text-blue-300 rounded-xl hover:bg-blue-500/25 transition-colors"
-                      >
-                        <Upload size={16} />
-                      </a>
-                      <button 
-                        onClick={(e) => { e.preventDefault(); toggleFavorite(material.id); }}
-                        className="p-2 bg-yellow-500/20 text-yellow-400 rounded-xl hover:bg-yellow-500/30 transition-colors"
-                      >
-                        <Bookmark size={16} fill="currentColor" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-8 text-center border-dashed border-2 border-white/10 rounded-xl glass-card">
-                <Bookmark className="mx-auto text-white/20 mb-3" size={32} />
-                <p className="text-white/50 font-medium">No saved materials yet</p>
-                <p className="text-white/30 text-xs mt-1">Items you bookmark in the library will appear here.</p>
-              </div>
-            )}
+          <div className="flex gap-4 mb-4 border-b border-zinc-800 overflow-x-auto whitespace-nowrap no-scrollbar pr-4">
+            <button
+              onClick={() => setActiveTab("recent")}
+              className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === "recent" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-2"><Clock size={14} />Recent</div>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab("favorites")}
+              className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === "favorites" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-2"><Bookmark size={14} />Favorites</div>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`flex-shrink-0 py-2 px-4 text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === "settings" ? "text-white border-b-2 border-yellow-400" : "text-white/50 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-2"><Settings size={14} />Settings</div>
+            </button>
           </div>
-        )}
 
-        {activeTab === "settings" && (
-          <div className="glass-card p-6 max-w-full overflow-x-hidden">
-            <h3 className="font-bold text-lg mb-6 text-white">Settings</h3>
-            <div className="space-y-4">
-              <div 
-                className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg cursor-pointer hover:bg-zinc-800/50 transition-colors"
-                onClick={() => setIsEditingProfile(true)}
-              >
-                <div>
-                  <div className="font-medium text-white">Edit Profile</div>
-                  <div className="text-xs text-white/50">Update your profile information</div>
-                </div>
-                <Settings size={18} className="text-white/50" />
+          {activeTab === "recent" && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-lg text-white">Recent</h2>
+                {recentHistory.length > 0 && (
+                  <button
+                    onClick={() => setShowClearModal(true)}
+                    className="text-xs text-white/50 hover:text-red-400 transition-colors flex items-center gap-1"
+                  >
+                    <Trash2 size={14} />Clear History
+                  </button>
+                )}
               </div>
               
-              <div className="pt-4 border-t border-zinc-800">
-                <button
-                  onClick={clearAllData}
-                  className="w-full py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg font-medium hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 size={16} />Clear All Data
-                </button>
-                <p className="text-xs text-white/50 mt-2 text-center">
-                  This will remove all history and reset your profile
-                </p>
+              <div className="glass-card">
+                {recentHistory.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400">No recent history.</div>
+                ) : (
+                  <div className="divide-y divide-zinc-800 max-h-80 overflow-y-auto">
+                    {recentHistory.map((item, index) => (
+                      <div key={`${item.id}-${index}`} className="p-3 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="px-1.5 py-0.5 bg-zinc-800 text-gray-300 text-[10px] rounded whitespace-nowrap">
+                              {(item.subject && item.subject.length > 12) ? item.subject.substring(0, 9) + "..." : (item.subject || "N/A")}
+                            </span>
+                            <span className="text-[10px] text-white/50">{item.type}</span>
+                          </div>
+                          <h4 className="text-sm text-white/90 truncate">
+                            {(item.title && item.title.length > 40) ? item.title.substring(0, 37) + "..." : (item.title || "Untitled")}
+                          </h4>
+                          <div className="text-[10px] text-zinc-400 mt-1">
+                            Viewed: {new Date(item.viewedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
+                          className="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
+                        >
+                          <ExternalLink size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
-      </div>
-      
+          )}
+
+          {activeTab === "favorites" && (
+            <div className="space-y-3">
+              {favoriteMaterials.length > 0 ? (
+                favoriteMaterials.map((material) => {
+                  const subject = getSubjectById ? getSubjectById(material.subjectId) : null;
+                  const shortName = subject ? (SUBJECT_SHORT_NAMES[subject.name] || subject.name) : "Unknown";
+
+                  return (
+                    <div key={material.id} className="glass-card p-3 sm:p-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="bg-white/5 p-2 rounded-lg shrink-0">
+                          <FileText className="text-blue-400" size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-white/90 text-sm truncate">{material.title}</h4>
+                          <p className="text-xs text-white/50 mt-0.5 truncate">
+                            {material.type} • {shortName}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a 
+                          href={material.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="p-2 bg-blue-500/15 text-blue-300 rounded-xl hover:bg-blue-500/25 transition-colors"
+                        >
+                          <Upload size={16} />
+                        </a>
+                        <button 
+                          onClick={(e) => { e.preventDefault(); toggleFavorite(material.id); }}
+                          className="p-2 bg-yellow-500/20 text-yellow-400 rounded-xl hover:bg-yellow-500/30 transition-colors"
+                        >
+                          <Bookmark size={16} fill="currentColor" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-8 text-center border-dashed border-2 border-white/10 rounded-xl glass-card">
+                  <Bookmark className="mx-auto text-white/20 mb-3" size={32} />
+                  <p className="text-white/50 font-medium">No saved materials yet</p>
+                  <p className="text-white/30 text-xs mt-1">Items you bookmark in the library will appear here.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "settings" && (
+            <div className="glass-card p-6 max-w-full overflow-x-hidden">
+              <h3 className="font-bold text-lg mb-6 text-white">Settings</h3>
+              <div className="space-y-4">
+                <div 
+                  className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg cursor-pointer hover:bg-zinc-800/50 transition-colors"
+                  onClick={() => setIsEditingProfile(true)}
+                >
+                  <div>
+                    <div className="font-medium text-white">Edit Profile</div>
+                    <div className="text-xs text-white/50">Update your profile information</div>
+                  </div>
+                  <Settings size={18} className="text-white/50" />
+                </div>
+                
+                <div className="pt-4 border-t border-zinc-800">
+                  <button
+                    onClick={clearAllData}
+                    className="w-full py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg font-medium hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={16} />Clear All Data
+                  </button>
+                  <p className="text-xs text-white/50 mt-2 text-center">
+                    This will remove all history and reset your profile
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
       {/* Edit Profile Modal */}
       {isEditingProfile && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -566,7 +563,7 @@ export default function Profile() {
           </div>
         </div>
       )}
-      
+
       {/* Notification Dropdown */}
       {isBellOpen && (
         <div ref={dropdownRef} className="fixed top-20 right-5 z-50 w-80 max-h-96 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg overflow-hidden">
@@ -583,96 +580,47 @@ export default function Profile() {
                   
                   const isUnread = !notification.readBy || !notification.readBy.includes(user.uid);
                   return (
-                  <div 
-                    key={notification.id} 
-                    className={`p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer ${isUnread ? 'bg-zinc-800/30' : ''}`}
-                    onClick={() => markAsRead(notification.id)}
-                  >
-                    <div className="flex items-start gap-2">
-                      <h4 className="font-semibold text-white text-sm flex-1">{notification.title}</h4>
-                      {isUnread && <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>}
-                      <button 
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDismissNotification(notification.id, notification.targetEmail); }}
-                        className="text-zinc-400 hover:text-white transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                    {/* The Crucial Animation Fix is Right Here! */}
-                    <div className="relative overflow-hidden flex whitespace-nowrap pt-1 w-full">
-                      <div 
-                        key={`marquee-${notification.id}-${isBellOpen ? 'open' : 'closed'}`} 
-                        className="flex animate-marquee w-max"
-                        style={{ 
-                          animationDelay: '0.7s', 
-                          animationFillMode: 'backwards' 
-                        }}
-                      >
-                        <span className="text-sm text-zinc-400 pr-10">{notification.message}</span>
-                        <span className="text-sm text-zinc-400 pr-10" aria-hidden="true">{notification.message}</span>
+                    <div 
+                      key={notification.id} 
+                      className={`p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer ${isUnread ? 'bg-zinc-800/30' : ''}`}
+                      onClick={() => markAsRead(notification.id)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <h4 className="font-semibold text-white text-sm flex-1">{notification.title}</h4>
+                        {isUnread && <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>}
+                        <button 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDismissNotification(notification.id, notification.targetEmail); }}
+                          className="text-zinc-400 hover:text-white transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <div className="relative overflow-hidden flex whitespace-nowrap pt-1 w-full">
+                        <div 
+                          key={`marquee-${notification.id}-${isBellOpen ? 'open' : 'closed'}`} 
+                          className="flex animate-marquee w-max"
+                          style={{ 
+                            animationDelay: '0.7s', 
+                            animationFillMode: 'backwards' 
+                          }}
+                        >
+                          <span className="text-sm text-zinc-400 pr-10">{notification.message}</span>
+                          <span className="text-sm text-zinc-400 pr-10" aria-hidden="true">{notification.message}</span>
+                        </div>
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-2">
+                        {notification.createdAt?.toDate().toLocaleString()}
                       </div>
                     </div>
-                    <div className="text-xs text-zinc-500 mt-2">
-                      {notification.createdAt?.toDate().toLocaleString()}
-                    </div>
-                  </div>
-                  )})} // Added closing parenthesis here
-                } : (
-                  <div className="p-6 text-center text-zinc-500">No notifications yet</div>
-                )}
+                  );
+                })}
               </div>
-            </div>
-          </div>
-        )}
-      
-      {/* Developer Support Card */}
-      <div className="mt-12 max-w-md w-full mx-auto bg-gradient-to-b from-zinc-900/40 to-black border border-white/5 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-        
-        {/* Subtle Background Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-purple-500/50 blur-xl"></div>
-
-        <div className="flex items-center gap-4 mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-zinc-800/80 flex items-center justify-center border border-white/10 shadow-inner">
-            <Github className="text-white w-7 h-7" />
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-lg tracking-wide">Developed by Rishikesh</h3>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              Creator & Owner
-            </div>
+            ) : (
+              <div className="p-6 text-center text-zinc-500">No notifications yet</div>
+            )}
           </div>
         </div>
-        
-        <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-          If this platform helped you in your studies, please consider supporting the project! Your stars and follows keep the motivation high. ✨
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* GitHub Profile Button */}
-          <a 
-            href="https://github.com/rishiuttamsahu-lang" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex-1 bg-white text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-200 hover:scale-[1.02] transition-all active:scale-95"
-          >
-            <Github className="w-4 h-4" />
-            Follow Me
-          </a>
-          
-          {/* Star Repo Button */}
-          <a 
-            href="https://github.com/rishiuttamsahu-lang/FYCS-Study-Hub" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex-1 bg-zinc-800/80 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 border border-zinc-700 hover:bg-zinc-700 hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(234,179,8,0.1)] active:scale-95"
-          >
-            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500/20" />
-            Star Repo
-          </a>
-        </div>
-      </div>
-    </main>
+      )}
     </>
   );
 }
