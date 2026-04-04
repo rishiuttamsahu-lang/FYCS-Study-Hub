@@ -645,7 +645,7 @@ export default function Profile() {
         </div>
         
         <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-          If this platform helped you in your studies, please consider supporting the project! Your stars and follows keep the motivation high. 
+          If this platform helped you in your studies, please consider supporting the project! Your stars and follows keep the motivation high. ✨
         </p>
         
         <div className="flex flex-col sm:flex-row gap-3">
