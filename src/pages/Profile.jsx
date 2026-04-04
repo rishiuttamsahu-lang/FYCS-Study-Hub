@@ -611,20 +611,19 @@ export default function Profile() {
                         <span className="text-sm text-zinc-400 pr-10">{notification.message}</span>
                         <span className="text-sm text-zinc-400 pr-10" aria-hidden="true">{notification.message}</span>
                       </div>
-                      <div className="text-xs text-zinc-500 mt-2">
-                        {notification.createdAt?.toDate().toLocaleString()}
-                      </div>
+                    </div>
+                    <div className="text-xs text-zinc-500 mt-2">
+                      {notification.createdAt?.toDate().toLocaleString()}
                     </div>
                   </div>
-                  );
-                })}
+                  )})} // Added closing parenthesis here
+                } : (
+                  <div className="p-6 text-center text-zinc-500">No notifications yet</div>
+                )}
               </div>
-            ) : (
-              <div className="p-6 text-center text-zinc-500">No notifications yet</div>
-            )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
       
       {/* Developer Support Card */}
       <div className="mt-12 max-w-md w-full mx-auto bg-gradient-to-b from-zinc-900/40 to-black border border-white/5 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
