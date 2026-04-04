@@ -616,7 +616,7 @@ export default function Profile() {
                       {notification.createdAt?.toDate().toLocaleString()}
                     </div>
                   </div>
-                  )})
+                  )})} // Added closing parenthesis here
                 } : (
                   <div className="p-6 text-center text-zinc-500">No notifications yet</div>
                 )}
