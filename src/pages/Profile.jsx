@@ -298,6 +298,22 @@ export default function Profile() {
                 <LogOut size={16} />
                 Sign Out
               </button>
+              
+              {/* 🔥 Naya Updated GitHub Animated Lordicon Button */}
+              <a
+                href="https://github.com/rishiuttamsahu-lang"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center justify-center shrink-0"
+                title="Follow me on GitHub"
+              >
+                <lord-icon
+                  src="https://cdn.lordicon.com/ioihllwu.json"
+                  trigger="loop"
+                  delay="1500"
+                  style={{ width: "36px", height: "36px" }}
+                ></lord-icon>
+              </a>
             </div>
           </div>
 
