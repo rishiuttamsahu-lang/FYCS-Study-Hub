@@ -824,14 +824,16 @@ export default function Admin() {
                                 <Pencil size={16} />
                                 <span className="hidden sm:inline">Edit</span>
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => setItemToDelete(material.id)}
-                                className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 font-bold hover:bg-rose-500/15 transition-colors min-w-[36px] sm:min-w-[auto]"
-                              >
-                                <Trash2 size={16} />
-                                <span className="hidden sm:inline">Delete</span>
-                              </button>
+                              {CREATOR_EMAILS.includes(user.email) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setItemToDelete(material.id)}
+                                  className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 font-bold hover:bg-rose-500/15 transition-colors min-w-[36px] sm:min-w-[auto]"
+                                >
+                                  <Trash2 size={16} />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -953,14 +955,16 @@ export default function Admin() {
                               >
                                 <Pencil size={16} />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => deleteSubject(subject.id)}
-                                className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
-                                title="Delete subject"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {CREATOR_EMAILS.includes(user.email) && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteSubject(subject.id)}
+                                  className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
+                                  title="Delete subject"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -1309,14 +1313,16 @@ export default function Admin() {
                             <span>{notif.readBy?.length || 0}</span>
                           </div>
                           
-                          {/* Existing Delete Button */}
-                          <button
-                            onClick={() => handleDeleteGlobal(notif.id)}
-                            className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                            title="Delete Notification"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          {/* Existing Delete Button - Super Admin Only */}
+                          {CREATOR_EMAILS.includes(user.email) && (
+                            <button
+                              onClick={() => handleDeleteGlobal(notif.id)}
+                              className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                              title="Delete Notification"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))
@@ -1331,14 +1337,16 @@ export default function Admin() {
                 <p className="text-white/50 text-xs md:text-sm mb-3 md:mb-4">
                   These actions cannot be undone. Proceed with caution.
                 </p>
-                <button
-                  type="button"
-                  onClick={handleResetAnalytics}
-                  className="btn-danger px-4 py-2 md:px-6 md:py-3 font-bold flex items-center gap-2 mb-3 md:mb-4"
-                >
-                  <Trash2 size={18} />
-                  Reset All Analytics
-                </button>
+                {CREATOR_EMAILS.includes(user.email) && (
+                  <button
+                    type="button"
+                    onClick={handleResetAnalytics}
+                    className="btn-danger px-4 py-2 md:px-6 md:py-3 font-bold flex items-center gap-2 mb-3 md:mb-4"
+                  >
+                    <Trash2 size={18} />
+                    Reset All Analytics
+                  </button>
+                )}
                 <p className="text-xs text-white/40 mt-2 mb-4">
                   This will reset all views and downloads to zero
                 </p>
