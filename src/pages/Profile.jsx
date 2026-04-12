@@ -282,36 +282,37 @@ export default function Profile() {
             <h1 className="text-2xl font-bold text-white mb-1">{user.displayName || "User"}</h1>
             <p className="text-white/60 text-sm mb-4">{user.email}</p>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full">
               <button
                 onClick={() => setIsFeedbackOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm font-medium"
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-[13px] font-medium min-w-[140px]"
               >
-                <BiMessageDetail />
-                Help & Feedback
+                <BiMessageDetail size={16} />
+                <span>Help & Feedback</span>
               </button>
+
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                className="flex-none sm:flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors text-[13px]"
+                title="Sign Out"
               >
-                <LogOut size={16} />
-                Sign Out
+                <LogOut size={18} />
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
               
-              {/* 🔥 Naya Updated GitHub Animated Lordicon Button */}
               <a
                 href="https://github.com/rishiuttamsahu-lang"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center justify-center shrink-0"
+                className="w-11 h-11 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center justify-center shrink-0 border border-zinc-700/50"
                 title="Follow me on GitHub"
               >
                 <lord-icon
                   src="https://cdn.lordicon.com/ioihllwu.json"
                   trigger="loop"
                   delay="1500"
-                  style={{ width: "36px", height: "36px" }}
+                  style={{ width: "32px", height: "32px" }}
                 ></lord-icon>
               </a>
             </div>
@@ -637,64 +638,6 @@ export default function Profile() {
           </div>
         </div>
       )}
-
-      {/* 🚀 Developer & Owner Section (Mobile Optimized) */}
-      <div className="mt-8 mb-6 mx-4 sm:mx-auto max-w-md bg-[#0d1117] border border-[#30363d] rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
-        
-        {/* Subtle Top Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
-
-        <div className="flex items-start gap-4 mb-4 relative z-10">
-          {/* Real GitHub Logo (SVG) */}
-          <div className="shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center p-1 shadow-md">
-            <svg viewBox="0 0 16 16" className="w-10 h-10 text-black" fill="currentColor">
-              <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" />
-            </svg>
-          </div>
-          
-          <div className="flex-1 pt-1">
-            <h3 className="text-white font-bold text-lg leading-tight">Developed by Rishikesh</h3>
-            <p className="text-zinc-400 text-xs mt-1 font-medium">@rishiuttamsahu-lang</p>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] sm:text-xs font-semibold mt-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-              Creator & Maintainer
-            </div>
-          </div>
-        </div>
-        
-        <p className="text-zinc-300 text-sm mb-6 leading-relaxed relative z-10">
-          If this hub is helping you score better, please drop a star on the repository! It keeps the project alive and ad-free. ⭐
-        </p>
-        
-        {/* Buttons - Stack vertically on mobile, side-by-side on desktop */}
-        <div className="flex flex-col sm:flex-row gap-3 relative z-10">
-          {/* Primary Action: Star Repo (GitHub Green) */}
-          <a 
-            href="https://github.com/rishiuttamsahu-lang/FYCS-Study-Hub" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex-1 bg-[#238636] hover:bg-[#2ea043] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98]"
-          >
-            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="currentColor">
-              <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Zm0 2.445L6.615 5.5a.75.75 0 0 1-.564.41l-3.097.45 2.24 2.184a.75.75 0 0 1 .216.664l-.528 3.084 2.769-1.456a.75.75 0 0 1 .698 0l2.77 1.456-.53-3.084a.75.75 0 0 1 .216-.664l2.24-2.183-3.096-.45a.75.75 0 0 1-.564-.41L8 2.694Z" />
-            </svg>
-            Star Repository
-          </a>
-          
-          {/* Secondary Action: Follow Me (GitHub Dark Grey) */}
-          <a 
-            href="https://github.com/rishiuttamsahu-lang" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex-1 bg-[#21262d] hover:bg-[#30363d] text-white border border-[#363b42] py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98]"
-          >
-            <svg viewBox="0 0 16 16" className="w-4 h-4 text-zinc-400" fill="currentColor">
-              <path d="M10.561 8.073a6.005 6.005 0 0 1 3.432 5.142.75.75 0 1 1-1.498.07 4.5 4.5 0 0 0-8.99 0 .75.75 0 0 1-1.498-.07 6.004 6.004 0 0 1 3.431-5.142 3.999 3.999 0 1 1 5.123 0ZM10.5 5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z" />
-            </svg>
-            Follow Me
-          </a>
-        </div>
-      </div>
     </>
   );
 }
