@@ -121,3 +121,25 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #52525b; /* Zinc-600 color on hover */
 }
+
+/* Custom Windows 11 Light Cursor */
+* {
+  /* Default cursor for everything */
+  cursor: url('/cursors/arrow.cur'), auto !important;
+}
+
+/* Custom 'Hand' cursor for clickable items */
+a, 
+button, 
+[role="button"], 
+input[type="submit"], 
+input[type="button"],
+.cursor-pointer {
+  cursor: url('/cursors/hand.cur'), pointer !important;
+}
+
+/* Fix for disabled buttons */
+button:disabled,
+button[disabled] {
+  cursor: not-allowed !important;
+}
