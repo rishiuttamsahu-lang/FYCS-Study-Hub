@@ -194,7 +194,19 @@ export default function Profile() {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      await updateProfile(auth.currentUser, { displayName: editName, photoURL: editPhoto || null });
+      // 1. Update Firebase Auth Profile
+      await updateProfile(auth.currentUser, { 
+        displayName: editName, 
+        photoURL: editPhoto || null 
+      });
+
+      // 2. Update Firestore User Document (Yeh step missing tha)
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userRef, {
+        displayName: editName,
+        photoURL: editPhoto || null
+      });
+
       setIsEditingProfile(false);
       toast.success("Profile Updated Successfully!");
       window.location.reload();
