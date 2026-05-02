@@ -1013,7 +1013,6 @@ export default function Admin() {
                       <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Name</th>
                       <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Email</th>
                       <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Role</th>
-                      <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Status</th>
                       <th className="text-left p-4 text-white/50 text-sm font-bold uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -1048,18 +1047,7 @@ export default function Admin() {
                                   )}
                                 </span>
                               </td>
-                              <td className="p-4">
-                                {user.isBanned ? (
-                                  <span className="inline-flex items-center px-2 py-1 bg-rose-500/20 text-rose-300 text-xs font-bold rounded-full">
-                                    <XCircle size={12} className="mr-1" /> Banned
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded-full">
-                                    <CheckCircle size={12} className="mr-1" /> Active
-                                  </span>
-                                )}
-                              </td>
-                              <td className="p-4">
+                                                            <td className="p-4">
                                 <div className="flex gap-2">
                                   {!CREATOR_EMAILS.includes(user.email) ? (
                                     <div className="flex items-center gap-2">
@@ -1109,7 +1097,7 @@ export default function Admin() {
                         {/* THE DESKTOP OBSERVER IS PLACED HERE */}
                         {visibleUsersCount < filteredUsers.length && (
                           <tr ref={desktopUserRef} key="loading-indicator">
-                            <td colSpan="5" className="p-6">
+                            <td colSpan="4" className="p-6">
                               <div className="w-full py-6 flex justify-center items-center">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-500"></div>
                                 <span className="ml-3 text-zinc-400 text-sm">Loading more...</span>
@@ -1120,7 +1108,7 @@ export default function Admin() {
                       </>
                     ) : (
                       <tr>
-                        <td colSpan="5" className="p-8 text-center">
+                        <td colSpan="4" className="p-8 text-center">
                           <User size={32} className="mx-auto mb-3 text-white/30" />
                           <p className="text-white/50 text-sm">No users found</p>
                           {userSearchTerm && <p className="text-white/40 text-xs mt-1">Try a different search term</p>}
@@ -1162,12 +1150,7 @@ export default function Admin() {
                                     <><User size={10} className="inline mr-1" /> Student</>
                                   )}
                                 </span>
-                                {user.isBanned && (
-                                  <span className="px-2 py-1 bg-rose-500/20 text-rose-300 text-[10px] font-bold rounded-full flex items-center">
-                                    <XCircle size={10} className="inline mr-1" /> Banned
-                                  </span>
-                                )}
-                              </div>
+                                                              </div>
                             </div>
                           </div>
                           

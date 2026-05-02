@@ -35,6 +35,7 @@ export default function Profile() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState(user?.displayName || "");
   const [editPhoto, setEditPhoto] = useState(user?.photoURL || "");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   
   // Feedback states
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -45,6 +46,9 @@ export default function Profile() {
   const [isBellOpen, setIsBellOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Profile DP Loading State
+  const [isDpLoading, setIsDpLoading] = useState(false); // Default false rahega
   
   // Sign out handler with confirmation
   const handleSignOut = async () => {
@@ -82,6 +86,7 @@ export default function Profile() {
   // Refs for click outside
   const dropdownRef = useRef(null);
   const bellRef = useRef(null);
+  const fileInputRef = useRef(null);
   
   const favoriteMaterials = materials.filter(m => user?.favorites?.includes(m.id));
   
@@ -190,28 +195,78 @@ export default function Profile() {
       console.error("Error dismissing notification:", error);
     }
   };
-  
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
+
+  // Yeh function manual save aur auto-save dono ke liye hai
+  const executeSave = async (name, photoUrl, showToast = true) => { // showToast default true hai
     try {
       // 1. Update Firebase Auth Profile
       await updateProfile(auth.currentUser, { 
-        displayName: editName, 
-        photoURL: editPhoto || null 
+        displayName: name, 
+        photoURL: photoUrl || null 
       });
 
-      // 2. Update Firestore User Document (Yeh step missing tha)
+      // 2. Update Firestore User Document
       const userRef = doc(db, "users", auth.currentUser.uid);
       await updateDoc(userRef, {
-        displayName: editName,
-        photoURL: editPhoto || null
+        displayName: name,
+        photoURL: photoUrl || null
       });
 
-      setIsEditingProfile(false);
-      toast.success("Profile Updated Successfully!");
-      window.location.reload();
+      // Sirf tabhi toast dikhega agar showToast true hoga
+      if (showToast) {
+        toast.success("Profile Updated Successfully!");
+      }
+      
+      // 🚨 YAHAN SE window.location.reload(); HATA DIYA GAYA HAI 🚨
+      // Firebase real-time listeners will handle UI updates automatically
     } catch (error) {
-      toast.error("Error updating profile: " + error.message);
+      toast.error("Error: " + error.message);
+    }
+  };
+  
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setIsEditingProfile(false);
+    await executeSave(editName, editPhoto);
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    setIsUploadingPhoto(true);
+    setIsDpLoading(true); // 🚨 Sirf yahan spinner chalu hoga
+
+    try {
+      // API call (apni API key yahan zaroor check kar lena)
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=18689c27743c695f94310e3bd0a52c99`, {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setEditPhoto(result.data.url);
+        
+        // Yahan maine sirf ek hi final success alert rakha hai
+        toast.success("Profile photo updated successfully!");
+        
+        // Yahan 'false' pass kar rahe hain taaki "Profile Updated..." wala toast na aaye
+        await executeSave(editName, result.data.url, false); 
+        
+        // 🚨 YAHAN PAR YEH NAYI LINE ADD KARNI HAI 🚨
+        setIsEditingProfile(false); 
+      } else {
+        toast.error("Upload failed: " + result.error.message);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Error uploading image");
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
   
@@ -281,13 +336,28 @@ export default function Profile() {
               </button>
             </div>
             
-            {user.photoURL ? (
-              <img src={user.photoURL} alt={user.displayName} className="w-24 h-24 rounded-full border-[6px] border-zinc-900 object-cover" />
-            ) : (
-              <div className="w-24 h-24 rounded-full border-[6px] border-zinc-900 bg-zinc-800 flex items-center justify-center">
-                <span className="text-3xl font-bold text-white">{getInitials(user.displayName)}</span>
-              </div>
-            )}
+            <div className="relative w-24 h-24 inline-block">
+              {/* ⏳ Spinner Overlay - Yeh tab dikhega jab upload ho raha ho YA nayi photo load ho rahi ho */}
+              {(isUploadingPhoto || isDpLoading) && (
+                <div className="absolute inset-0 rounded-full border-[6px] border-zinc-900 bg-zinc-900/80 backdrop-blur-sm flex items-center justify-center z-10">
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-[#FFD700] rounded-full animate-spin"></div>
+                </div>
+              )}
+
+              {user.photoURL ? (
+                <img 
+                  src={user.photoURL} 
+                  alt={user.displayName} 
+                  onLoad={() => setIsDpLoading(false)} // Photo load hote hi spinner band
+                  onError={() => setIsDpLoading(false)} 
+                  className="w-full h-full rounded-full border-[6px] border-zinc-900 object-cover" 
+                />
+              ) : (
+                <div className="w-full h-full rounded-full border-[6px] border-zinc-900 bg-zinc-800 flex items-center justify-center">
+                  <span className="text-3xl font-bold text-white">{getInitials(user.displayName)}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mb-6">
@@ -514,12 +584,39 @@ export default function Profile() {
               </div>
               <div>
                 <label className="block text-white/70 text-sm mb-2">Profile Picture URL</label>
-                <input
-                  type="url"
-                  value={editPhoto}
-                  onChange={(e) => setEditPhoto(e.target.value)}
-                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none"
-                />
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="url"
+                    value={editPhoto}
+                    onChange={(e) => setEditPhoto(e.target.value)}
+                    placeholder="Paste URL or click upload"
+                    className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white focus:border-blue-500 focus:outline-none"
+                  />
+                  
+                  {/* Hidden File Input */}
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    ref={fileInputRef} 
+                    onChange={handlePhotoUpload}
+                    accept="image/*" 
+                  />
+                  
+                  {/* Upload Button */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current.click()}
+                    disabled={isUploadingPhoto}
+                    className="p-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl border border-zinc-700 transition-colors flex items-center justify-center shrink-0 min-w-[50px] disabled:opacity-50"
+                    title="Upload from Gallery"
+                  >
+                    {isUploadingPhoto ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      <Upload size={20} />
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors">
