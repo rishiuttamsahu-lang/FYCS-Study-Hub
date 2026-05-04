@@ -245,10 +245,18 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <div className="text-xs text-zinc-400">
               {material.type}
             </div>
+            
+            {/* 🚨 Yeh nayi line add hui hai Semester dikhane ke liye 🚨 */}
+            {material.semId && (
+              <span className="text-xs text-zinc-400 whitespace-nowrap">
+                • Sem {material.semId}
+              </span>
+            )}
+            
             {getSubjectById && material.subjectId && (
               <span className="px-2 py-0.5 bg-zinc-800 text-gray-300 text-xs rounded-md whitespace-nowrap">
                 {getSubjectAbbreviation(getSubjectById(material.subjectId)?.name || "Unknown")}
