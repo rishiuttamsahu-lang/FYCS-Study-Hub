@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 import { useApp } from "../context/AppContext";
 import AdminReports from "../components/admin/AdminReports";
 import { doc, updateDoc, deleteDoc, writeBatch, collection, getDocs, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 
 const tabs = [
   { id: "analytics", label: "Analytics", icon: <BarChart2 size={16} /> },
@@ -50,6 +50,9 @@ export default function Admin() {
   const [filterType, setFilterType] = useState("All");
   const [filterSem, setFilterSem] = useState("All");
   const [sortOrder, setSortOrder] = useState("newest");
+  
+  // Google Drive API State for Edit Modal
+  const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
   
   // Form States
   const [newSubject, setNewSubject] = useState({ name: "", semesterId: "1", icon: "Book" });
@@ -149,6 +152,42 @@ export default function Admin() {
       }
     });
     return () => unsubscribe();
+  }, []);
+
+  // Dynamically load Google scripts on mount
+  useEffect(() => {
+    const loadGapi = () => new Promise(res => {
+      if (window.gapi) { 
+        window.gapi.load('picker');
+        res(); 
+        return; 
+      }
+      const s = document.createElement("script");
+      s.src = "https://apis.google.com/js/api.js";
+      s.async = true;
+      s.defer = true;
+      s.onload = () => {
+        window.gapi.load('picker');
+        res();
+      };
+      document.head.appendChild(s);
+    });
+    
+    const loadGis = () => new Promise(res => {
+      if (window.google?.accounts?.oauth2) { res(); return; }
+      const s = document.createElement("script");
+      s.src = "https://accounts.google.com/gsi/client";
+      s.async = true;
+      s.defer = true;
+      s.onload = res;
+      document.head.appendChild(s);
+    });
+    
+    Promise.all([loadGapi(), loadGis()]).then(() => {
+      setTimeout(() => {
+        setIsGoogleApiLoaded(true);
+      }, 100);
+    });
   }, []);
 
   // 5. Loading State Check
@@ -516,6 +555,53 @@ export default function Admin() {
     } finally {
       setIsSending(false);
     }
+  };
+
+  // Google Drive Picker Logic for Edit Modal
+  const openDrivePicker = () => {
+    const userEmail = auth.currentUser?.email;
+    if (!userEmail) {
+      toast.error("Please sign in first.");
+      return;
+    }
+
+    if (!window.google || !window.google.picker) {
+      toast.error("Google Drive interface is still loading. Please try again in a few seconds.");
+      return;
+    }
+
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      scope: "https://www.googleapis.com/auth/drive.readonly",
+      login_hint: userEmail,
+      callback: (tokenResponse) => {
+        if (tokenResponse && tokenResponse.access_token) {
+          showPicker(tokenResponse.access_token);
+        } else {
+          toast.error("Failed to get access token. Please try again.");
+        }
+      },
+    });
+    client.requestAccessToken({ prompt: "" });
+  };
+
+  const showPicker = (accessToken) => {
+    const picker = new window.google.picker.PickerBuilder()
+      .addView(window.google.picker.ViewId.DOCS)
+      .setOAuthToken(accessToken)
+      .setDeveloperKey(import.meta.env.VITE_GOOGLE_API_KEY)
+      .setOrigin(window.location.protocol + '//' + window.location.host)
+      .setCallback((data) => {
+        if (data.action === window.google.picker.Action.PICKED) {
+          const file = data.docs[0];
+          const driveLink = `https://drive.google.com/file/d/${file.id}/view?usp=sharing`;
+          // Edit form mein automatically naya link set kar dega
+          setEditForm((prev) => ({ ...prev, link: driveLink }));
+          toast.success(`✅ File selected: ${file.name}`);
+        }
+      })
+      .build();
+    picker.setVisible(true);
   };
 
   return (
@@ -1395,13 +1481,39 @@ export default function Admin() {
               </div>
               <div>
                 <label className="block text-white/70 text-sm mb-2">Google Drive Link</label>
-                <input
-                  type="url"
-                  value={editForm.link}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, link: e.target.value }))}
-                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none"
-                  required
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={editForm.link}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, link: e.target.value }))}
+                    className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={openDrivePicker}
+                    disabled={!isGoogleApiLoaded}
+                    title={!isGoogleApiLoaded ? "Loading Google Drive..." : "Pick from Google Drive"}
+                    className={`flex-shrink-0 px-4 rounded-xl transition-all border ${
+                      !isGoogleApiLoaded 
+                        ? "bg-white/5 border-white/10 cursor-not-allowed opacity-50" 
+                        : "bg-white/10 hover:bg-white/20 border-white/20"
+                    }`}
+                  >
+                    {!isGoogleApiLoaded ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                        <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                        <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                        <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                        <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                        <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors">
