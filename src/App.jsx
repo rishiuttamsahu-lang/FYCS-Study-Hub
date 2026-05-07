@@ -326,7 +326,7 @@ function FloatingAIButton() {
                           {`
                             .spin-gemini {
                               transform-origin: 12px 12px;
-                              animation: rotate-gemini 4s linear infinite;
+                              animation: rotate-gemini 8s linear infinite;
                             }
                             @keyframes rotate-gemini {
                               100% {
