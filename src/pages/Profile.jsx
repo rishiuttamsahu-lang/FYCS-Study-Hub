@@ -726,7 +726,7 @@ export default function Profile() {
                           key={`marquee-${notification.id}-${isBellOpen ? 'open' : 'closed'}`} 
                           className="flex animate-marquee w-max"
                           style={{ 
-                            animationDelay: '0.7s', 
+                            animationDelay: '1.5s', 
                             animationFillMode: 'backwards' 
                           }}
                         >
