@@ -323,3 +323,47 @@ button[disabled] {
     }
   }
 }
+
+/* 🤖 Continuous AI Breathing & Glowing Animation */
+@keyframes ai-breathe {
+  0%, 100% { 
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.4)); /* Halka blue glow */
+  }
+  50% { 
+    transform: translateY(-4px) scale(1.05);
+    filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.9)); /* Tez blue glow */
+  }
+}
+
+.animate-ai-breathe {
+  animation: ai-breathe 3s ease-in-out infinite;
+}
+
+/* Agar aap chahte hain ki icon halka sa ghoome (spin) bhi, toh ise use kar sakte hain */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* 🤖 Floating AI Button (Strictly for Mobile) */
+@keyframes button-float {
+  0%, 100% { 
+    transform: translateY(0px); 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 0 10px rgba(59, 130, 246, 0.4);
+  }
+  50% { 
+    transform: translateY(-8px); /* Upar jayega */
+    box-shadow: 0 15px 20px -3px rgba(0, 0, 0, 0.3), 0 0 20px rgba(168, 85, 247, 0.7); /* Glow change hoga */
+  }
+}
+
+/* Ye sirf 768px (Mobile) ya usse choti screens par kaam karega */
+@media (max-width: 768px) {
+  .mobile-float-btn {
+    animation: button-float 3s ease-in-out infinite;
+  }
+}

@@ -252,10 +252,10 @@ function FloatingAIButton() {
     <>
       {showAiButton && (
         <>
-          {/* Floating Button */}
+          {/* Floating Button (Now with mobile-only float animation) */}
           <button
             onClick={toggleModal}
-            className="fixed bottom-24 right-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-200 flex items-center gap-2"
+            className="fixed bottom-24 right-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-200 flex items-center gap-2 mobile-float-btn"
             aria-label="Open Assignment AI assistant"
           >
             <Sparkles size={20} />
