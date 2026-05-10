@@ -41,26 +41,50 @@ const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "N
       </div>
 
       {isOpen && (
-        /* 🚨 FIX: 'right-0' aur 'min-w-full' hata kar sirf 'left-0 w-full' kiya taaki parent box ke bahar na bage */
-        <div className="absolute left-0 z-[100] w-full mt-2 py-2 bg-[#0c0c0e] border border-white/10 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        /* 🚨 Update dropdown div width property */
+        <div className="absolute left-0 z-[100] min-w-full w-max max-w-[90vw] mt-2 py-2 bg-[#0c0c0e] border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           <div className="max-h-60 overflow-y-auto custom-scrollbar">
             {options && options.length > 0 ? (
               options.map((opt) => (
                 <div
                   key={opt.value}
-                  title={opt.label} /* 🌟 Naya: Lambe text pe hold/hover karne par poora naam dikhega */
-                  /* 🚨 FIX: 'whitespace-nowrap' ki jagah 'truncate' lagaya, lambe text pe smoothly '...' aa jayega */
-                  className={`px-4 py-2.5 cursor-pointer transition-all text-sm truncate ${String(value) === String(opt.value) ? 'bg-[#FFD700]/15 text-[#FFD700] font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                  title={opt.label}
                   onClick={() => {
                     onChange(opt.value);
                     setIsOpen(false);
                   }}
+                  // 🚨 Added 'w-full' and 'relative'
+                  className={`px-4 py-2.5 cursor-pointer transition-all text-sm relative flex items-center ${
+                    String(value) === String(opt.value) 
+                      ? 'bg-[#FFD700]/15 text-[#FFD700] font-bold' 
+                      : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
                 >
-                  {opt.label}
+                  {/* 🚨 Added 'whitespace-nowrap' and 'block' to force single line */}
+                  <span className="block whitespace-nowrap pr-6">
+                    {opt.label}
+                  </span>
+                  
+                  {/* 🚨 Checkmark Icon - Positioned absolute so it doesn't push text */}
+                  {String(value) === String(opt.value) && (
+                    <svg 
+                      width="14" 
+                      height="14" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="3" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 flex-shrink-0"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )}
                 </div>
               ))
             ) : (
-              <div className="px-4 py-3 text-sm text-zinc-500 italic text-center truncate cursor-not-allowed">
+              <div className="px-4 py-3 text-sm text-zinc-500 italic text-center cursor-not-allowed">
                 {emptyMessage}
               </div>
             )}
