@@ -1,10 +1,75 @@
 import { CloudUpload, Link2, Tag, FileText, Code, Star, Edit3, CheckCircle, XCircle, RefreshCw } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useApp } from "../context/AppContext";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../firebase";
+
+// 🚨 UPDATE THIS IN ADMIN.JSX, LIBRARY.JSX, AND UPLOAD.JSX
+// Yahan humne 'emptyMessage' prop add kiya hai
+const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "No options available" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => String(opt.value) === String(value));
+
+  return (
+    <div className={`relative w-full ${isOpen ? 'z-[9999]' : 'z-10'}`} ref={dropdownRef}>
+      <div
+        className="w-full glass-card px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 text-white hover:border-[#FFD700]/50 cursor-pointer flex justify-between items-center transition-all duration-300"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {/* 🚨 Added 'truncate' and 'mr-2' so text never pushes the icon out */}
+        <span className={`truncate mr-2 ${!selectedOption ? "text-white/40 text-sm" : "text-sm font-medium"}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        {/* 🚨 Added 'flex-shrink-0' so icon stays perfect */}
+        <svg className={`flex-shrink-0 transition-transform duration-300 text-white/40 ${isOpen ? 'rotate-180 text-[#FFD700]' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+
+      {isOpen && (
+        /* 🚨 FIX: 'right-0' aur 'min-w-full' hata kar sirf 'left-0 w-full' kiya taaki parent box ke bahar na bage */
+        <div className="absolute left-0 z-[100] w-full mt-2 py-2 bg-[#0c0c0e] border border-white/10 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {options && options.length > 0 ? (
+              options.map((opt) => (
+                <div
+                  key={opt.value}
+                  title={opt.label} /* 🌟 Naya: Lambe text pe hold/hover karne par poora naam dikhega */
+                  /* 🚨 FIX: 'whitespace-nowrap' ki jagah 'truncate' lagaya, lambe text pe smoothly '...' aa jayega */
+                  className={`px-4 py-2.5 cursor-pointer transition-all text-sm truncate ${String(value) === String(opt.value) ? 'bg-[#FFD700]/15 text-[#FFD700] font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </div>
+              ))
+            ) : (
+              <div className="px-4 py-3 text-sm text-zinc-500 italic text-center truncate cursor-not-allowed">
+                {emptyMessage}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -369,68 +434,53 @@ export default function Upload() {
 
         <div className="grid grid-cols-2 gap-3">
           {/* Semester */}
-          <label className="block mb-4">
-            <div className="text-[11px] font-bold text-white/70 mb-2">
-              Semester *
-            </div>
-            <select
+          <div className="mb-4">
+            <label className="block text-white/70 text-sm mb-2">Semester *</label>
+            <CustomSelect
               value={form.semester}
-              onChange={onChange("semester")}
-              className="w-full glass-card px-4 py-3 text-sm outline-hidden"
-              required
-            >
-              <option value="" className="bg-[#0a0a0a]">Select Semester</option>
-              {semesters.map((s) => (
-                <option key={s.id} value={s.id} className="bg-[#0a0a0a]">
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={(val) => onChange("semester")({ target: { value: val } })}
+              placeholder="Select Semester"
+              options={[
+                ...(semesters || []).map(sem => ({ value: sem.id, label: sem.name }))
+              ]}
+            />
+          </div>
 
           {/* Type */}
-          <label className="block mb-4">
-            <div className="text-[11px] font-bold text-white/70 mb-2">Type *</div>
-            <select
+          <div className="mb-4">
+            <label className="block text-white/70 text-sm mb-2">Type *</label>
+            <CustomSelect
               value={form.type}
-              onChange={onChange("type")}
-              className="w-full glass-card px-4 py-3 text-sm outline-hidden"
-              required
-            >
-              {types.map((t) => (
-                <option key={t} value={t} className="bg-[#0a0a0a]">
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+              onChange={(val) => onChange("type")({ target: { value: val } })}
+              placeholder="Select Type"
+              options={[
+                { value: "Notes", label: "Notes" },
+                { value: "Practicals", label: "Practicals" },
+                { value: "IMP", label: "IMP" },
+                { value: "Assignment", label: "Assignment" }
+              ]}
+            />
+          </div>
 
-        {/* Subject */}
-        <label className="block mb-4">
-          <div className="text-[11px] font-bold text-white/70 mb-2">Subject *</div>
-          <select
-            value={form.subject}
-            onChange={onChange("subject")}
-            className={`w-full glass-card px-4 py-3 text-sm outline-hidden ${!form.semester ? "opacity-50" : ""}`}
-            required
-            disabled={!form.semester}
-          >
-            <option value="" className="bg-[#0a0a0a]">
-              {form.semester ? "Select subject..." : "Select semester first"}
-            </option>
-            {filteredSubjects.map((s) => (
-              <option key={s.id} value={s.id} className="bg-[#0a0a0a]">
-                {s.name} (Sem {s.semId})
-              </option>
-            ))}
-          </select>
-          {!form.semester && (
-            <div className="text-[10px] text-amber-400 mt-1">
-              Please select a semester first
-            </div>
-          )}
-        </label>
+          {/* Subject */}
+          <div className="mb-4 relative z-[90]">
+            <label className="block text-white/70 text-sm mb-2">Subject *</label>
+            <CustomSelect
+              value={form.subject}
+              onChange={(val) => onChange("subject")({ target: { value: val } })}
+              placeholder={form.semester ? "Select subject..." : "Select semester first"}
+              // 🚨 Agar semesterId select nahi hua hai, toh khali array bhejo
+              options={form.semester ? (filteredSubjects || []).map(sub => ({ value: sub.id, label: `${sub.name} (Sem ${sub.semId})` })) : []}
+              // 🚨 Ye message tab dikhega jab array khali hoga
+              emptyMessage="⚠️ Please select Semester first"
+            />
+            {!form.semester && (
+              <div className="text-[10px] text-amber-400 mt-1">
+                Please select a semester first
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Google Drive Link */}
         <label className="block mb-4">

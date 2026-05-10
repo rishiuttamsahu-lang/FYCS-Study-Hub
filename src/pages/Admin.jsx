@@ -20,12 +20,12 @@ const tabs = [
 // Super Admin email - protected from all actions
 const CREATOR_EMAILS = ["rishiuttamsahu@gmail.com", "piyushgupta122006@gmail.com"];
 
-// 🚨 CUSTOM PREMIUM DROPDOWN COMPONENT 🚨
-const CustomSelect = ({ value, onChange, options, placeholder }) => {
+// 🚨 UPDATE THIS IN ADMIN.JSX, LIBRARY.JSX, AND UPLOAD.JSX
+// Yahan humne 'emptyMessage' prop add kiya hai
+const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "No options available" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Bahar click karne par dropdown close karne ka logic
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -36,36 +36,49 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find(opt => String(opt.value) === String(value));
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className={`relative w-full ${isOpen ? 'z-[9999]' : 'z-10'}`} ref={dropdownRef}>
       <div
-        className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white focus:border-[#FFD700] cursor-pointer flex justify-between items-center transition-colors hover:bg-white/10"
+        className="w-full glass-card px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 text-white hover:border-[#FFD700]/50 cursor-pointer flex justify-between items-center transition-all duration-300"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={!selectedOption ? "text-white/50" : "font-medium"}>
+        {/* 🚨 Added 'truncate' and 'mr-2' so text never pushes the icon out */}
+        <span className={`truncate mr-2 ${!selectedOption ? "text-white/40 text-sm" : "text-sm font-medium"}`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 text-white/50 ${isOpen ? 'rotate-180' : ''}`}>
+        {/* 🚨 Added 'flex-shrink-0' so icon stays perfect */}
+        <svg className={`flex-shrink-0 transition-transform duration-300 text-white/40 ${isOpen ? 'rotate-180 text-[#FFD700]' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </div>
 
       {isOpen && (
-        <div className="absolute z-[9999] w-full mt-2 py-2 glass-card border border-white/10 bg-[#0f0f11] backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full">
-          {options.map((opt) => (
-            <div
-              key={opt.value}
-              className={`px-4 py-2.5 cursor-pointer transition-colors text-sm ${value === opt.value ? 'bg-[#FFD700]/10 text-[#FFD700] font-bold' : 'text-white/80 hover:bg-white/10 hover:text-white'}`}
-              onClick={() => {
-                onChange(opt.value);
-                setIsOpen(false);
-              }}
-            >
-              {opt.label}
-            </div>
-          ))}
+        /* 🚨 FIX: 'right-0' aur 'min-w-full' hata kar sirf 'left-0 w-full' kiya taaki parent box ke bahar na bage */
+        <div className="absolute left-0 z-[100] w-full mt-2 py-2 bg-[#0c0c0e] border border-white/10 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {options && options.length > 0 ? (
+              options.map((opt) => (
+                <div
+                  key={opt.value}
+                  title={opt.label} /* 🌟 Naya: Lambe text pe hold/hover karne par poora naam dikhega */
+                  /* 🚨 FIX: 'whitespace-nowrap' ki jagah 'truncate' lagaya, lambe text pe smoothly '...' aa jayega */
+                  className={`px-4 py-2.5 cursor-pointer transition-all text-sm truncate ${String(value) === String(opt.value) ? 'bg-[#FFD700]/15 text-[#FFD700] font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </div>
+              ))
+            ) : (
+              <div className="px-4 py-3 text-sm text-zinc-500 italic text-center truncate cursor-not-allowed">
+                {emptyMessage}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -286,7 +299,21 @@ export default function Admin() {
     totalSemesters: (semesters || []).length
   };
   
-  const uniqueSubjects = [...new Set(materials.filter(m => m.status === 'Approved').map(m => m.subjectId))];
+  // 🚨 100% WORKING FILTER LOGIC 🚨
+  let filteredSubjectsForDropdown = [];
+  
+  if (filterSem === "All") {
+    // Agar "All Sem" select kiya hai, toh saare subjects dikhao
+    filteredSubjectsForDropdown = subjects || []; 
+  } else {
+    // Agar koi specific semester select kiya hai, toh AppContext wala function use karo
+    filteredSubjectsForDropdown = getSubjectsBySemester?.(filterSem) || [];
+  }
+
+  // Semester change hone par subject ko wapas "All" pe lana zaroori hai
+  useEffect(() => {
+    setFilterSubject("All");
+  }, [filterSem]);
   
   const filteredMaterials = getApprovedMaterials()
     .filter(material => {
@@ -297,17 +324,19 @@ export default function Admin() {
       return true;
     })
     .sort((a, b) => {
-      if (sortOrder === "newest") {
-        const dateA = a.createdAt?.seconds || a.createdAt || 0;
-        const dateB = b.createdAt?.seconds || b.createdAt || 0;
-        return dateB - dateA;
-      } else if (sortOrder === "oldest") {
-        const dateA = a.createdAt?.seconds || a.createdAt || 0;
-        const dateB = b.createdAt?.seconds || b.createdAt || 0;
-        return dateA - dateB;
-      } else if (sortOrder === "az") {
-        return (a.title || "").localeCompare(b.title || "");
-      }
+      // Date conversion logic: Firestore Timestamp ya normal date ko handle karne ke liye
+      const getTime = (date) => {
+        if (!date) return 0;
+        if (date.seconds) return date.seconds * 1000; // Firestore Timestamp
+        return new Date(date).getTime() || 0; // Normal Date string/object
+      };
+
+      const dateA = getTime(a.createdAt || a.date);
+      const dateB = getTime(b.createdAt || b.date);
+
+      if (sortOrder === "newest") return dateB - dateA;
+      if (sortOrder === "oldest") return dateA - dateB;
+      if (sortOrder === "az") return (a.title || "").localeCompare(b.title || "");
       return 0;
     });
 
@@ -762,7 +791,8 @@ export default function Admin() {
           {/* Materials Tab */}
           {activeTab === "materials" && (
             <>
-              <div className="glass-card p-4 mb-6 overflow-visible">
+              {/* 🚨 Z-INDEX FIX: Ab ye container hamesha cards ke upar rahega */}
+<div className="glass-card p-4 mb-6 overflow-visible relative z-[100]">
                 <div className="flex flex-wrap gap-3 mb-4">
                   <button
                     type="button"
@@ -789,8 +819,9 @@ export default function Admin() {
                 </div>
                 
                 {materialFilter === "Approved" && (
-                  <div className="relative grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" style={{ position: 'relative', zIndex: 9999 }}>
-                    <div className="relative col-span-2 md:col-span-4">
+                  <div className="space-y-4 mb-6">
+                    {/* Search Input */}
+                    <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search size={16} className="text-white/50" />
                       </div>
@@ -802,51 +833,58 @@ export default function Admin() {
                         className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none text-sm"
                       />
                     </div>
-                    <select
-                      value={filterSem}
-                      onChange={(e) => setFilterSem(e.target.value)}
-                      className="premium-dropdown"
-                    >
-                      <option value="All" className="bg-[#0a0a0a]">All Sem</option>
-                      {(semesters || []).map(sem => (
-                        <option key={sem.id} value={sem.id} className="bg-[#0a0a0a]">{sem.name}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={filterType}
-                      onChange={(e) => setFilterType(e.target.value)}
-                      className="premium-dropdown"
-                    >
-                      <option value="All" className="bg-[#0a0a0a]">All Types</option>
-                      <option value="Notes" className="bg-[#0a0a0a]">Notes</option>
-                      <option value="Practicals" className="bg-[#0a0a0a]">Practicals</option>
-                      <option value="IMP" className="bg-[#0a0a0a]">IMP</option>
-                      <option value="Assignment" className="bg-[#0a0a0a]">Assignment</option>
-                    </select>
-                    <select
-                      value={filterSubject}
-                      onChange={(e) => setFilterSubject(e.target.value)}
-                      className="premium-dropdown"
-                    >
-                      <option value="All" className="bg-[#0a0a0a]">All Subjects</option>
-                      {uniqueSubjects.map(subjectId => {
-                        const subject = getSubjectById(subjectId);
-                        return (
-                          <option key={subjectId} value={subjectId} className="bg-[#0a0a0a]">
-                            {subject?.name || subjectId}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <select 
-                      value={sortOrder} 
-                      onChange={(e) => setSortOrder(e.target.value)}
-                      className="select-premium"
-                    >
-                      <option value="newest" className="bg-[#0a0a0a]">Sort: Newest First</option>
-                      <option value="oldest" className="bg-[#0a0a0a]">Sort: Oldest First</option>
-                      <option value="az" className="bg-[#0a0a0a]">Sort: A-Z</option>
-                    </select>
+
+                    {/* Materials Tab Filters Section - Replace old grid content with this */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-[50]">
+                      
+                      {/* Semester Filter */}
+                      <CustomSelect
+                        value={filterSem}
+                        onChange={setFilterSem}
+                        placeholder="All Semesters"
+                        options={[
+                          { value: "All", label: "All Semesters" },
+                          ...(semesters || []).map(sem => ({ value: sem.id, label: sem.name }))
+                        ]}
+                      />
+
+                      {/* Type Filter */}
+                      <CustomSelect
+                        value={filterType}
+                        onChange={setFilterType}
+                        placeholder="All Types"
+                        options={[
+                          { value: "All", label: "All Types" },
+                          { value: "Notes", label: "Notes" },
+                          { value: "Practicals", label: "Practicals" },
+                          { value: "IMP", label: "IMP" },
+                          { value: "Assignment", label: "Assignment" }
+                        ]}
+                      />
+
+                      {/* Subject Filter */}
+                      <CustomSelect
+                        value={filterSubject}
+                        onChange={setFilterSubject}
+                        placeholder="All Subjects"
+                        options={[
+                          { value: "All", label: "All Subjects" },
+                          ...(filteredSubjectsForDropdown || []).map(sub => ({ value: sub.id, label: sub.name }))
+                        ]}
+                      />
+
+                      {/* Sort Filter */}
+                      <CustomSelect
+                        value={sortOrder}
+                        onChange={setSortOrder}
+                        placeholder="Sort Order"
+                        options={[
+                          { value: "newest", label: "Newest First" },
+                          { value: "oldest", label: "Oldest First" },
+                          { value: "az", label: "Title A-Z" }
+                        ]}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -917,59 +955,74 @@ export default function Admin() {
                       const subject = getSubjectById(material.subjectId);
                       
                       return (
-                        <div key={material.id} className="glass-card p-5" ref={ref}>
-                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        /* 🌟 NAYA PREMIUM MATERIAL CARD */
+                        <div key={material.id} className="glass-card p-5 rounded-2xl hover:border-white/20 transition-all duration-300 group" ref={ref}>
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            
+                            {/* Left Side: Icon & Info */}
                             <div className="flex-1">
-                              <div className="flex items-start gap-3">
-                                <div className="mt-1">
-                                  {material.type === 'Notes' ? <FileText className="text-blue-400" size={18} /> :
-                                   material.type === 'Practicals' ? <Code className="text-green-400" size={18} /> :
-                                   material.type === 'IMP' ? <Star className="text-yellow-400" size={18} /> :
-                                   material.type === 'Assignment' ? <Edit3 className="text-purple-400" size={18} /> :
-                                   <FileText className="text-emerald-400" size={18} />}
+                              <div className="flex items-start gap-4">
+                                <div className={`p-3 rounded-2xl flex-shrink-0 ${
+                                  material.type === 'Notes' ? 'bg-blue-500/10 text-blue-400' :
+                                  material.type === 'Practicals' ? 'bg-green-500/10 text-green-400' :
+                                  material.type === 'IMP' ? 'bg-yellow-500/10 text-yellow-400' :
+                                  material.type === 'Assignment' ? 'bg-purple-500/10 text-purple-400' :
+                                  'bg-emerald-500/10 text-emerald-400'
+                                }`}>
+                                  {material.type === 'Notes' ? <FileText size={24} /> :
+                                   material.type === 'Practicals' ? <Code size={24} /> :
+                                   material.type === 'IMP' ? <Star size={24} /> :
+                                   material.type === 'Assignment' ? <Edit3 size={24} /> :
+                                   <FileText size={24} />}
                                 </div>
+                                
                                 <div>
-                                  <h3 className="font-bold text-white/90">{material.title}</h3>
-                                  <div className="text-sm text-white/50 mt-1">
-                                    {semester?.name} • {subject?.name} • {material.type}
+                                  <h3 className="font-bold text-white text-base group-hover:text-[#FFD700] transition-colors">{material.title}</h3>
+                                  
+                                  {/* Tags */}
+                                  <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold text-white/50 mt-2 uppercase tracking-wider">
+                                    <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg">{semester?.name}</span>
+                                    <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg">{subject?.name}</span>
+                                    <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg text-white/70">{material.type}</span>
                                   </div>
-                                  <div className="text-xs text-white/40 mt-2">
-                                    Uploaded by {material.uploadedBy?.split(' ')[0] || 'Admin'} • {material.date ? new Date(typeof material.date === 'object' && material.date.toDate ? material.date.toDate() : material.date).toLocaleDateString() : 'Just now'}
-                                  </div>
-                                  <div className="flex gap-4 mt-2 text-xs text-white/50">
-                                    <span>👁 {material.views} views</span>
-                                    <span>⬇ {material.downloads} downloads</span>
+                                  
+                                  {/* Stats */}
+                                  <div className="flex items-center flex-wrap gap-4 mt-3 text-xs text-white/40 font-medium">
+                                    <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Eye size={14} className="text-white/30" /> {material.views} views</span>
+                                    <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Download size={14} className="text-white/30" /> {material.downloads} dls</span>
+                                    <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Clock size={14} className="text-white/30" /> {material.date ? new Date(typeof material.date === 'object' && material.date.toDate ? material.date.toDate() : material.date).toLocaleDateString() : 'Just now'}</span>
                                   </div>
                                 </div>
                               </div>
                             </div>
                             
-                            <div className="flex flex-wrap gap-2">
+                            {/* Right Side: Action Buttons */}
+                            <div className="flex items-center gap-2 w-full lg:w-auto mt-2 lg:mt-0">
                               <a
                                 href={material.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-200 font-bold hover:bg-blue-500/20 transition-colors min-w-[36px] sm:min-w-[auto]"
+                                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 font-bold hover:bg-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all"
                               >
-                                <Upload size={16} />
-                                <span className="hidden sm:inline">View</span>
+                                <Eye size={16} />
+                                <span className="text-sm">View</span>
                               </a>
                               <button
                                 type="button"
                                 onClick={() => handleEditClick(material)}
-                                className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-blue-600/15 border border-blue-500/25 text-blue-200 font-bold hover:bg-blue-600/20 transition-colors min-w-[36px] sm:min-w-[auto]"
+                                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-bold hover:bg-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all"
                               >
                                 <Pencil size={16} />
-                                <span className="hidden sm:inline">Edit</span>
+                                <span className="text-sm">Edit</span>
                               </button>
                               {CREATOR_EMAILS.includes(user.email) && (
                                 <button
                                   type="button"
                                   onClick={() => setItemToDelete(material.id)}
-                                  className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 font-bold hover:bg-rose-500/15 transition-colors min-w-[36px] sm:min-w-[auto]"
+                                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 font-bold hover:bg-rose-500/20 hover:scale-[1.02] active:scale-95 transition-all"
                                 >
                                   <Trash2 size={16} />
-                                  <span className="hidden sm:inline">Delete</span>
+                                  <span className="text-sm">Delete</span>
                                 </button>
                               )}
                             </div>

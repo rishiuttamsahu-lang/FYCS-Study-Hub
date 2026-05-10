@@ -198,7 +198,8 @@ function App() {
           }
         }
       />
-      <Suspense fallback={<LoadingSpinner />}>
+      {/* 🚨 null ki jagah <AppSkeleton /> laga diya */}
+      <Suspense fallback={<AppSkeleton />}>
         <main className="bg-[#0a0a0a] text-white pb-24 relative">
           <Routes>
             <Route path="/" element={<Home />} />

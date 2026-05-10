@@ -4,6 +4,71 @@ import { useApp } from "../context/AppContext";
 import { useData } from "../context/DataContext";
 import MaterialCard from "../components/MaterialCard";
 
+// 🚨 UPDATE THIS IN ADMIN.JSX, LIBRARY.JSX, AND UPLOAD.JSX
+// Yahan humne 'emptyMessage' prop add kiya hai
+const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "No options available" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => String(opt.value) === String(value));
+
+  return (
+    <div className={`relative w-full ${isOpen ? 'z-[9999]' : 'z-10'}`} ref={dropdownRef}>
+      <div
+        className="w-full glass-card px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 text-white hover:border-[#FFD700]/50 cursor-pointer flex justify-between items-center transition-all duration-300"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {/* 🚨 Added 'truncate' and 'mr-2' so text never pushes the icon out */}
+        <span className={`truncate mr-2 ${!selectedOption ? "text-white/40 text-sm" : "text-sm font-medium"}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        {/* 🚨 Added 'flex-shrink-0' so icon stays perfect */}
+        <svg className={`flex-shrink-0 transition-transform duration-300 text-white/40 ${isOpen ? 'rotate-180 text-[#FFD700]' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+
+      {isOpen && (
+        /* 🚨 FIX: 'right-0' aur 'min-w-full' hata kar sirf 'left-0 w-full' kiya taaki parent box ke bahar na bage */
+        <div className="absolute left-0 z-[100] w-full mt-2 py-2 bg-[#0c0c0e] border border-white/10 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
+            {options && options.length > 0 ? (
+              options.map((opt) => (
+                <div
+                  key={opt.value}
+                  title={opt.label} /* 🌟 Naya: Lambe text pe hold/hover karne par poora naam dikhega */
+                  /* 🚨 FIX: 'whitespace-nowrap' ki jagah 'truncate' lagaya, lambe text pe smoothly '...' aa jayega */
+                  className={`px-4 py-2.5 cursor-pointer transition-all text-sm truncate ${String(value) === String(opt.value) ? 'bg-[#FFD700]/15 text-[#FFD700] font-bold' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </div>
+              ))
+            ) : (
+              <div className="px-4 py-3 text-sm text-zinc-500 italic text-center truncate cursor-not-allowed">
+                {emptyMessage}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Library() {
   const { subjects, semesters, getSubjectById, getSemesterById } = useApp();
   const { libraryMaterials, fetchLibraryData, isLibraryLoaded } = useData();
@@ -17,6 +82,7 @@ export default function Library() {
   const [localLoading, setLocalLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(15);
   const observer = useRef();
+  const sortRef = useRef(null);
 
   const lastElementRef = useCallback((node) => {
     if (observer.current) observer.current.disconnect();
@@ -36,10 +102,31 @@ export default function Library() {
     });
   }, [fetchLibraryData]);
 
+  // 🚨 SUBJECT DROPDOWN FILTER LOGIC - Same as Admin.jsx
+  let filteredSubjectsForDropdown = [];
+  
+  if (selectedSemester === "all" || selectedSemester === "") {
+    filteredSubjectsForDropdown = subjects || []; 
+  } else {
+    const { getSubjectsBySemester } = useApp();
+    filteredSubjectsForDropdown = getSubjectsBySemester?.(selectedSemester) || [];
+  }
+
   // Reset visible count when search or filters change
   useEffect(() => {
     setVisibleCount(15);
   }, [searchTerm, selectedSemester, selectedType, sortBy]);
+
+  // Outside click logic for sort dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (sortRef.current && !sortRef.current.contains(event.target)) {
+        setShowSortMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Defer heavy rendering to unblock navigation
   useEffect(() => {
@@ -189,7 +276,7 @@ export default function Library() {
             </div>
             
             {/* Sort Button */}
-            <div className="relative">
+            <div className="relative" ref={sortRef}>
               <button
                 type="button"
                 onClick={() => setShowSortMenu(!showSortMenu)}
@@ -230,35 +317,43 @@ export default function Library() {
             </div>
           </div>
 
-          {/* Filters - Side by Side */}
-          <div className="grid grid-cols-2 gap-2">
-            {/* Semester Filter */}
-            <select
+          {/* 🌟 PREMIUM LIBRARY FILTERS */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6 relative z-[50]">
+            
+            <CustomSelect
               value={selectedSemester}
-              onChange={(e) => setSelectedSemester(e.target.value)}
-              className="glass-card px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white focus:border-[#FFD700] focus:outline-none text-sm"
-            >
-              <option value="all" className="bg-[#0a0a0a]">All Sem</option>
-              {semesters.map(semester => (
-                <option key={semester.id} value={semester.id} className="bg-[#0a0a0a]">
-                  {semester.name.replace('Semester ', 'Sem ')}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedSemester} // Direct function lagayenge
+              placeholder="All Semesters"
+              options={[
+                { value: "all", label: "All Semesters" },
+                ...(semesters || []).map(sem => ({ value: sem.id, label: sem.name.replace('Semester ', 'Sem ') }))
+              ]}
+            />
 
-            {/* Type Filter */}
-            <select
+            <CustomSelect
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="glass-card px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-white focus:border-[#FFD700] focus:outline-none text-sm"
-            >
-              <option value="all" className="bg-[#0a0a0a]">All Types</option>
-              {allTypes.map(type => (
-                <option key={type} value={type} className="bg-[#0a0a0a]">
-                  {type}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedType}
+              placeholder="All Types"
+              options={[
+                { value: "all", label: "All Types" },
+                { value: "notes", label: "Notes" },
+                { value: "practicals", label: "Practicals" },
+                { value: "imp", label: "IMP" },
+                { value: "assignment", label: "Assignment" }
+              ]}
+            />
+
+            <CustomSelect
+              value={selectedSemester === "" || selectedSemester === "all" ? "all" : filteredSubjectsForDropdown.find(s => s.semId === selectedSemester)?.id || "all"}
+              onChange={(val) => {
+                // For Library, we don't have a separate subject filter state, so this is just for display
+              }}
+              placeholder="All Subjects"
+              options={[
+                { value: "all", label: "All Subjects" },
+                ...(filteredSubjectsForDropdown || []).map(sub => ({ value: sub.id, label: sub.name }))
+              ]}
+            />
           </div>
         </div>
       </div>

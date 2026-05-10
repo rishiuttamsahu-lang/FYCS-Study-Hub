@@ -41,6 +41,7 @@ export default function Profile() {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [isSendingFeedback, setIsSendingFeedback] = useState(false);
+  const [feedbackImages, setFeedbackImages] = useState([]); // Array for multiple images
   
   // Notification states
   const [isBellOpen, setIsBellOpen] = useState(false);
@@ -287,20 +288,87 @@ export default function Profile() {
     if (!feedbackMessage.trim()) return;
     setIsSendingFeedback(true);
     try {
-      await addDoc(collection(db, 'feedbacks'), { text: feedbackMessage, createdAt: serverTimestamp(), status: 'unread' });
+      await addDoc(collection(db, 'feedbacks'), { 
+        text: feedbackMessage, 
+        images: feedbackImages, // Include images in feedback
+        createdAt: serverTimestamp(), 
+        status: 'unread' 
+      });
       const q = query(collection(db, 'users'), where('role', '==', 'admin'));
       const querySnapshot = await getDocs(q);
       const adminEmails = [];
       querySnapshot.forEach((doc) => { if (doc.data().email) adminEmails.push(doc.data().email); });
   
       const joinedEmails = adminEmails.join(',');
-      window.location.href = `mailto:${joinedEmails}?subject=BNN CS Study Hub Feedback&body=${encodeURIComponent(feedbackMessage)}`;
+      const emailBody = feedbackImages.length > 0 
+        ? `${feedbackMessage}\n\nImages attached: ${feedbackImages.length}`
+        : feedbackMessage;
+      window.location.href = `mailto:${joinedEmails}?subject=BNN CS Study Hub Feedback&body=${encodeURIComponent(emailBody)}`;
       setIsFeedbackOpen(false);
       setFeedbackMessage('');
+      setFeedbackImages([]); // Clear images after sending
     } catch (error) {
       toast.error('Error sending feedback: ' + error.message);
     } finally {
       setIsSendingFeedback(false);
+    }
+  };
+
+  // 🚨 BULLETPROOF UPLOAD LOGIC (WITH BASE64 CONVERSION) 🚨
+  const handleFeedbackImageUpload = async (e) => {
+    const files = Array.from(e.target.files).slice(0, 3);
+    if (files.length === 0) return;
+
+    const loadingToast = toast.loading(`Uploading ${files.length} screenshot(s)...`);
+    const newUrls = [];
+
+    // Helper Function: Image ko Base64 format me convert karne ke liye
+    const convertToBase64 = (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]); // Sirf data nikalne ke liye
+        reader.onerror = (error) => reject(error);
+      });
+    };
+
+    try {
+      for (const file of files) {
+        // Pehle file ko Base64 me convert karenge
+        const base64Image = await convertToBase64(file);
+        
+        const formData = new FormData();
+        formData.append('image', base64Image); // Direct raw file ki jagah Base64 string bhejenge
+        
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=18689c27743c695f94310e3bd0a52c99`, { 
+          method: 'POST', 
+          body: formData 
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+          newUrls.push(result.data.url);
+        } else {
+          console.error("ImgBB API Error:", result);
+          throw new Error(result.error?.message || "Server rejected image");
+        }
+      }
+      
+      setFeedbackImages(prev => {
+        const combined = [...prev, ...newUrls];
+        return combined.slice(0, 3);
+      });
+      
+      toast.dismiss(loadingToast);
+      toast.success("Screenshots added successfully!");
+      
+    } catch (error) {
+      console.error("Upload error details:", error);
+      toast.dismiss(loadingToast);
+      toast.error("Upload failed! Please check your internet connection.");
+    } finally {
+      e.target.value = ''; 
     }
   };
     
@@ -644,16 +712,21 @@ export default function Profile() {
           </div>
         )}
 
-                <div 
-                  className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg cursor-pointer hover:bg-zinc-800/50 transition-colors"
-                  onClick={() => setIsEditingProfile(true)}
-                >
-                  <div>
-                    <div className="font-medium text-white">Edit Profile</div>
-                    <div className="text-xs text-white/50">Update your profile information</div>
-                  </div>
-                  <Settings size={18} className="text-white/50" />
-                </div>
+                <button 
+          onClick={() => setIsEditingProfile(true)}
+          className="w-full flex items-center justify-between p-4 bg-zinc-900/50 hover:bg-zinc-800/50 transition-colors border border-zinc-800/50 rounded-xl mb-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-purple-500/10 text-purple-400 rounded-xl">
+              <User size={20} />
+            </div>
+            <div className="text-left">
+              <h3 className="font-bold text-white text-sm">Edit Profile</h3>
+              <p className="text-[11px] text-zinc-400">Update your name and photo</p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-zinc-500" />
+        </button>
                 
                 <div className="pt-4 border-t border-zinc-800">
                   <button
@@ -774,11 +847,11 @@ export default function Profile() {
       {/* Feedback Modal */}
       {isFeedbackOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-700/50 w-full max-w-md p-6 rounded-2xl shadow-2xl relative overflow-hidden">
+          <div className="bg-[#18181b] border border-zinc-800 rounded-3xl p-6 shadow-2xl relative w-full max-w-md">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-white">Send Feedback</h3>
+                <h3 className="text-xl font-bold text-white">Help & Feedback</h3>
                 <button onClick={() => setIsFeedbackOpen(false)} className="text-white/50 hover:text-white transition-colors">
                   <X size={24} />
                 </button>
@@ -787,8 +860,56 @@ export default function Profile() {
                 value={feedbackMessage}
                 onChange={(e) => setFeedbackMessage(e.target.value)}
                 placeholder="Enter your feedback here..."
-                className="w-full h-40 p-3 bg-zinc-800 text-white rounded border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
+                className="w-full h-32 bg-zinc-800/50 rounded-xl p-3 text-sm text-white border border-zinc-700 mb-4 focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"
               />
+              
+              {/* Sleek Screenshot Section */}
+              <div className="space-y-3 mt-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-white/70">Attach Screenshots</label>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Max 3</span>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Upload Button - Small & Minimal */}
+                  {feedbackImages.length < 3 && (
+                    <label className="w-12 h-12 border-2 border-dashed border-zinc-700 hover:border-[#FFD700] hover:bg-white/5 rounded-xl flex items-center justify-center cursor-pointer transition-all shrink-0">
+                      <Plus size={18} className="text-zinc-500" />
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleFeedbackImageUpload} 
+                      />
+                    </label>
+                  )}
+
+                  {/* Previews with Delete Icons */}
+                  <div className="flex gap-2">
+                    {feedbackImages.map((url, i) => (
+                      <div key={i} className="relative w-12 h-12 shrink-0">
+                        <img 
+                          src={url} 
+                          className="w-full h-full object-cover rounded-xl border border-white/10" 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFeedbackImages(prev => prev.filter((_, index) => index !== i))}
+                          className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 shadow-lg z-10 border border-[#18181b]"
+                        >
+                          <X size={10} strokeWidth={3} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {feedbackImages.length === 0 && (
+                    <p className="text-[11px] text-zinc-500 italic ml-1">No files selected</p>
+                  )}
+                </div>
+              </div>
+              
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setIsFeedbackOpen(false)} disabled={isSendingFeedback} className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-all font-medium border border-zinc-700 disabled:opacity-50">
                   Cancel
