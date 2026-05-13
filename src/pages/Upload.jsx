@@ -4,6 +4,9 @@ import { toast } from "react-hot-toast";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 
+const defaultUploadMemory = { title: "", semester: "", subject: "", type: "Notes", files: [] };
+let uploadMemory = { ...defaultUploadMemory };
+
 // 🚨 CUSTOM SELECT
 const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "No options available" }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,27 +77,23 @@ const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "N
 };
 
 export default function Upload() {
-  const { semesters, subjects, user, isAdmin, uploadFormData, setUploadFormData, startGlobalUpload } = useApp();
+  const { semesters, subjects, user, isAdmin, startGlobalUpload } = useApp();
   const navigate = useNavigate();
 
-  // Use global form memory so navigating away doesn't wipe inputs
-  const title = uploadFormData.title;
-  const setTitle = (val) => setUploadFormData(prev => ({ ...prev, title: val }));
-
-  const semester = uploadFormData.semester;
-  const setSemester = (val) => setUploadFormData(prev => ({ ...prev, semester: val }));
-
-  const subject = uploadFormData.subject;
-  const setSubject = (val) => setUploadFormData(prev => ({ ...prev, subject: val }));
-
-  const type = uploadFormData.type;
-  const setType = (val) => setUploadFormData(prev => ({ ...prev, type: val }));
-
-  const selectedFiles = uploadFormData.files;
-  const setSelectedFiles = (val) => setUploadFormData(prev => ({ ...prev, files: typeof val === 'function' ? val(prev.files) : val }));
+  const [title, setTitle] = useState(() => uploadMemory.title);
+  const [semester, setSemester] = useState(() => uploadMemory.semester);
+  const [subject, setSubject] = useState(() => uploadMemory.subject);
+  const [type, setType] = useState(() => uploadMemory.type);
+  const [selectedFiles, setSelectedFiles] = useState(() => uploadMemory.files);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const dragDepthRef = useRef(0);
+
+  useEffect(() => {
+    uploadMemory = { title, semester, subject, type, files: selectedFiles };
+  }, [title, semester, subject, type, selectedFiles]);
 
   useEffect(() => {
     if (isAdmin === true) {
@@ -111,26 +110,84 @@ export default function Upload() {
 
   if (isAdmin === true) return null;
 
+  const clearUploadMemory = () => {
+    uploadMemory = { ...defaultUploadMemory };
+    setTitle("");
+    setSemester("");
+    setSubject("");
+    setType("Notes");
+    setSelectedFiles([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const appendFiles = (files) => {
+    if (!files.length) return;
+    setSelectedFiles((prevFiles) => [...prevFiles, ...files]);
+  };
+
   const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedFiles(prevFiles => [...prevFiles, ...files]);
+    appendFiles(Array.from(e.target.files || []));
+    e.target.value = "";
   };
 
   const removeFile = (indexToRemove) => {
     setSelectedFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleSubmit = (e) => {
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current += 1;
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = 0;
+    setIsDragging(false);
+    appendFiles(Array.from(e.dataTransfer.files || []));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid) return;
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      // Trigger the global upload; the global engine will reset form on success
-      startGlobalUpload(selectedFiles, { title, semester, subject, type }, user?.displayName || user?.email?.split('@')[0] || "Student", user?.email);
+    try {
+      const result = await startGlobalUpload(
+        selectedFiles,
+        { title, semester, subject, type },
+        user?.displayName || user?.email?.split('@')[0] || "Student",
+        user?.email
+      );
+
+      if (result?.success) {
+        clearUploadMemory();
+        setIsDragging(false);
+        dragDepthRef.current = 0;
+      }
+    } finally {
       setIsSubmitting(false);
-    }, 600);
+    }
   };
 
   return (
@@ -197,9 +254,19 @@ export default function Upload() {
 
         <div className="mb-5">
           <label className="block text-[11px] font-bold text-white/70 mb-2">Attachments *</label>
-          <div onClick={() => fileInputRef.current?.click()} className="glass-card border-dashed border-2 border-white/10 hover:border-[#FFD700]/50 bg-black/30 hover:bg-[#FFD700]/5 p-6 flex flex-col items-center justify-center cursor-pointer group transition-all">
-            <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-[#FFD700]/20 flex items-center justify-center mb-2"><Plus size={20} className="text-white/50 group-hover:text-[#FFD700]" /></div>
-            <p className="text-xs text-white/70 font-medium">Tap to select files</p>
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`glass-card border-dashed border-2 p-6 flex flex-col items-center justify-center cursor-pointer group transition-all ${isDragging ? "border-[#FFD700] bg-[#FFD700]/10 scale-[1.01]" : "border-white/10 hover:border-[#FFD700]/50 bg-black/30 hover:bg-[#FFD700]/5"}`}
+          >
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isDragging ? "bg-[#FFD700]/20" : "bg-white/5 group-hover:bg-[#FFD700]/20"}`}>
+              <CloudUpload size={20} className={isDragging ? "text-[#FFD700]" : "text-white/50 group-hover:text-[#FFD700]"} />
+            </div>
+            <p className="text-xs text-white/70 font-medium text-center">Drop files here or tap to select</p>
+            <p className="text-[10px] text-white/35 mt-1 text-center">Multiple files are supported</p>
             <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
           </div>
           {selectedFiles.length > 0 && (
@@ -215,7 +282,7 @@ export default function Upload() {
         </div>
 
         <button type="submit" disabled={!isFormValid || isSubmitting} className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 ${isFormValid && !isSubmitting ? "bg-[#FFD700] text-black shadow-[0_0_15px_rgba(255,215,0,0.3)] hover:scale-[1.02]" : "bg-white/10 text-white/30 cursor-not-allowed"}`}>
-          {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Preparing...</> : <><CloudUpload size={16} /> Submit for Approval</>}
+          {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Uploading...</> : <><CloudUpload size={16} /> Submit for Approval</>}
         </button>
       </form>
     </div>

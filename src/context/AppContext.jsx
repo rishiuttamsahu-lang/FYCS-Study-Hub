@@ -3,6 +3,7 @@ import { db, auth, googleProvider } from '../firebase';
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy, where, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { toast } from 'react-hot-toast';
+import { CheckCircle, X } from 'lucide-react';
 
 // Create Context
 const AppContext = createContext();
@@ -449,19 +450,43 @@ export const AppProvider = ({ children }) => {
       }
     }
 
-    setTimeout(() => {
-      setGlobalUploadState({ uploading: false, current: 0, total: 0, realProgress: 0 });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      if (successCount > 0) {
-        // Reset the global form ONLY when upload succeeded
-        setUploadFormData({ title: "", semester: "", subject: "", type: "Notes", files: [] });
+    setGlobalUploadState({ uploading: false, current: 0, total: 0, realProgress: 0 });
 
-        toast.success("Upload Complete! Sent for admin approval.", {
-          icon: '✅',
-          style: { background: '#0a0a0a', color: '#fff', border: '1px solid #FFD700' }
-        });
-      }
-    }, 1000);
+    if (successCount > 0) {
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-in fade-in slide-in-from-top-4' : 'animate-out fade-out slide-out-to-right-8'} max-w-sm w-full glass-card bg-[#0c0c0e]/90 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl pointer-events-auto flex relative overflow-hidden transition-all`}>
+          <div className="absolute top-0 left-0 w-1 bg-[#FFD700] h-full shadow-[0_0_15px_#FFD700]"></div>
+
+          <div className="flex-1 w-0 p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <div className="bg-[#FFD700]/20 p-2 rounded-full">
+                  <CheckCircle className="h-5 w-5 text-[#FFD700]" />
+                </div>
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-bold text-white tracking-tight">Upload Successful!</p>
+                <p className="mt-1 text-[11px] text-white/50 leading-relaxed">
+                  {successCount} files are now pending for admin review.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex border-l border-white/10">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="w-full border border-transparent rounded-none rounded-r-2xl p-4 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      ), { duration: 5000 });
+    }
+
+    return { success: successCount > 0, successCount };
   };
 
   // 2. Approve material (Pending → Approved)

@@ -1,5 +1,6 @@
 import { BarChart2, Book, CheckCircle, Clock, Code, Crown, Download, Edit3, Eye, FileText, Flag, Pen, Pencil, Plus, Search, Settings, Shield, Star, Trash2, Upload, User, XCircle, AlertTriangle, Users, Send, Loader2 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
@@ -179,22 +180,16 @@ export default function Admin() {
       }
       toast.dismiss(loadingToast);
       toast.custom((t) => (
-        <div className={`${t.visible ? 'animate-in fade-in slide-in-from-top-4' : 'animate-out fade-out slide-out-to-right-8'} max-w-sm w-full glass-card bg-[#0c0c0e] border border-white/10 shadow-2xl rounded-2xl pointer-events-auto flex relative overflow-hidden transition-all`}>
-          <div className="absolute top-0 left-0 w-1 bg-emerald-500 h-full shadow-[0_0_10px_#10b981]"></div>
-          <div className="flex-1 w-0 p-4">
-            <div className="flex items-start">
-              <div className="flex-shrink-0 pt-0.5"><CheckCircle className="h-6 w-6 text-emerald-500" /></div>
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-bold text-white">Bulk Approved!</p>
-                <p className="mt-1 text-[11px] text-white/50">{selectedCount} materials published to library.</p>
-              </div>
-            </div>
+        <div className={`${t.visible ? 'animate-in fade-in slide-in-from-bottom-4' : 'animate-out fade-out zoom-out-95'} max-w-xs w-full bg-[#0c0c0e]/95 backdrop-blur-xl border border-emerald-500/30 shadow-[0_10px_30px_rgba(16,185,129,0.2)] rounded-2xl pointer-events-auto p-4 flex items-center gap-4`}>
+          <div className="bg-emerald-500/20 p-2 rounded-xl">
+            <CheckCircle className="h-6 w-6 text-emerald-400" />
           </div>
-          <div className="flex border-l border-white/10">
-            <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-2xl p-4 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-colors"><XCircle size={18} /></button>
+          <div>
+            <p className="text-sm font-bold text-white">Bulk Approved</p>
+            <p className="text-[10px] text-emerald-400/70">{selectedCount} files published successfully.</p>
           </div>
         </div>
-      ), { duration: 5000 });
+      ), { position: 'bottom-center' });
       setSelectedPending([]);
     } catch (error) {
       toast.dismiss(loadingToast);
@@ -214,22 +209,16 @@ export default function Admin() {
       }
       toast.dismiss(loadingToast);
       toast.custom((t) => (
-        <div className={`${t.visible ? 'animate-in fade-in slide-in-from-top-4' : 'animate-out fade-out slide-out-to-right-8'} max-w-sm w-full glass-card bg-[#0c0c0e] border border-white/10 shadow-2xl rounded-2xl pointer-events-auto flex relative overflow-hidden transition-all`}>
-          <div className="absolute top-0 left-0 w-1 bg-rose-500 h-full shadow-[0_0_10px_#f43f5e]"></div>
-          <div className="flex-1 w-0 p-4">
-            <div className="flex items-start">
-              <div className="flex-shrink-0 pt-0.5"><XCircle className="h-6 w-6 text-rose-500" /></div>
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-bold text-white">Materials Rejected</p>
-                <p className="mt-1 text-[11px] text-white/50">{selectedCount} materials have been deleted.</p>
-              </div>
-            </div>
+        <div className={`${t.visible ? 'animate-in fade-in slide-in-from-bottom-4' : 'animate-out fade-out zoom-out-95'} max-w-xs w-full bg-[#0c0c0e]/95 backdrop-blur-xl border border-rose-500/30 shadow-[0_10px_30px_rgba(244,63,94,0.2)] rounded-2xl pointer-events-auto p-4 flex items-center gap-4`}>
+          <div className="bg-rose-500/20 p-2 rounded-xl">
+            <Trash2 className="h-6 w-6 text-rose-400" />
           </div>
-          <div className="flex border-l border-white/10">
-            <button onClick={() => toast.dismiss(t.id)} className="w-full border border-transparent rounded-none rounded-r-2xl p-4 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-colors"><XCircle size={18} /></button>
+          <div>
+            <p className="text-sm font-bold text-white">Files Rejected</p>
+            <p className="text-[10px] text-rose-400/70">{selectedCount} items removed forever.</p>
           </div>
         </div>
-      ), { duration: 5000 });
+      ), { position: 'bottom-center' });
       setSelectedPending([]);
     } catch (error) {
       toast.dismiss(loadingToast);
@@ -1002,21 +991,6 @@ export default function Admin() {
               </div>
               
               <div className="relative space-y-4" style={{ position: 'relative', zIndex: 1 }}>
-                {/* 🚨 FLOATING BULK ACTION BAR (FAB) */}
-                {selectedPending.length > 0 && (
-                  <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-5 fade-in duration-300">
-                    <div className="glass-card bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.9)] px-4 py-3 rounded-2xl flex items-center gap-4">
-                      <div className="bg-[#FFD700]/10 px-3 py-1.5 rounded-xl border border-[#FFD700]/20 flex items-center gap-2">
-                        <span className="flex h-2 w-2 rounded-full bg-[#FFD700] animate-pulse"></span>
-                        <span className="text-sm font-bold text-[#FFD700] whitespace-nowrap">{selectedPending.length} Selected</span>
-                      </div>
-                      <div className="w-px h-6 bg-white/10 mx-1"></div>
-                      <button onClick={handleBulkApprove} type="button" className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-sm font-bold hover:bg-emerald-500/20 transition-all"><CheckCircle size={16}/> Approve</button>
-                      <button onClick={handleBulkReject} type="button" className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-400 rounded-xl text-sm font-bold hover:bg-rose-500/20 transition-all"><XCircle size={16}/> Reject</button>
-                    </div>
-                  </div>
-                )}
-
                 {/* 🚨 CUSTOM SELECT ALL BUTTON (fixed tick rendering) */}
                 {materialFilter === "Pending" && getPendingMaterials().length > 0 && (
                   <div className="glass-card p-3 mb-4 flex items-center justify-between bg-white/5 border border-white/10 rounded-xl">
@@ -1202,6 +1176,8 @@ export default function Admin() {
                   </div>
                 )}
               </div>
+
+
             </>
           )}
 
@@ -1911,6 +1887,23 @@ export default function Admin() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 🚨 FLOATING BULK ACTION BAR (PORTAL - renders at body level) 🚨 */}
+      {selectedPending.length > 0 && createPortal(
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100000] animate-in slide-in-from-bottom-5 px-4 w-full max-w-md pointer-events-none">
+          <div className="pointer-events-auto glass-card bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.9)] px-4 py-3 rounded-2xl flex items-center justify-between gap-4">
+            <div className="bg-[#FFD700]/10 px-3 py-1.5 rounded-xl border border-[#FFD700]/20 flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-[#FFD700] animate-pulse"></span>
+              <span className="text-xs font-bold text-[#FFD700] whitespace-nowrap">{selectedPending.length} Selected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={handleBulkApprove} type="button" className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition-all border border-emerald-500/20"><CheckCircle size={14}/> Approve</button>
+              <button onClick={handleBulkReject} type="button" className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 text-rose-400 rounded-xl text-xs font-bold hover:bg-rose-500/20 transition-all border border-rose-500/20"><XCircle size={14}/> Reject</button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   );
