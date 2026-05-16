@@ -3,7 +3,8 @@ import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import { doc, getDoc, setDoc, increment } from "firebase/firestore";
 import { db } from "./firebase";
-import { Sparkles, Bot, X, Loader2 } from "lucide-react";
+import { Bot, X, Loader2 } from "lucide-react";
+import BrainCircuitIcon from "./components/AnimatedIcons";
 
 import { useApp } from "./context/AppContext";
 import { DataProvider } from "./context/DataContext";
@@ -262,7 +263,7 @@ function FloatingAIButton() {
             className="fixed bottom-24 right-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-200 flex items-center gap-2 mobile-float-btn"
             aria-label="Open Assignment AI assistant"
           >
-            <Sparkles size={20} />
+            <BrainCircuitIcon size={20} />
             <span className="hidden sm:inline font-medium text-sm">Assignment AI</span>
           </button>
 
