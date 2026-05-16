@@ -372,6 +372,7 @@ export const AppProvider = ({ children }) => {
 
   const startGlobalUpload = async (filesToUpload, metadata, userName, userEmail) => {
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec";
+    const emailAccessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
     let successCount = 0;
 
     setGlobalUploadState({ uploading: true, current: 0, total: filesToUpload.length, realProgress: 0 });
@@ -455,6 +456,27 @@ export const AppProvider = ({ children }) => {
     setGlobalUploadState({ uploading: false, current: 0, total: 0, realProgress: 0 });
 
     if (successCount > 0) {
+      if (emailAccessKey) {
+        try {
+          const emailMessage = `A new student just uploaded materials to the Study Hub!\n\n👤 Student Name: ${userName || 'Student'}\n📧 Email: ${userEmail || 'No Email'}\n📚 Subject: ${subName || 'Unknown'}\n📁 Files Uploaded: ${successCount} document(s)\n\nPlease log in to the Admin Dashboard to Review and Approve.`;
+
+          fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              access_key: emailAccessKey,
+              subject: '🚨 FYCS Hub Alert: New Upload Pending!',
+              from_name: 'Study Hub System',
+              message: emailMessage
+            })
+          }).catch((err) => console.log('Email alert silently failed', err));
+        } catch (error) {
+          console.error('Alert Engine Error:', error);
+        }
+      } else {
+        console.warn('VITE_WEB3FORMS_ACCESS_KEY is not set; admin email alert skipped.');
+      }
+
       toast.custom((t) => (
         <div className={`${t.visible ? 'animate-in fade-in slide-in-from-top-4' : 'animate-out fade-out slide-out-to-right-8'} max-w-sm w-full glass-card bg-[#0c0c0e]/90 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl pointer-events-auto flex relative overflow-hidden transition-all`}>
           <div className="absolute top-0 left-0 w-1 bg-[#FFD700] h-full shadow-[0_0_15px_#FFD700]"></div>

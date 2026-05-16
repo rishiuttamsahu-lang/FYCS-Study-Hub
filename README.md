@@ -129,6 +129,16 @@ const firebaseConfig = {
 };
 ```
 
+### Environment Variables
+
+Create a local `.env` file for browser-safe keys used by the app:
+
+```bash
+VITE_WEB3FORMS_ACCESS_KEY=your_web3forms_access_key
+```
+
+The upload flow uses this value to send the admin notification email after a successful submission.
+
 ### Running Locally
 
 ```bash
