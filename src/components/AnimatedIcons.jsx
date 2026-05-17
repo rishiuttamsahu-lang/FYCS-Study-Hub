@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useCallback } from "react";
-import { motion, useAnimate } from "framer-motion";
+import { motion, useAnimate } from "motion/react";
 
 // 🌟 1. GEMINI AUTO-ANIMATED ICON 🌟
 export const BrandGeminiIcon = forwardRef(
