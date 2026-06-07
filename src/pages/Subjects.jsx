@@ -3,6 +3,43 @@ import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useState, useEffect, startTransition } from "react";
 
+const SubjectsSkeleton = () => (
+  <div className="p-5 pt-6 max-w-md mx-auto">
+    {/* Header */}
+    <div className="flex items-center justify-between mb-6">
+      <div className="w-10 h-10 rounded-xl bg-white/10 animate-pulse" />
+      <div className="text-center flex flex-col items-center gap-2">
+        <div className="h-2.5 w-16 rounded bg-white/10 animate-pulse" />
+        <div className="h-5 w-32 rounded bg-white/10 animate-pulse" />
+      </div>
+      <div className="w-10" />
+    </div>
+
+    {/* Section label */}
+    <div className="flex justify-between items-center mb-4">
+      <div className="flex items-center gap-2">
+        <div className="w-3.5 h-3.5 rounded bg-white/10 animate-pulse" />
+        <div className="h-3 w-24 rounded bg-white/10 animate-pulse" />
+      </div>
+      <div className="w-5 h-5 rounded bg-white/10 animate-pulse" />
+    </div>
+
+    {/* Subject rows */}
+    <div className="space-y-3">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="glass-card p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/10 animate-pulse flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3.5 rounded bg-white/10 animate-pulse" style={{ width: `${[70, 55, 80, 60, 75, 50][i]}%` }} />
+            <div className="h-2.5 rounded bg-white/10 animate-pulse w-28" />
+          </div>
+          <div className="w-5 h-5 rounded bg-white/10 animate-pulse flex-shrink-0" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function Subjects() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -12,24 +49,15 @@ export default function Subjects() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const { subjects, getSemesterById, getSubjectsBySemester, getMaterialsBySubject } = useApp();
+  const { subjects, loading, getSemesterById, getSubjectsBySemester, getMaterialsBySubject } = useApp();
 
   // Auto-reset the spinner when navigation completes
   useEffect(() => {
     setLoadingSubject(null);
   }, [location.pathname]);
-  
-  // Safety check: Ensure subjects data exists
-  if (!subjects) {
-    return (
-      <div className="p-5 pt-8 max-w-md mx-auto">
-        <div className="glass-card p-6 text-center">
-          <div className="font-semibold text-white">Loading subjects...</div>
-          <div className="text-sm text-white/50 mt-2">Please wait</div>
-        </div>
-      </div>
-    );
-  }
+
+  // Show skeleton while AppContext is still loading data
+  if (loading || !subjects) return <SubjectsSkeleton />;
   
   // Get semester info
   const semester = getSemesterById(semId);
@@ -186,4 +214,3 @@ export default function Subjects() {
     </div>
   );
 }
-

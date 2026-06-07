@@ -38,6 +38,13 @@ export default function Profile() {
   const [editName, setEditName] = useState(user?.displayName || "");
   const [editPhoto, setEditPhoto] = useState(user?.photoURL || "");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setEditName(user.displayName || "");
+      setEditPhoto(user.photoURL || "");
+    }
+  }, [user]);
   
   // Feedback states
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);

@@ -192,7 +192,14 @@ export const AppProvider = ({ children }) => {
           if (docSnap.exists()) {
             const userData = docSnap.data();
             // Merge Firebase Auth data with Firestore data (including favorites, role, etc)
-            setUser({ ...firebaseUser, ...userData, id: firebaseUser.uid });
+            setUser({
+              uid: firebaseUser.uid,
+              displayName: firebaseUser.displayName,
+              email: firebaseUser.email,
+              photoURL: firebaseUser.photoURL,
+              ...userData,
+              id: firebaseUser.uid
+            });
             setUserRole(userData.role || "student");
           } else {
             // Create user document if it doesn't exist
@@ -206,7 +213,13 @@ export const AppProvider = ({ children }) => {
               favorites: [], // Initialize empty favorites array
               createdAt: new Date()
             });
-            setUser({ ...firebaseUser, id: firebaseUser.uid });
+            setUser({
+              uid: firebaseUser.uid,
+              displayName: firebaseUser.displayName,
+              email: firebaseUser.email,
+              photoURL: firebaseUser.photoURL,
+              id: firebaseUser.uid
+            });
             setUserRole("student");
           }
           setLoading(false);

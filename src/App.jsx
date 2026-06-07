@@ -7,7 +7,6 @@ import { Bot, X, Loader2 } from "lucide-react";
 import BrainCircuitIcon from "./components/AnimatedIcons";
 
 import { useApp } from "./context/AppContext";
-import Navbar from "./components/Navbar";
 
 // Lazy load ALL main page components for route-level code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -22,10 +21,8 @@ const Upload = lazy(() => import('./pages/Upload'));
 const AdminUpload = lazy(() => import('./pages/AdminUpload'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const Navbar = lazy(() => import('./components/Navbar'));
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
-
-
-
 
 // Shared shimmer primitive
 const Sk = ({ className, style }) => (
@@ -345,7 +342,6 @@ function AppSkeleton() {
   );
 }
 
-
 function App() {
   const { user, loading, isBanned, siteZoom } = useApp();
   const location = useLocation(); // Use React Router's reactive location
@@ -353,11 +349,8 @@ function App() {
   // Reactively check if the user is on a public page
   const isPublicRoute = location.pathname === '/privacy' || location.pathname === '/terms';
 
-  // No background prefetching needed - React.lazy handles code splitting automatically
-
   // Apply Site Zoom globally with Smooth Transition
   useEffect(() => {
-    // Smooth animation ke liye CSS transition add kiya
     document.documentElement.style.transition = 'zoom 0.3s ease-in-out';
     document.documentElement.style.zoom = `${siteZoom / 100}`;
   }, [siteZoom]);
@@ -426,7 +419,6 @@ function App() {
           }
         }
       />
-      {/* 🚨 null ki jagah <AppSkeleton /> laga diya */}
       <Suspense fallback={<AppSkeleton />}>
         <main className="bg-[#0a0a0a] text-white pb-24 relative">
           <Routes>

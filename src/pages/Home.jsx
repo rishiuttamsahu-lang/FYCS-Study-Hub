@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { useState, useEffect, startTransition } from "react";
 import dbLogo from "/logo.png";
 import MaterialCard from "../components/MaterialCard";
+import HomeSkeleton from "../components/HomeSkeleton";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -77,6 +78,10 @@ const Home = () => {
     // If it's not a Google Drive link, return the original link
     return viewLink;
   };
+
+  const isHomeLoaded = !loading;
+
+  if (!isHomeLoaded) return <HomeSkeleton />;
 
   return (
     <div className="p-5 pt-10 max-w-md mx-auto">

@@ -2,6 +2,7 @@ import { FileText, Search, BookOpen, GraduationCap, Download, ArrowUpDown, Check
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useApp } from "../context/AppContext";
 import MaterialCard from "../components/MaterialCard";
+import LibrarySkeleton from "../components/LibrarySkeleton";
 
 const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "No options available" }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -177,16 +178,7 @@ export default function Library() {
     return result;
   }, [libraryMaterials, searchTerm, selectedSemester, selectedType, selectedSubject, getSubjectById, sortBy]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[80vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700] mx-auto mb-4"></div>
-          <p className="text-white/70 text-sm">Loading library materials...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LibrarySkeleton />;
 
   return (
     <div className="p-5 pt-8 max-w-4xl mx-auto pb-24">

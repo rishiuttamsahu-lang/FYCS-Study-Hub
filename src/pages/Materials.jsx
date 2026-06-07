@@ -11,15 +11,57 @@ const convertToDownloadLink = (link) => {
   return fileId ? `https://docs.google.com/uc?export=download&id=${fileId}` : link;
 };
 
+const MaterialsSkeleton = () => (
+  <div className="p-5 pt-6 max-w-md mx-auto pb-24">
+    {/* Header */}
+    <div className="flex items-center justify-between mb-5">
+      <div className="w-10 h-10 rounded-xl bg-white/10 animate-pulse" />
+      <div className="text-center flex flex-col items-center gap-2">
+        <div className="h-2.5 w-20 rounded bg-white/10 animate-pulse" />
+        <div className="h-4 w-36 rounded bg-white/10 animate-pulse" />
+      </div>
+      <div className="w-10" />
+    </div>
+
+    {/* Tab bar */}
+    <div className="glass-card p-2 mb-4 rounded-full">
+      <div className="flex gap-2">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className={`flex-1 h-9 rounded-full animate-pulse ${i === 0 ? 'bg-[#FFD700]/20' : 'bg-white/5'}`} />
+        ))}
+      </div>
+    </div>
+
+    {/* Search + sort */}
+    <div className="flex gap-2 mb-4">
+      <div className="flex-1 h-11 rounded-xl bg-white/10 animate-pulse" />
+      <div className="w-12 h-12 rounded-xl bg-white/10 animate-pulse" />
+    </div>
+
+    {/* Material cards */}
+    <div className="space-y-3">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="glass-card p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-white/10 animate-pulse flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3.5 rounded bg-white/10 animate-pulse" style={{ width: `${[70, 55, 80, 60, 75][i]}%` }} />
+            <div className="h-3 rounded bg-white/10 animate-pulse" style={{ width: `${[45, 40, 50, 42, 48][i]}%` }} />
+            <div className="h-2.5 rounded bg-white/10 animate-pulse w-24" />
+          </div>
+          <div className="w-9 h-9 rounded-full bg-white/10 animate-pulse flex-shrink-0" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function Materials() {
   const navigate = useNavigate();
   const { semId, subjectId } = useParams();
   const [searchParams] = useSearchParams();
 
-  const { getSemesterById, getSubjectById, getMaterialsBySubject } = useApp();
-  const semester = getSemesterById(semId);
-  const subject = getSubjectById(subjectId);
-  
+  const { loading, getSemesterById, getSubjectById, getMaterialsBySubject } = useApp();
+
   const initialTab = searchParams.get('tab') || 'notes';
   const tabMapping = {
     'notes': 'Notes',
@@ -28,56 +70,53 @@ export default function Materials() {
     'assignment': 'Assignment'
   };
   const mappedTab = tabMapping[initialTab.toLowerCase()] || 'Notes';
-  const [typeTab, setTypeTab] = useState(mappedTab); 
-  
+  const [typeTab, setTypeTab] = useState(mappedTab);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("a-z"); 
+  const [sortBy, setSortBy] = useState("a-z");
   const [showSortMenu, setShowSortMenu] = useState(false);
-  
+
   const materialsForSubject = getMaterialsBySubject(subjectId) || [];
-  
+
   const approvedForSubject = useMemo(() => {
-    // 🚨 STRICT FILTER: show only explicitly 'approved' or legacy items without status
     return materialsForSubject.filter(m => {
       const stat = (m.status || "").toString().trim().toLowerCase();
       return stat === "" || stat === "approved";
     });
   }, [materialsForSubject]);
-  
+
   const filteredAndSorted = useMemo(() => {
     let result = [...approvedForSubject];
-    
     result = result.filter(m => m.type === typeTab);
-    
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(m => 
-        m.title.toLowerCase().includes(query)
-      );
+      result = result.filter(m => m.title.toLowerCase().includes(query));
     }
-    
     result.sort((a, b) => {
       switch (sortBy) {
-        case "newest":
-          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || 0);
-          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || 0);
-          return dateB - dateA; 
-        
-        case "oldest":
-          const dateA2 = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || 0);
-          const dateB2 = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || 0);
-          return dateA2 - dateB2; 
-        
+        case "newest": {
+          const dA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || 0);
+          const dB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || 0);
+          return dB - dA;
+        }
+        case "oldest": {
+          const dA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.date || 0);
+          const dB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.date || 0);
+          return dA - dB;
+        }
         case "a-z":
           return (a.title || "").localeCompare(b.title || "");
-        
         default:
           return 0;
       }
     });
-    
     return result;
   }, [approvedForSubject, typeTab, searchQuery, sortBy]);
+
+  // Show skeleton while AppContext is still loading
+  if (loading) return <MaterialsSkeleton />;
+
+  const semester = getSemesterById(semId);
+  const subject = getSubjectById(subjectId);
 
   if (!semester || !subject) {
     return (
