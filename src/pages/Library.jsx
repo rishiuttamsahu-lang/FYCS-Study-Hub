@@ -1,7 +1,6 @@
 import { FileText, Search, BookOpen, GraduationCap, Download, ArrowUpDown, Check } from "lucide-react";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useApp } from "../context/AppContext";
-import { useData } from "../context/DataContext";
 import MaterialCard from "../components/MaterialCard";
 
 const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "No options available" }) => {
@@ -78,8 +77,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "N
 };
 
 export default function Library() {
-  const { subjects, semesters, getSubjectById, getSemesterById } = useApp();
-  const { libraryMaterials, fetchLibraryData, isLibraryLoaded } = useData();
+  const { materials: libraryMaterials, subjects, semesters, getSubjectById, getSemesterById, getSubjectsBySemester, loading } = useApp();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("all"); 
@@ -87,8 +85,6 @@ export default function Library() {
   const [selectedSubject, setSelectedSubject] = useState("all"); 
   const [sortBy, setSortBy] = useState("newest"); 
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const [localLoading, setLocalLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(15);
   const observer = useRef();
   const sortRef = useRef(null);
@@ -104,23 +100,12 @@ export default function Library() {
   }, []);
 
   useEffect(() => {
-    setLocalLoading(true);
-    fetchLibraryData().finally(() => {
-      setLocalLoading(false);
-    });
-  }, [fetchLibraryData]);
-
-  useEffect(() => {
     setSelectedSubject("all");
   }, [selectedSemester]);
 
-  let filteredSubjectsForDropdown = [];
-  if (selectedSemester === "all" || selectedSemester === "") {
-    filteredSubjectsForDropdown = subjects || []; 
-  } else {
-    const { getSubjectsBySemester } = useApp();
-    filteredSubjectsForDropdown = getSubjectsBySemester?.(selectedSemester) || [];
-  }
+  const filteredSubjectsForDropdown = (selectedSemester === "all" || selectedSemester === "")
+    ? (subjects || [])
+    : (getSubjectsBySemester?.(selectedSemester) || []);
 
   useEffect(() => {
     setVisibleCount(15);
@@ -136,12 +121,7 @@ export default function Library() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 50); 
-    return () => clearTimeout(timer);
-  }, []);
+
 
   const convertToDownloadLink = (viewLink) => {
     if (!viewLink) return viewLink;
@@ -197,7 +177,7 @@ export default function Library() {
     return result;
   }, [libraryMaterials, searchTerm, selectedSemester, selectedType, selectedSubject, getSubjectById, sortBy]);
 
-  if (localLoading || !isLibraryLoaded) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[80vh]">
         <div className="text-center">

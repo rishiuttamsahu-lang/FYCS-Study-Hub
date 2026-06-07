@@ -8,6 +8,8 @@ import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { BiMessageDetail } from 'react-icons/bi';
 
+const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_KEY;
+
 const SUBJECT_SHORT_NAMES = {
   "Hindi": "Hindi",
   "Time Table": "TT",
@@ -255,8 +257,7 @@ export default function Profile() {
     setIsDpLoading(true); // 🚨 Sirf yahan spinner chalu hoga
 
     try {
-      // API call (apni API key yahan zaroor check kar lena)
-      const response = await fetch(`https://api.imgbb.com/1/upload?key=18689c27743c695f94310e3bd0a52c99`, {
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
         method: 'POST',
         body: formData
       });
@@ -340,7 +341,7 @@ export default function Profile() {
         const formData = new FormData();
         formData.append('image', base64Image); // Direct raw file ki jagah Base64 string bhejenge
         
-        const res = await fetch(`https://api.imgbb.com/1/upload?key=18689c27743c695f94310e3bd0a52c99`, { 
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { 
           method: 'POST', 
           body: formData 
         });

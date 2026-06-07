@@ -1,14 +1,13 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef, lazy, Suspense } from "react";
-import { doc, getDoc, setDoc, increment } from "firebase/firestore";
+import { doc, setDoc, increment } from "firebase/firestore";
 import { db } from "./firebase";
 import { Bot, X, Loader2 } from "lucide-react";
 import BrainCircuitIcon from "./components/AnimatedIcons";
 
 import { useApp } from "./context/AppContext";
-import { DataProvider } from "./context/DataContext";
-import LoadingSpinner from "./components/LoadingSpinner";
+import Navbar from "./components/Navbar";
 
 // Lazy load ALL main page components for route-level code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -23,60 +22,210 @@ const Upload = lazy(() => import('./pages/Upload'));
 const AdminUpload = lazy(() => import('./pages/AdminUpload'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
-const Navbar = lazy(() => import('./components/Navbar'));
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
 
 
-// Global App Skeleton Component
-function AppSkeleton() {
+
+
+// Shared shimmer primitive
+const Sk = ({ className, style }) => (
+  <div className={`bg-white/10 animate-pulse rounded ${className || ''}`} style={style} />
+);
+
+// Matches actual glass-nav: fixed bottom, backdrop-blur, border-t
+function NavbarSkeleton() {
   return (
-    <div className="h-screen bg-[#0a0a0a] text-white overflow-hidden">
-      {/* Navbar Skeleton */}
-      <div className="h-16 w-full bg-zinc-950 border-b border-zinc-800 flex items-center px-4 space-x-4">
-        <div className="w-8 h-8 rounded-full bg-zinc-800 animate-pulse"></div>
-        <div className="h-4 bg-zinc-800 rounded w-24 animate-pulse"></div>
-        <div className="flex-1"></div>
-        <div className="h-6 w-6 bg-zinc-800 rounded-full animate-pulse"></div>
+    <nav className="fixed bottom-0 left-0 right-0 border-t border-white/10 z-50 px-2 py-3"
+         style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(24px)' }}>
+      <div className="flex justify-around items-center max-w-md mx-auto">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <Sk className="w-6 h-6 rounded-md" />
+            <Sk className="h-2 w-8 rounded" />
+          </div>
+        ))}
       </div>
-      
-      {/* Main Content Area */}
-      <div className="p-5 pt-6 max-w-md mx-auto">
-        {/* Hero Section Skeleton */}
-        <div className="h-48 w-full bg-zinc-900/50 rounded-3xl animate-pulse mb-6"></div>
-        
-        {/* Quick Section Title Skeleton */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-4 h-4 bg-zinc-800 rounded animate-pulse"></div>
-          <div className="h-3 bg-zinc-800 rounded w-24 animate-pulse"></div>
+    </nav>
+  );
+}
+
+function HomePageSkeleton() {
+  return (
+    <div className="p-5 pt-10 max-w-md mx-auto">
+      <div className="text-center mb-10 flex flex-col items-center gap-2.5">
+        <Sk className="w-16 h-16 rounded-full" />
+        <Sk className="h-7 w-48" />
+        <Sk className="h-3 w-64" />
+      </div>
+      <div className="flex items-center gap-2 mb-4">
+        <Sk className="w-3.5 h-3.5" /><Sk className="h-2.5 w-28" />
+      </div>
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="glass-card p-4 min-h-[132px]">
+            <Sk className="w-9 h-9 rounded-full mb-3" />
+            <Sk className="h-3.5 w-24 mb-2" />
+            <Sk className="h-2.5 w-20 mb-2" />
+            <Sk className="h-5 w-14 rounded-full" />
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2"><Sk className="w-3.5 h-3.5" /><Sk className="h-2.5 w-20" /></div>
+        <Sk className="h-2.5 w-12" />
+      </div>
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="glass-card p-4 flex items-start gap-3">
+            <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Sk className="h-3.5 w-3/4" /><Sk className="h-3 w-1/2" /><Sk className="h-2.5 w-1/3" />
+            </div>
+            <Sk className="w-7 h-7 rounded-md flex-shrink-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LibraryPageSkeleton() {
+  return (
+    <div className="p-5 pt-8 max-w-4xl mx-auto pb-24">
+      <div className="text-center mb-4 flex flex-col items-center gap-2">
+        <Sk className="h-6 w-40" /><Sk className="h-3 w-72" />
+      </div>
+      <div className="glass-card p-4 mb-4">
+        <div className="space-y-3">
+          <div className="flex gap-3">
+            <Sk className="flex-1 h-10 rounded-xl" />
+            <Sk className="w-11 h-10 rounded-xl flex-shrink-0" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <Sk className="h-10 rounded-2xl" /><Sk className="h-10 rounded-2xl" /><Sk className="h-10 rounded-2xl" />
+          </div>
         </div>
-        
-        {/* Grid Skeleton */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+      </div>
+      <Sk className="h-3 w-40 mb-3" />
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="glass-card p-4 flex items-start gap-3">
+            <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Sk className="h-3.5" style={{ width: `${[70,55,80,60,75][i]}%` }} />
+              <Sk className="h-3" style={{ width: `${[45,40,50,42,48][i]}%` }} />
+              <Sk className="h-2.5 w-1/3" />
+            </div>
+            <Sk className="w-7 h-7 rounded-md flex-shrink-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SubjectsPageSkeleton() {
+  return (
+    <div className="p-5 pt-6 max-w-md mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <Sk className="w-10 h-10 rounded-xl" />
+        <div className="flex flex-col items-center gap-2"><Sk className="h-2.5 w-16" /><Sk className="h-5 w-32" /></div>
+        <div className="w-10" />
+      </div>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2"><Sk className="w-3.5 h-3.5" /><Sk className="h-3 w-24" /></div>
+        <Sk className="w-5 h-5" />
+      </div>
+      <div className="space-y-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="glass-card p-4 flex items-center gap-3">
+            <Sk className="w-10 h-10 rounded-xl flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Sk className="h-3.5" style={{ width: `${[70,55,80,60,75,50][i]}%` }} />
+              <Sk className="h-2.5 w-28" />
+            </div>
+            <Sk className="w-5 h-5 flex-shrink-0" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MaterialsPageSkeleton() {
+  return (
+    <div className="p-5 pt-6 max-w-md mx-auto pb-24">
+      <div className="flex items-center justify-between mb-5">
+        <Sk className="w-10 h-10 rounded-xl" />
+        <div className="flex flex-col items-center gap-2"><Sk className="h-2.5 w-20" /><Sk className="h-4 w-36" /></div>
+        <div className="w-10" />
+      </div>
+      <div className="glass-card p-2 mb-4 rounded-full">
+        <div className="flex gap-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-zinc-900/30 rounded-xl animate-pulse"></div>
+            <div key={i} className={`flex-1 h-9 rounded-full animate-pulse ${i === 0 ? 'bg-[#FFD700]/20' : 'bg-white/5'}`} />
           ))}
         </div>
-        
-        {/* Materials Section Skeleton */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-zinc-800 rounded animate-pulse"></div>
-            <div className="h-3 bg-zinc-800 rounded w-20 animate-pulse"></div>
+      </div>
+      <div className="flex gap-2 mb-4">
+        <Sk className="flex-1 h-11 rounded-xl" /><Sk className="w-12 h-12 rounded-xl" />
+      </div>
+      <div className="space-y-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="glass-card p-4 flex items-start gap-3">
+            <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Sk className="h-3.5" style={{ width: `${[70,55,80,60,75][i]}%` }} />
+              <Sk className="h-3" style={{ width: `${[45,40,50,42,48][i]}%` }} />
+              <Sk className="h-2.5 w-24" />
+            </div>
+            <Sk className="w-9 h-9 rounded-full flex-shrink-0" />
           </div>
-          <div className="h-4 bg-zinc-800 rounded w-16 animate-pulse"></div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProfilePageSkeleton() {
+  return (
+    <div className="pt-4 min-h-screen bg-black">
+      {/* Cover banner */}
+      <Sk className="h-24 w-full rounded-none" style={{ borderRadius: 0 }} />
+      <div className="px-5 pb-8 max-w-md mx-auto">
+        {/* Avatar + bell row */}
+        <div className="flex items-end justify-between -mt-12 mb-6">
+          <Sk className="w-24 h-24 rounded-full border-4 border-black flex-shrink-0" />
+          <Sk className="w-7 h-7 rounded-full mb-2" />
         </div>
-        
-        {/* Materials List Skeleton */}
-        <div className="space-y-4">
+        {/* Name + email */}
+        <Sk className="h-6 w-40 mb-2" />
+        <Sk className="h-3 w-56 mb-4" />
+        {/* Action buttons */}
+        <div className="flex gap-2 mb-6">
+          <Sk className="flex-1 h-10 rounded-xl" />
+          <Sk className="flex-1 h-10 rounded-xl" />
+        </div>
+        {/* Stats row */}
+        <div className="glass-card p-4 mb-4">
+          <div className="flex justify-around">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-1.5">
+                <Sk className="h-6 w-10" />
+                <Sk className="h-2.5 w-16" />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Upload cards */}
+        <Sk className="h-3 w-28 mb-3" />
+        <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-zinc-900/20 border border-zinc-800/50 rounded-2xl p-4 animate-pulse">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-zinc-800 rounded-lg flex-shrink-0"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-zinc-800 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-zinc-800 rounded w-1/2 mb-1"></div>
-                  <div className="h-3 bg-zinc-800 rounded w-2/3"></div>
-                </div>
+            <div key={i} className="glass-card p-4 flex items-start gap-3">
+              <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Sk className="h-3.5" style={{ width: `${[65,75,55][i]}%` }} />
+                <Sk className="h-2.5 w-1/3" />
               </div>
             </div>
           ))}
@@ -86,11 +235,120 @@ function AppSkeleton() {
   );
 }
 
+function UploadPageSkeleton() {
+  return (
+    <div className="p-5 pt-8 max-w-md mx-auto pb-24">
+      <div className="text-center mb-6">
+        <Sk className="h-6 w-28 mx-auto mb-1" />
+        <Sk className="h-3 w-52 mx-auto" />
+      </div>
+      <div className="glass-card p-4 space-y-4">
+        {/* User identity banner */}
+        <div className="glass-card p-3 flex items-center gap-3 bg-white/5">
+          <Sk className="w-10 h-10 rounded-full flex-shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <Sk className="h-3.5 w-32" />
+            <Sk className="h-2.5 w-44" />
+          </div>
+          <Sk className="w-16 h-5 rounded-full flex-shrink-0" />
+        </div>
+        {/* Title field */}
+        <Sk className="h-2.5 w-12 mb-1" />
+        <Sk className="h-11 w-full rounded-xl" />
+        {/* Sem + Type row */}
+        <div className="grid grid-cols-2 gap-3">
+          <div><Sk className="h-2.5 w-16 mb-2" /><Sk className="h-11 rounded-xl" /></div>
+          <div><Sk className="h-2.5 w-10 mb-2" /><Sk className="h-11 rounded-xl" /></div>
+        </div>
+        {/* Subject */}
+        <Sk className="h-2.5 w-14 mb-2" />
+        <Sk className="h-11 w-full rounded-xl" />
+        {/* Drop zone */}
+        <Sk className="h-28 w-full rounded-xl" style={{ borderRadius: '12px' }} />
+        {/* Submit button */}
+        <Sk className="h-12 w-full rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+function AdminPageSkeleton() {
+  return (
+    <div className="p-5 pt-8 max-w-2xl mx-auto pb-24">
+      <div className="text-center mb-6">
+        <Sk className="h-6 w-24 mx-auto mb-2" />
+        <Sk className="h-3 w-48 mx-auto" />
+      </div>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="glass-card p-4">
+            <Sk className="h-7 w-12 mb-1" />
+            <Sk className="h-3 w-20" />
+          </div>
+        ))}
+      </div>
+      {/* Tab bar */}
+      <div className="flex gap-2 mb-4">
+        {[...Array(3)].map((_, i) => (
+          <Sk key={i} className={`flex-1 h-9 rounded-full ${i === 0 ? 'opacity-60' : 'opacity-30'}`} />
+        ))}
+      </div>
+      {/* Pending cards */}
+      <div className="space-y-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="glass-card p-4 flex items-start gap-3">
+            <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Sk className="h-3.5" style={{ width: `${[70,55,80,60][i]}%` }} />
+              <Sk className="h-2.5 w-1/2" />
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <Sk className="w-8 h-8 rounded-lg" />
+              <Sk className="w-8 h-8 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Route-aware global skeleton.
+// Uses window.location.hash (HashRouter) to pick the right page skeleton,
+// so the AppContext loading phase and page-level loading phase are visually identical.
+function AppSkeleton() {
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  const parts = hash.split('/').filter(Boolean);
+  const path = '/' + hash;
+
+  let PageSkeleton = HomePageSkeleton;
+  if (path === '/library') {
+    PageSkeleton = LibraryPageSkeleton;
+  } else if (path === '/profile') {
+    PageSkeleton = ProfilePageSkeleton;
+  } else if (path === '/upload' || path === '/admin-upload') {
+    PageSkeleton = UploadPageSkeleton;
+  } else if (path === '/admin') {
+    PageSkeleton = AdminPageSkeleton;
+  } else if (parts[0] === 'semester' && parts.length >= 3) {
+    PageSkeleton = MaterialsPageSkeleton;
+  } else if (parts[0] === 'semester') {
+    PageSkeleton = SubjectsPageSkeleton;
+  }
+
+  return (
+    <div className="bg-[#0a0a0a] text-white min-h-screen">
+      <PageSkeleton />
+      <NavbarSkeleton />
+    </div>
+  );
+}
+
+
 function App() {
-  const { user, loading, siteZoom } = useApp();
+  const { user, loading, isBanned, siteZoom } = useApp();
   const location = useLocation(); // Use React Router's reactive location
-  const [isUserBanned, setIsUserBanned] = useState(false);
-  const [userDataLoading, setUserDataLoading] = useState(true);
 
   // Reactively check if the user is on a public page
   const isPublicRoute = location.pathname === '/privacy' || location.pathname === '/terms';
@@ -103,36 +361,6 @@ function App() {
     document.documentElement.style.transition = 'zoom 0.3s ease-in-out';
     document.documentElement.style.zoom = `${siteZoom / 100}`;
   }, [siteZoom]);
-
-  // Check if user is banned
-  useEffect(() => {
-    if (!user?.uid) {
-      setUserDataLoading(false);
-      setIsUserBanned(false);
-      return;
-    }
-    
-    const checkBanStatus = async () => {
-      try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          setIsUserBanned(userData.isBanned || false);
-        } else {
-          setIsUserBanned(false);
-        }
-      } catch (error) {
-        console.error("Error checking ban status:", error);
-        setIsUserBanned(false);
-      } finally {
-        setUserDataLoading(false);
-      }
-    };
-    
-    checkBanStatus();
-  }, [user?.uid]);
 
   // Track daily visitor
   useEffect(() => {
@@ -154,15 +382,14 @@ function App() {
   }, []);
 
   // Loading state
-  if (loading || userDataLoading) {
+  if (loading) {
     return <AppSkeleton />;
   }
 
   // Show banned page if user is banned
-  if (user && isUserBanned) {
+  if (user && isBanned) {
     return (
-      <Suspense fallback={<LoadingSpinner />}
-      >
+      <Suspense fallback={<AppSkeleton />}>
         <BannedPage />
       </Suspense>
     );
@@ -171,8 +398,7 @@ function App() {
   // Not logged in (and not trying to view a public policy page)
   if (!user && !isPublicRoute) {
     return (
-      <Suspense fallback={<LoadingSpinner />}
-      >
+      <Suspense fallback={<AppSkeleton />}>
         <Login />
       </Suspense>
     );
@@ -180,7 +406,7 @@ function App() {
 
   // Logged in - return the router with all routes
   return (
-    <DataProvider>
+    <>
       <Toaster
         position="top-center"
         reverseOrder={false}
@@ -224,7 +450,7 @@ function App() {
           <FloatingAIButton />
         </main>
       </Suspense>
-    </DataProvider>
+    </>
   );
 }
 

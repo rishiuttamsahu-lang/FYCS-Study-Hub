@@ -80,6 +80,10 @@ export const AppProvider = ({ children }) => {
   // User role state (separate from users array for real-time updates)
   const [userRole, setUserRole] = useState(null);
 
+  // RBAC - Role-Based Access Control
+  const CREATOR_EMAILS = ["rishiuttamsahu@gmail.com", "piyushgupta122006@gmail.com"];
+  const isAdmin = CREATOR_EMAILS.includes(user?.email) || userRole === "admin";
+
   // 🌟 NAYA GLOBAL UPLOAD ENGINE 🌟
   const [globalUploadState, setGlobalUploadState] = useState({ uploading: false, current: 0, total: 0, realProgress: 0 });
   
@@ -143,10 +147,15 @@ export const AppProvider = ({ children }) => {
       unsubscribeMaterials();
       unsubscribeSubjects();
     };
-  }, [loading]);
+  }, []);
   
-  // Real-time listener for users
+  // Real-time listener for users (ONLY FOR ADMIN)
   useEffect(() => {
+    if (!isAdmin) {
+      setUsers([]);
+      return;
+    }
+    
     const unsubscribeUsers = onSnapshot(
       collection(db, "users"),
       (snapshot) => {
@@ -170,7 +179,7 @@ export const AppProvider = ({ children }) => {
     );
     
     return () => unsubscribeUsers();
-  }, []);
+  }, [isAdmin]);
   
   // Authentication listener with user sync and ban flag
   useEffect(() => {
@@ -215,35 +224,10 @@ export const AppProvider = ({ children }) => {
     return () => unsubscribeAuth();
   }, []);
   
-  // Real-time role listener for current user
-  useEffect(() => {
-    if (!user?.uid) return;
-    
-    const userDocRef = doc(db, "users", user.uid);
-    const unsubscribeRole = onSnapshot(userDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        setUserRole(userData.role || "student");
-        // Also update the users array for consistency
-        setUsers(prevUsers => 
-          prevUsers.map(u => u.uid === user.uid ? {...u, role: userData.role} : u)
-        );
-      }
-    }, (error) => {
-      console.error("Error listening to user role: ", error);
-    });
-    
-    return () => unsubscribeRole();
-  }, [user?.uid]);
-  
-  // RBAC - Role-Based Access Control
-  const CREATOR_EMAILS = ["rishiuttamsahu@gmail.com", "piyushgupta122006@gmail.com"];
-  const isAdmin = CREATOR_EMAILS.includes(user?.email) || userRole === "admin";
-  
   // Derived state - Calculate statistics dynamically
   const stats = useMemo(() => {
-    const approvedMaterials = materials.filter(m => m.status === 'Approved');
-    const pendingMaterials = materials.filter(m => m.status === 'Pending');
+    const approvedMaterials = materials.filter(m => (m.status || "").toLowerCase() === 'approved');
+    const pendingMaterials = materials.filter(m => (m.status || "").toLowerCase() === 'pending');
     
     return {
       totalViews: approvedMaterials.reduce((sum, material) => sum + (material.views || 0), 0),
@@ -692,6 +676,7 @@ export const AppProvider = ({ children }) => {
     users,
     user, // Add user to context
     userRole,
+    isBanned: user?.isBanned || false,
     stats,
     loading,
     siteZoom,

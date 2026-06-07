@@ -1,7 +1,6 @@
 import { BookOpen, Download, FileText, GraduationCap, Layers, Lock, Circle, Loader2 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { useData } from "../context/DataContext";
 import { useState, useEffect, startTransition } from "react";
 import dbLogo from "/logo.png";
 import MaterialCard from "../components/MaterialCard";
@@ -10,25 +9,15 @@ const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loadingCard, setLoadingCard] = useState(null);
-  const { semesters, getSubjectById, getSemesterById, isAdmin } = useApp();
-  const { homeData, fetchHomeData, isHomeLoaded } = useData();
+  const { semesters, getSubjectById, getSemesterById, isAdmin, subjects, getRecentMaterials, loading } = useApp();
 
   // Reset the loading spinner when navigation completes
   useEffect(() => {
     setLoadingCard(null);
   }, [location.pathname]);
-
-  // Fetch data on mount - will only fetch if not already loaded
-  useEffect(() => {
-    fetchHomeData();
-  }, [fetchHomeData]);
-
-  // Debugging log
-  console.log("🏠 Home Page Data Received:", homeData);
   
-  // Use cached data or empty arrays as fallback
-  const subjects = homeData?.subjects || [];
-  const recentMaterials = homeData?.recents || [];
+  // Get recent approved materials from the global context
+  const recentMaterials = getRecentMaterials(10);
 
   const semestersVm = semesters.map((s) => ({
     id: s.id,
@@ -40,9 +29,6 @@ const Home = () => {
 
   // Use cached recent materials
   const recentApproved = recentMaterials.slice(0, 10);
-  
-  // Debug: Log the recent materials
-  console.log("📊 Recent Materials for Display:", recentApproved);
   
   // Helper function to check if material is new (within 24 hours)
   const isNewMaterial = (material) => {
@@ -199,7 +185,7 @@ const Home = () => {
           <div className="glass-card p-8 text-center">
             <div className="text-white/50 mb-2">No materials found</div>
             <div className="text-sm text-white/40">
-              {isHomeLoaded ? "No materials available yet" : "Loading materials..."}
+              {!loading ? "No materials available yet" : "Loading materials..."}
             </div>
             {isAdmin && (
               <button
