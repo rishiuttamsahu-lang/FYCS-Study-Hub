@@ -342,6 +342,30 @@ function AppSkeleton() {
   );
 }
 
+// Route transition fallback (keeps navbar mounted, only renders the page skeleton)
+function RouteSuspenseFallback() {
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  const parts = hash.split('/').filter(Boolean);
+  const path = '/' + hash;
+
+  let PageSkeleton = HomePageSkeleton;
+  if (path === '/library') {
+    PageSkeleton = LibraryPageSkeleton;
+  } else if (path === '/profile') {
+    PageSkeleton = ProfilePageSkeleton;
+  } else if (path === '/upload' || path === '/admin-upload') {
+    PageSkeleton = UploadPageSkeleton;
+  } else if (path === '/admin') {
+    PageSkeleton = AdminPageSkeleton;
+  } else if (parts[0] === 'semester' && parts.length >= 3) {
+    PageSkeleton = MaterialsPageSkeleton;
+  } else if (parts[0] === 'semester') {
+    PageSkeleton = SubjectsPageSkeleton;
+  }
+
+  return <PageSkeleton />;
+}
+
 function App() {
   const { user, loading, isBanned, siteZoom } = useApp();
   const location = useLocation(); // Use React Router's reactive location
@@ -419,8 +443,8 @@ function App() {
           }
         }
       />
-      <Suspense fallback={<AppSkeleton />}>
-        <main className="bg-[#0a0a0a] text-white pb-24 relative">
+      <main className="bg-[#0a0a0a] text-white pb-24 relative min-h-screen">
+        <Suspense fallback={<RouteSuspenseFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/semester/:semId" element={<Subjects />} />
@@ -434,14 +458,14 @@ function App() {
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+        </Suspense>
 
-          <Navbar />
-          <GlobalUploadBlob />
-          
-          {/* Floating AI Assistant Button */}
-          <FloatingAIButton />
-        </main>
-      </Suspense>
+        <Navbar />
+        <GlobalUploadBlob />
+        
+        {/* Floating AI Assistant Button */}
+        <FloatingAIButton />
+      </main>
     </>
   );
 }
