@@ -126,6 +126,18 @@ export default function Admin() {
   const [selectedPending, setSelectedPending] = useState([]);
   const [showAddSubjectForm, setShowAddSubjectForm] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
+  
+  // 🚨 AI Automation States
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+  // 🚨 Dynamic Bulk Subject Selection Utilities
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
+  const touchTimer = useRef(null);
+  // 🚨 Bulk Materials Selection Utilities
+  const [isMaterialMultiMode, setIsMaterialMultiMode] = useState(false);
+  const [selectedMaterials, setSelectedMaterials] = useState([]);
+  const matTouchTimer = useRef(null);
+  const [aiExtractedSubjects, setAiExtractedSubjects] = useState([]);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [editingSubject, setEditingSubject] = useState(null);
   const [editSubjectName, setEditSubjectName] = useState("");
@@ -466,8 +478,357 @@ export default function Admin() {
       }
     }
   };
+
+  // 🚨 SEMESTER-AWARE MASTER AUTOMATION ENGINE (Local Filter + AI Fuzzy Protection)
+  const handlePdfAiAutomation = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // 🧠 HUMAN LOGIC: Check customer context target upfront
+    const currentTargetSem = newSubject.semesterId; // "3" or "4" etc.
+    
+    setIsAiProcessing(true);
+    const loadingToast = toast.loading(`Scanning PDF specifically for Semester ${currentTargetSem} subjects...`);
+
+    // 🚨 FIX PROBLEM 3: Target stream value ko turant null clear karna taaki refresh na lagana pade!
+    const inputElement = e.target;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfjs = await import("pdfjs-dist");
+      
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+        "pdfjs-dist/build/pdf.worker.min.mjs",
+        import.meta.url
+      ).toString();
+      
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      
+      let currentParsingSemester = null;
+      let targetLines = [];
+      
+      // Pure PDF ke pages par traverse karenge step-by-step
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+        const pageLines = textContent.items.map(item => item.str);
+        
+        // 🧠 STATE MACHINE TRACKING: Check karein ki page par kis Sem ka data shuru ho raha hai
+        if (/Semester\s+III/i.test(pageText) || /Sem\s*–\s*III/i.test(pageText)) {
+          currentParsingSemester = "3";
+        } else if (/Semester\s+IV/i.test(pageText) || /Sem\s*–\s*IV/i.test(pageText)) {
+          currentParsingSemester = "4";
+        } else if (/Semester\s+I\b/i.test(pageText)) {
+          currentParsingSemester = "1";
+        } else if (/Semester\s+II\b/i.test(pageText)) {
+          currentParsingSemester = "2";
+        }
+
+        // 🚨 CRITICAL LAYER: Line tabhi pick hogi jab current page admin ke selected semester se match karega!
+        if (currentParsingSemester === String(currentTargetSem)) {
+          pageLines.forEach(line => {
+            if (/name\s+of\s+(the\s+)?course:/i.test(line)) {
+              // Extract logic configuration guard
+              if (!targetLines.includes(line.trim())) {
+                targetLines.push(line.trim());
+              }
+            }
+          });
+        }
+      }
+
+      // 🧠 SMART HUMAN CHECK: Agar loops ke baad target lines khali hain
+      if (targetLines.length === 0) {
+        toast.dismiss(loadingToast);
+        
+        // SweetAlert2 use karke user ko samjhao ki galti kahan hui hai
+        Swal.fire({
+          title: "Semester Mismatch! ⚠️",
+          html: `<div class="text-xs text-zinc-400 leading-relaxed">
+            The uploaded syllabus PDF does not seem to contain data for <b class="text-[#FFD700]">Semester ${currentTargetSem}</b>.<br/><br/>
+            This specific document contains chapters for <b>Semester 3 and Semester 4</b> only. Please switch your dropdown to the correct semester and try again!
+          </div>`,
+          icon: "warning",
+          buttonsStyling: false,
+          background: "#0c0c0e",
+          color: "#FFFFFF",
+          confirmButtonText: "Got it!",
+          customClass: {
+            popup: "border border-zinc-800 rounded-3xl p-5 shadow-2xl",
+            title: "text-base font-bold text-rose-400",
+            confirmButton: "w-full mt-4 bg-zinc-800 hover:bg-zinc-700 py-2.5 rounded-xl text-xs font-bold text-white transition-colors"
+          }
+        });
+        
+        setIsAiProcessing(false);
+        return; // Code safe zone mein terminate ho gaya, ab console error nahi aayega!
+      }
+
+      // 2. Gemini Formatting Optimization Payload
+      const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY; 
+      if (!geminiApiKey) {
+        throw new Error("VITE_GEMINI_API_KEY is missing in your .env file!");
+      }
+
+      const prompt = `You are an automated university database parser tool.
+      Analyze these pre-filtered Course Heading Lines for Semester ${currentTargetSem}.
+      Format each line exactly as: SHORTFORM - FULLFORM (e.g., "OS - Principles of Operating Systems").
+      
+      CRITICAL RULES:
+      1. Keep the exact full name intact in the FULLFORM part. Do not lose prefixes.
+      2. Return ONLY a raw JSON array of strings. No markdown formatting, no \`\`\`json blocks.
+      
+      Filtered Course Lines for Semester ${currentTargetSem}:
+      ${targetLines.join("\n")}`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+
+      const resData = await response.json();
+      if (!resData.candidates || resData.candidates.length === 0) {
+        throw new Error("Gemini API stream validation fault.");
+      }
+
+      const aiResponseText = resData.candidates[0].content.parts[0].text;
+      const cleanJson = aiResponseText.replace(/```json|```/g, "").trim();
+      const extractedArray = JSON.parse(cleanJson);
+
+      // 3. 🧠 Smart Fuzzy Semantic Duplicate Protection
+      const existingSubjects = (subjects || []).map(sub => ({
+        id: sub.id,
+        cleanName: sub.name.toLowerCase()
+          .replace(/principles of|core|advanced|introduction to/g, "")
+          .replace(/[^a-zA-Z0-9]/g, "")
+          .trim()
+      }));
+
+      const processedList = extractedArray.map(subName => {
+        const fullFormPart = subName.includes("-") ? subName.split("-")[1] : subName;
+        const cleanIncoming = fullFormPart.toLowerCase()
+          .replace(/principles of|core|advanced|introduction to/g, "")
+          .replace(/[^a-zA-Z0-9]/g, "")
+          .trim();
+
+        const isDuplicate = existingSubjects.some(existing => {
+          if (!existing.cleanName || !cleanIncoming) return false;
+          return (
+            existing.cleanName === cleanIncoming || 
+            existing.cleanName.includes(cleanIncoming) || 
+            cleanIncoming.includes(existing.cleanName)
+          );
+        });
+
+        return {
+          name: subName,
+          exists: isDuplicate
+        };
+      });
+
+      setAiExtractedSubjects(processedList);
+      
+      const duplicatesCount = processedList.filter(s => s.exists).length;
+      toast.dismiss(loadingToast);
+      
+      if (duplicatesCount > 0) {
+        toast.success(`Extracted ${processedList.length} items for Semester ${currentTargetSem}! (${duplicatesCount} duplicates safe).`);
+      } else {
+        toast.success(`Successfully isolated ${processedList.length} fresh subjects for Semester ${currentTargetSem}!`);
+      }
+
+    } catch (error) {
+      console.error("AI Automation Error:", error);
+      toast.dismiss(loadingToast);
+      toast.error(error.message || "Parsing isolation failed.");
+    } finally {
+      setIsAiProcessing(false);
+      // 🚨 RESET CACHE: Input token clean up executing reset stream
+      if (inputElement) inputElement.value = "";
+    }
+  };
+
+  // Naye Filters ke sath Bulk Push update (Sirf unhi ko add karega jo unique hain)
+  const handleBulkAddAiSubjects = async () => {
+    // Filter out items that already exist in DB
+    const uniqueSubjectsToPush = aiExtractedSubjects.filter(s => !s.exists);
+    
+    if (uniqueSubjectsToPush.length === 0) {
+      toast.error("No unique subjects left to add!");
+      return;
+    }
+
+    const loadToast = toast.loading(`Pushing ${uniqueSubjectsToPush.length} unique subjects to Firestore...`);
+    try {
+      for (const sub of uniqueSubjectsToPush) {
+        await addSubject(sub.name, newSubject.semesterId, "Book");
+      }
+      toast.dismiss(loadToast);
+      toast.success("Database synchronized successfully! 🚀");
+      setAiExtractedSubjects([]);
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error("Error saving subjects.");
+    }
+  };
+
+  // 🧠 HIGH-PERFORMANCE MATERIAL TOUCH ORCHESTRATION
+  const handleMatTouchStart = (materialId) => {
+    if (isMaterialMultiMode) return;
+    matTouchTimer.current = setTimeout(() => {
+      setIsMaterialMultiMode(true);
+      setSelectedMaterials([materialId]);
+      navigator.vibrate?.(40); // Soft feedback vibration
+    }, 600);
+  };
+
+  const handleMatTouchEnd = () => {
+    if (matTouchTimer.current) clearTimeout(matTouchTimer.current);
+  };
+
+  const handleMaterialItemClick = (material, e) => {
+    // Agar link ya buttons click ho rahe hain toh mode bypass ho jaye
+    if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) {
+      return;
+    }
+
+    if (isMaterialMultiMode) {
+      e.preventDefault();
+      setSelectedMaterials(prev => 
+        prev.includes(material.id) ? prev.filter(id => id !== material.id) : [...prev, material.id]
+      );
+    }
+  };
+
+  // Bulk Delete Actions Trigger for Multi Selected Materials
+  const handleBulkDeleteMaterials = async () => {
+    if (selectedMaterials.length === 0) return;
+    const currentScrollPos = window.scrollY || document.documentElement.scrollTop;
+    
+    const result = await Swal.fire({
+      title: `Delete ${selectedMaterials.length} Materials?`,
+      text: "This will permanently delete these files from the server structure!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Delete All",
+      cancelButtonText: "Cancel",
+      buttonsStyling: false,
+      background: "#0c0c0e",
+      color: "#ffffff",
+      customClass: {
+        popup: "border border-zinc-800 rounded-3xl p-5 shadow-2xl",
+        confirmButton: "bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl text-xs font-bold text-white mr-3",
+        cancelButton: "bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold text-white"
+      },
+      didOpen: () => {
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${currentScrollPos}px`;
+        document.body.style.width = '100%';
+      },
+      willClose: () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, currentScrollPos);
+      }
+    });
+
+    if (result.isConfirmed) {
+      const loadToast = toast.loading(`Deleting selected files...`);
+      try {
+        for (const id of selectedMaterials) {
+          await deleteDoc(doc(db, "materials", id));
+        }
+        toast.dismiss(loadToast);
+        toast.success("All selected materials deleted successfully!");
+        setSelectedMaterials([]);
+        setIsMaterialMultiMode(false);
+        
+        // 🚨 BATCH DELETE JUMP LOCK: Firebase callback render bypass
+        window.scrollTo(0, currentScrollPos);
+        requestAnimationFrame(() => {
+          document.documentElement.scrollTop = currentScrollPos;
+        });
+      } catch (err) {
+        toast.dismiss(loadToast);
+        toast.error("Wipe loop execution fault encountered.");
+      }
+    }
+  };
+
+  // 🧠 MOBILE LONG PRESS TRIGGER ORCHESTRATION LOGIC
+  const handleTouchStart = (subjectId) => {
+    touchTimer.current = setTimeout(() => {
+      setIsMultiSelectMode(true);
+      setSelectedSubjects(prev => [...prev, subjectId]);
+      navigator.vibrate?.(50); // Feedback vibration for premium mobile feeling
+    }, 600); // 500-600ms hold turns multi select on!
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimer.current) clearTimeout(touchTimer.current);
+  };
+
+  const handleSubjectItemClick = (subjectId) => {
+    if (isMultiSelectMode) {
+      setSelectedSubjects(prev => 
+        prev.includes(subjectId) ? prev.filter(id => id !== subjectId) : [...prev, subjectId]
+      );
+    }
+  };
+
+  // Bulk Delete Actions Trigger for Multi Selected streams
+  // 🚨 PERFECT BULK SUBJECTS PURGE ENGINE (Zero Page Jerk on Batch Success)
+  const handleBulkDeleteSubjects = async () => {
+    if (selectedSubjects.length === 0) return;
+    const currentScrollPos = window.scrollY || document.documentElement.scrollTop;
+    
+    const result = await Swal.fire({
+      title: `Delete ${selectedSubjects.length} Subjects?`,
+      text: "Warning: Linked materials routes may throw breaks!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Wipe Out",
+      cancelButtonText: "Cancel",
+      buttonsStyling: false,
+      background: "#0c0c0e",
+      color: "#ffffff",
+      customClass: {
+        popup: "border border-zinc-800 rounded-3xl p-5 shadow-2xl",
+        confirmButton: "bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl text-xs font-bold text-white mr-3",
+        cancelButton: "bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-xs font-bold text-white"
+      }
+    });
+
+    if (result.isConfirmed) {
+      const loadToast = toast.loading(`Purging targets from storage layers...`);
+      try {
+        for (const id of selectedSubjects) {
+          await deleteDoc(doc(db, "subjects", id));
+        }
+        toast.dismiss(loadToast);
+        toast.success("Database targets cleared out clean!");
+        setSelectedSubjects([]);
+        setIsMultiSelectMode(false);
+        
+        // 🚨 Multi success macro anchor integration
+        window.scrollTo(0, currentScrollPos);
+        requestAnimationFrame(() => {
+          document.documentElement.scrollTop = currentScrollPos;
+        });
+      } catch (err) {
+        toast.dismiss(loadToast);
+        toast.error("Wipe loop execution fault encountered.");
+      }
+    }
+  };
   
+  // 🚨 100% FIXED JUMP MECHANISM ON DATABASE CONFIRMED PURGE
   const deleteSubject = async (id) => {
+    const currentScrollPos = window.scrollY || document.documentElement.scrollTop;
+
     const result = await Swal.fire({
       titleHtml: '<div class="text-sm font-bold">Delete Subject?</div>',
       text: "This action cannot be undone.",
@@ -489,10 +850,22 @@ export default function Admin() {
         cancelButton: "bg-[#2a2a2a] hover:bg-[#3a3a3a] px-4 py-1.5 rounded-xl text-xs font-medium text-white"
       }
     });
+
     if (!result.isConfirmed) return;
+    
     try {
       await deleteDoc(doc(db, "subjects", id));
       toast.success("Subject deleted successfully!");
+      
+      // 🚨 PURE REALTIME ANCHOR FORCING: Double layer guard executing loop settlement
+      window.scrollTo(0, currentScrollPos);
+      
+      requestAnimationFrame(() => {
+        window.scrollTo(0, currentScrollPos);
+        // HTML and document parameters dynamic reset
+        document.documentElement.scrollTop = currentScrollPos;
+      });
+
     } catch (error) {
       toast.error("Error deleting subject: " + error.message);
     }
@@ -1076,79 +1449,77 @@ export default function Admin() {
                       const ref = isLastItem ? lastMaterialRef : null;
                       const semester = getSemesterById(material.semId);
                       const subject = getSubjectById(material.subjectId);
+                      const isMatSelected = selectedMaterials.includes(material.id);
                       
                       return (
-                        /* 🌟 NAYA PREMIUM MATERIAL CARD */
-                        <div key={material.id} className="glass-card p-5 rounded-2xl hover:border-white/20 transition-all duration-300 group" ref={ref}>
+                        <div 
+                          key={material.id} 
+                          ref={ref}
+                          onTouchStart={() => handleMatTouchStart(material.id)}
+                          onTouchEnd={handleMatTouchEnd}
+                          onClick={(e) => handleMaterialItemClick(material, e)}
+                          style={{ transform: 'translateZ(0)', willChange: 'transform' }}
+                          className={`glass-card p-5 rounded-2xl hover:border-white/20 transition-all duration-300 group select-none ${
+                            isMatSelected ? 'border-[#FFD700] bg-[#FFD700]/10 scale-[0.99]' : ''
+                          }`}
+                        >
                           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                             
-                            {/* Left Side: Icon & Info */}
-                            <div className="flex-1">
-                              <div className="flex items-start gap-4">
-                                <div className={`p-3 rounded-2xl flex-shrink-0 ${
-                                  material.type === 'Notes' ? 'bg-blue-500/10 text-blue-400' :
-                                  material.type === 'Practicals' ? 'bg-green-500/10 text-green-400' :
-                                  material.type === 'IMP' ? 'bg-yellow-500/10 text-yellow-400' :
-                                  material.type === 'Assignment' ? 'bg-purple-500/10 text-purple-400' :
-                                  'bg-emerald-500/10 text-emerald-400'
+                            <div className="flex-1 flex items-start gap-4 min-w-0">
+                              {isMaterialMultiMode && (
+                                <div className={`w-5 h-5 rounded-lg mt-3 flex items-center justify-center border transition-all flex-shrink-0 ${
+                                  isMatSelected ? 'bg-[#FFD700] border-[#FFD700]' : 'border-white/20'
                                 }`}>
-                                  {material.type === 'Notes' ? <FileText size={24} /> :
-                                   material.type === 'Practicals' ? <Code size={24} /> :
-                                   material.type === 'IMP' ? <Star size={24} /> :
-                                   material.type === 'Assignment' ? <Edit3 size={24} /> :
-                                   <FileText size={24} />}
+                                  {isMatSelected && <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                                 </div>
-                                
-                                <div>
-                                  <h3 className="font-bold text-white text-base group-hover:text-[#FFD700] transition-colors">{material.title}</h3>
-                                  
-                                  {/* Tags */}
-                                  <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold text-white/50 mt-2 uppercase tracking-wider">
-                                    <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg">{semester?.name}</span>
-                                    <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg">{subject?.name}</span>
-                                    <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg text-white/70">{material.type}</span>
+                              )}
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start gap-4">
+                                  <div className={`p-3 rounded-2xl flex-shrink-0 ${
+                                    material.type === 'Notes' ? 'bg-blue-500/10 text-blue-400' :
+                                    material.type === 'Practicals' ? 'bg-green-500/10 text-green-400' :
+                                    material.type === 'IMP' ? 'bg-yellow-500/10 text-yellow-400' :
+                                    material.type === 'Assignment' ? 'bg-purple-500/10 text-purple-400' :
+                                    'bg-emerald-500/10 text-emerald-400'
+                                  }`}>
+                                    {material.type === 'Notes' ? <FileText size={24} /> :
+                                     material.type === 'Practicals' ? <Code size={24} /> :
+                                     material.type === 'IMP' ? <Star size={24} /> :
+                                     material.type === 'Assignment' ? <Edit3 size={24} /> :
+                                     <FileText size={24} />}
                                   </div>
                                   
-                                  {/* Stats */}
-                                  <div className="flex items-center flex-wrap gap-4 mt-3 text-xs text-white/40 font-medium">
-                                    <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Eye size={14} className="text-white/30" /> {material.views} views</span>
-                                    <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Download size={14} className="text-white/30" /> {material.downloads} dls</span>
-                                    <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Clock size={14} className="text-white/30" /> {material.date ? new Date(typeof material.date === 'object' && material.date.toDate ? material.date.toDate() : material.date).toLocaleDateString() : 'Just now'}</span>
+                                  <div className="min-w-0 flex-1">
+                                    <h3 className="font-bold text-white text-base group-hover:text-[#FFD700] transition-colors truncate">{material.title}</h3>
+                                    
+                                    {/* Tags */}
+                                    <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold text-white/50 mt-2 uppercase tracking-wider">
+                                      <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg">{semester?.name}</span>
+                                      <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg">{subject?.name}</span>
+                                      <span className="bg-white/5 border border-white/5 px-2 py-1 rounded-lg text-white/70">{material.type}</span>
+                                    </div>
+                                    
+                                    {/* Stats */}
+                                    <div className="flex items-center flex-wrap gap-4 mt-3 text-xs text-white/40 font-medium">
+                                      <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Eye size={14} /> {material.views || 0} views</span>
+                                      <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Download size={14} /> {material.downloads || 0} dls</span>
+                                      <span className="flex items-center gap-1.5 bg-black/20 px-2 py-1 rounded-md"><Clock size={14} /> {material.date ? new Date(typeof material.date === 'object' && material.date.toDate ? material.date.toDate() : material.date).toLocaleDateString() : 'Just now'}</span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
                             
-                            {/* Right Side: Action Buttons */}
-                            <div className="flex items-center gap-2 w-full lg:w-auto mt-2 lg:mt-0">
-                              <a
-                                href={material.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 font-bold hover:bg-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all"
-                              >
-                                <Eye size={16} />
-                                <span className="text-sm">View</span>
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => handleEditClick(material)}
-                                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-bold hover:bg-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all"
-                              >
-                                <Pencil size={16} />
-                                <span className="text-sm">Edit</span>
-                              </button>
-                              {CREATOR_EMAILS.includes(user.email) && (
-                                <button
-                                  type="button"
-                                  onClick={() => setItemToDelete(material.id)}
-                                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 font-bold hover:bg-rose-500/20 hover:scale-[1.02] active:scale-95 transition-all"
-                                >
-                                  <Trash2 size={16} />
-                                  <span className="text-sm">Delete</span>
-                                </button>
-                              )}
-                            </div>
+                            {!isMaterialMultiMode && (
+                              <div className="flex items-center gap-2 w-full lg:w-auto mt-2 lg:mt-0 relative z-10">
+                                <a href={material.link} target="_blank" rel="noopener noreferrer" className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 font-bold hover:bg-blue-500/20 transition-all text-sm">View</a>
+                                <button type="button" onClick={() => handleEditClick(material)} className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-bold hover:bg-emerald-500/20 transition-all text-sm">Edit</button>
+                                {CREATOR_EMAILS.includes(user?.email) && (
+                                  <button type="button" onClick={() => setItemToDelete(material.id)} className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 font-bold hover:bg-rose-500/20 transition-all text-sm">Delete</button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1187,19 +1558,146 @@ export default function Admin() {
           {/* Subjects Tab */}
           {activeTab === "subjects" && (
             <>
-              <div className="mb-6">
-                <button
-                  type="button"
-                  onClick={() => setShowAddSubjectForm(!showAddSubjectForm)}
-                  className="w-full glass-card border-2 border-dashed border-white/20 p-8 flex flex-col items-center justify-center gap-3 rounded-2xl hover:bg-white/5 transition-colors"
-                >
-                  <Plus size={24} className="text-white/50" />
-                  <span className="font-bold text-white/70">Add New Subject</span>
-                  <span className="text-sm text-white/40 text-center">
-                    Click to {showAddSubjectForm ? "cancel" : "open"} the form
-                  </span>
-                </button>
+              {/* 🧠 SMART HUMAN WORKFLOW: Pehle Semester Select Hoga, Phir Action Milega */}
+              <div className="glass-card p-5 mb-6 border border-purple-500/10 bg-purple-500/5 rounded-2xl">
+                <div className="max-w-xs mx-auto text-center mb-4">
+                  <label className="block text-purple-300 text-xs font-bold uppercase tracking-wider mb-2">
+                    🎯 Step 1: Select Target Semester First
+                  </label>
+                  <CustomSelect
+                    value={newSubject.semesterId}
+                    onChange={(val) => {
+                      setNewSubject(prev => ({ ...prev, semesterId: val }));
+                      setAiExtractedSubjects([]); // Clear previous extraction on sem change to avoid mess
+                    }}
+                    placeholder="Select Semester"
+                    options={(semesters || []).map(sem => ({ value: sem.id, label: sem.name }))}
+                  />
+                </div>
+
+                <div className="w-full h-px bg-white/5 my-4" />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Manual Single Subject Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAddSubjectForm(!showAddSubjectForm)}
+                    className="glass-card border border-white/10 p-5 flex flex-col items-center justify-center gap-2 rounded-xl hover:bg-white/5 transition-all text-center"
+                  >
+                    <Plus size={18} className="text-white/50" />
+                    <span className="font-bold text-white/70 text-xs">Add Single Subject (Manual)</span>
+                    <span className="text-[10px] text-white/40">Type manually for Semester {newSubject.semesterId}</span>
+                  </button>
+
+                  {/* 🚨 THE UPGRADED AI AUTOMATION UPLOAD ZONE */}
+                  <label className={`glass-card border border-dashed p-5 flex flex-col items-center justify-center gap-2 rounded-xl transition-all text-center group ${
+                    isAiProcessing 
+                      ? 'border-zinc-700 bg-zinc-900/20 cursor-not-allowed opacity-50' 
+                      : 'border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer'
+                  }`}>
+                    <input 
+                      type="file" 
+                      accept=".pdf" 
+                      onChange={handlePdfAiAutomation} 
+                      disabled={isAiProcessing} 
+                      className="sr-only" 
+                    />
+                    {isAiProcessing ? (
+                      <Loader2 size={18} className="text-purple-400 animate-spin" />
+                    ) : (
+                      <Code size={18} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                    )}
+                    <span className="font-bold text-purple-300 text-xs">AI Syllabus Parser (PDF)</span>
+                    <span className="text-[10px] text-purple-200/50">Auto-extract items for Semester {newSubject.semesterId}</span>
+                  </label>
+                </div>
               </div>
+              
+              {/* Manual Subject Adding Form */}
+              {showAddSubjectForm && (
+                <div className="glass-card p-6 mb-6 border border-white/10 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <h3 className="font-bold text-sm mb-4 text-white/90">Add Subject Manually to Semester {newSubject.semesterId}</h3>
+                  <form onSubmit={handleAddSubject} className="space-y-4">
+                    <div>
+                      <label className="block text-white/50 text-xs mb-2">Subject Name</label>
+                      <input
+                        type="text"
+                        value={newSubject.name}
+                        onChange={(e) => setNewSubject(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full glass-card p-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-[#FFD700] focus:outline-none text-sm"
+                        placeholder="e.g. OS - Principles of Operating Systems"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex gap-3 pt-2">
+                      <button type="submit" className="flex-1 btn-primary py-2.5 text-xs font-bold">Save Subject</button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddSubjectForm(false)}
+                        className="flex-1 glass-card py-2.5 text-center font-bold rounded-xl border border-white/10 text-white/70 hover:bg-white/5 text-xs transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+              
+              {/* AI Verification Panel (Renders when AI extracts data) */}
+              {aiExtractedSubjects.length > 0 && (
+                <div className="glass-card p-5 mb-6 border border-[#FFD700]/20 bg-[#FFD700]/5 rounded-2xl animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 mb-4 gap-2">
+                    <div>
+                      <h4 className="font-bold text-white text-sm">🤖 AI Structure Preview (Semester {newSubject.semesterId})</h4>
+                      <p className="text-[11px] text-white/40">Review clean names before synchronizing database streams</p>
+                    </div>
+                  </div>
+
+                  {/* List items extracted with smart human-vibe tracking UI */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto mb-4 p-2 bg-black/40 rounded-xl custom-scrollbar">
+                    {aiExtractedSubjects.map((sub, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`flex items-center justify-between px-3 py-2 border rounded-lg text-xs font-medium transition-all ${
+                          sub.exists 
+                            ? 'bg-rose-500/5 border-rose-500/10 text-rose-300 opacity-60 line-through' 
+                            : 'bg-white/5 border-white/5 text-zinc-300'
+                        }`}
+                      >
+                        <span className="truncate pr-2">
+                          {sub.exists ? '⚠️' : '✨'} {sub.name}
+                        </span>
+                        {sub.exists && (
+                          <span className="text-[9px] bg-rose-500/10 border border-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wide flex-shrink-0">
+                            Exists
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={handleBulkAddAiSubjects} 
+                      disabled={aiExtractedSubjects.filter(s => !s.exists).length === 0}
+                      className={`flex-1 px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all ${
+                        aiExtractedSubjects.filter(s => !s.exists).length === 0
+                          ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50 shadow-none'
+                          : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-900/20'
+                      }`}
+                    >
+                      🚀 Push {aiExtractedSubjects.filter(s => !s.exists).length} Unique Subjects to Sem {newSubject.semesterId}
+                    </button>
+                    <button 
+                      onClick={() => setAiExtractedSubjects([])} 
+                      className="px-4 py-2.5 bg-white/5 border border-white/10 text-white/60 hover:text-white rounded-xl font-bold text-xs transition-colors"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              )}
               
               {showAddSubjectForm && (
                 <div className="glass-card p-6 mb-6">
@@ -1257,33 +1755,56 @@ export default function Admin() {
                         {semester.name}
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
-                        {(semSubjects || []).map(subject => (
-                          <div key={subject.id} className="glass-card p-3 md:p-4 flex items-center justify-between">
-                            <div>
-                              <div className="font-semibold">{subject.name}</div>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleEditSubjectClick(subject)}
-                                className="p-1.5 md:p-2 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
-                                title="Edit subject"
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              {CREATOR_EMAILS.includes(user.email) && (
-                                <button
-                                  type="button"
-                                  onClick={() => deleteSubject(subject.id)}
-                                  className="p-1.5 md:p-2 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
-                                  title="Delete subject"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
+                        {(semSubjects || []).map(subject => {
+                          const isItemSelected = selectedSubjects.includes(subject.id);
+                          
+                          return (
+                            <div 
+                              key={subject.id} 
+                              onTouchStart={() => handleTouchStart(subject.id)}
+                              onTouchEnd={handleTouchEnd}
+                              onClick={() => handleSubjectItemClick(subject.id)}
+                              style={{ transform: 'translateZ(0)', willChange: 'transform' }} // 🚀 HARDWARE ACCELERATION FORCE
+                              className={`glass-card p-4 flex items-center justify-between transition-all duration-200 relative select-none transform active:scale-98 ${
+                                isItemSelected 
+                                  ? 'border-[#FFD700] bg-[#FFD700]/10' 
+                                  : 'bg-white/2 hover:border-white/20'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                {isMultiSelectMode && (
+                                  <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all flex-shrink-0 ${
+                                    isItemSelected ? 'bg-[#FFD700] border-[#FFD700]' : 'border-white/30'
+                                  }`}>
+                                    {isItemSelected && <svg className="w-2.5 h-2.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                  </div>
+                                )}
+                                <div className="font-semibold text-xs sm:text-sm text-white/90 truncate">{subject.name}</div>
+                              </div>
+
+                              {!isMultiSelectMode && (
+                                <div className="flex gap-2 relative z-10">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleEditSubjectClick(subject); }}
+                                    className="p-1.5 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
+                                  {CREATOR_EMAILS.includes(user?.email) && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); deleteSubject(subject.id); }}
+                                      className="p-1.5 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 transition-colors"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -1901,6 +2422,78 @@ export default function Admin() {
               <button onClick={handleBulkApprove} type="button" className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition-all border border-emerald-500/20"><CheckCircle size={14}/> Approve</button>
               <button onClick={handleBulkReject} type="button" className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 text-rose-400 rounded-xl text-xs font-bold hover:bg-rose-500/20 transition-all border border-rose-500/20"><XCircle size={14}/> Reject</button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* 🚨 FLOATING PORTAL FOR SUBJECTS BULK SELECTION MODES */}
+      {isMultiSelectMode && createPortal(
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100000] animate-in slide-in-from-bottom-5 px-4 w-full max-w-md pointer-events-none">
+          <div className="pointer-events-auto glass-card bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.9)] px-4 py-3 rounded-2xl flex items-center justify-between gap-4">
+            
+            {/* 👈 LEFT: Exit Button */}
+            <button 
+              onClick={() => { setIsMultiSelectMode(false); setSelectedSubjects([]); }} 
+              type="button" 
+              className="px-4 py-2 bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-bold transition-all shrink-0"
+            >
+              Exit
+            </button>
+
+            {/* 🎯 MIDDLE: Selected Items Counter */}
+            <div className="bg-[#FFD700]/10 px-4 py-2 rounded-xl border border-[#FFD700]/20 flex items-center gap-2 justify-center mx-auto">
+              <span className="flex h-2 w-2 rounded-full bg-[#FFD700] animate-pulse"></span>
+              <span className="text-xs font-extrabold text-[#FFD700] whitespace-nowrap tracking-wide">
+                {selectedSubjects.length} Selected
+              </span>
+            </div>
+
+            {/* 👉 RIGHT: Action Button */}
+            <button 
+              onClick={handleBulkDeleteSubjects} 
+              disabled={selectedSubjects.length === 0} 
+              type="button" 
+              className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 text-rose-400 rounded-xl text-xs font-bold hover:bg-rose-500/20 transition-all border border-rose-500/20 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+            >
+              <Trash2 size={14}/> Bulk Purge
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* 🚨 FLOATING PORTAL FOR MATERIALS BULK SELECTION MODES */}
+      {isMaterialMultiMode && createPortal(
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100000] animate-in slide-in-from-bottom-5 px-4 w-full max-w-md pointer-events-none">
+          <div className="pointer-events-auto glass-card bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.9)] px-4 py-3 rounded-2xl flex items-center justify-between gap-4">
+            
+            {/* 👈 LEFT: Exit Button */}
+            <button 
+              onClick={() => { setIsMaterialMultiMode(false); setSelectedMaterials([]); }} 
+              type="button" 
+              className="px-4 py-2 bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 rounded-xl text-xs font-bold transition-all shrink-0"
+            >
+              Exit
+            </button>
+
+            {/* 🎯 MIDDLE: Selected Items Counter */}
+            <div className="bg-[#FFD700]/10 px-4 py-2 rounded-xl border border-[#FFD700]/20 flex items-center gap-2 justify-center mx-auto">
+              <span className="flex h-2 w-2 rounded-full bg-[#FFD700] animate-pulse"></span>
+              <span className="text-xs font-extrabold text-[#FFD700] whitespace-nowrap tracking-wide">
+                {selectedMaterials.length} Selected
+              </span>
+            </div>
+
+            {/* 👉 RIGHT: Action Button */}
+            <button 
+              onClick={handleBulkDeleteMaterials} 
+              disabled={selectedMaterials.length === 0} 
+              type="button" 
+              className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 text-rose-400 rounded-xl text-xs font-bold hover:bg-rose-500/20 transition-all border border-rose-500/20 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+            >
+              <Trash2 size={14}/> Batch Delete
+            </button>
           </div>
         </div>,
         document.body
