@@ -481,18 +481,17 @@ export default function Admin() {
     }
   };
 
-  // 🚨 SEMESTER-AWARE MASTER AUTOMATION ENGINE (Local Filter + AI Fuzzy Protection)
+  // 🚨 MASTER AUTOMATION ENGINE: GEMINI-3.1-FLASH-LITE + CUSTOM "FULLFORM (SHORTFORM)" SYSTEM
   const handlePdfAiAutomation = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 🧠 HUMAN LOGIC: Check customer context target upfront
+    // 🧠 HUMAN LOGIC: Check target semester upfront
     const currentTargetSem = newSubject.semesterId; // "3" or "4" etc.
     
     setIsAiProcessing(true);
     const loadingToast = toast.loading(`Scanning PDF specifically for Semester ${currentTargetSem} subjects...`);
 
-    // 🚨 FIX PROBLEM 3: Target stream value ko turant null clear karna taaki refresh na lagana pade!
     const inputElement = e.target;
 
     try {
@@ -531,7 +530,6 @@ export default function Admin() {
         if (currentParsingSemester === String(currentTargetSem)) {
           pageLines.forEach(line => {
             if (/name\s+of\s+(the\s+)?course:/i.test(line)) {
-              // Extract logic configuration guard
               if (!targetLines.includes(line.trim())) {
                 targetLines.push(line.trim());
               }
@@ -544,7 +542,6 @@ export default function Admin() {
       if (targetLines.length === 0) {
         toast.dismiss(loadingToast);
         
-        // SweetAlert2 use karke user ko samjhao ki galti kahan hui hai
         Swal.fire({
           title: "Semester Mismatch! ⚠️",
           html: `<div class="text-xs text-zinc-400 leading-relaxed">
@@ -564,26 +561,30 @@ export default function Admin() {
         });
         
         setIsAiProcessing(false);
-        return; // Code safe zone mein terminate ho gaya, ab console error nahi aayega!
+        return;
       }
 
-      // 2. Gemini Formatting Optimization Payload
-      const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY; 
+      // 🚨 Fetch production VITE key profile configurations
+      const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || window?.process?.env?.VITE_GEMINI_API_KEY; 
       if (!geminiApiKey) {
-        throw new Error("VITE_GEMINI_API_KEY is missing in your .env file!");
+        throw new Error("VITE_GEMINI_API_KEY is missing in your environment configuration profile!");
       }
 
+      // 🧠 Prompt updated to output exact: FULLFORM (SHORTFORM) format
       const prompt = `You are an automated university database parser tool.
       Analyze these pre-filtered Course Heading Lines for Semester ${currentTargetSem}.
-      Format each line exactly as: FULLFORM - SHORTFORM  (e.g., "Principles of Operating Systems (OS)").
+      Format each line exactly as: FULLFORM (SHORTFORM) 
+      Example: "Principles of Operating Systems" becomes "Principles of Operating Systems (OS)".
+      Example: "Theory of Computation" becomes "Theory of Computation (TOC)".
       
       CRITICAL RULES:
-      1. Keep the exact full name intact in the FULLFORM part. Do not lose prefixes.
+      1. Keep the exact full name intact in the FULLFORM part. Do not truncate words.
       2. Return ONLY a raw JSON array of strings. No markdown formatting, no \`\`\`json blocks.
       
       Filtered Course Lines for Semester ${currentTargetSem}:
       ${targetLines.join("\n")}`;
 
+      // 🚨 Model lock remains gemini-3.1-flash-lite as requested!
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -591,6 +592,11 @@ export default function Admin() {
       });
 
       const resData = await response.json();
+      
+      if (resData.error) {
+        throw new Error(`Google API Gateway Exception: ${resData.error.message}`);
+      }
+
       if (!resData.candidates || resData.candidates.length === 0) {
         throw new Error("Gemini API stream validation fault.");
       }
@@ -603,14 +609,16 @@ export default function Admin() {
       const existingSubjects = (subjects || []).map(sub => ({
         id: sub.id,
         cleanName: sub.name.toLowerCase()
+          .replace(/\(.*?\)/g, "") // Brackets aur unke andar ke shortforms hatayein check ke liye
           .replace(/principles of|core|advanced|introduction to/g, "")
           .replace(/[^a-zA-Z0-9]/g, "")
           .trim()
       }));
 
       const processedList = extractedArray.map(subName => {
-        const fullFormPart = subName.includes("-") ? subName.split("-")[1] : subName;
-        const cleanIncoming = fullFormPart.toLowerCase()
+        // Incoming string se brackets content hatakar clean core text extract karna duplication check ke liye
+        const cleanIncoming = subName.toLowerCase()
+          .replace(/\(.*?\)/g, "")
           .replace(/principles of|core|advanced|introduction to/g, "")
           .replace(/[^a-zA-Z0-9]/g, "")
           .trim();
@@ -647,7 +655,6 @@ export default function Admin() {
       toast.error(error.message || "Parsing isolation failed.");
     } finally {
       setIsAiProcessing(false);
-      // 🚨 RESET CACHE: Input token clean up executing reset stream
       if (inputElement) inputElement.value = "";
     }
   };
