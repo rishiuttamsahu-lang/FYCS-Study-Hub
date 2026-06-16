@@ -141,6 +141,8 @@ export default function Admin() {
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [editingSubject, setEditingSubject] = useState(null);
   const [editSubjectName, setEditSubjectName] = useState("");
+  // 🚨 Naya state add kijiye edit subject ke semester ke liye
+  const [editSubjectSem, setEditSubjectSem] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToReject, setItemToReject] = useState(null);
@@ -1049,17 +1051,23 @@ export default function Admin() {
   const handleEditSubjectClick = (subject) => {
     setEditingSubject(subject);
     setEditSubjectName(subject.name);
+    // 🚨 Modal khulte waqt subject ka current semester set karein
+    setEditSubjectSem(subject.semesterId || subject.semId || "1"); 
   };
   
   const handleUpdateSubject = async (e) => {
     e.preventDefault();
     try {
       await updateDoc(doc(db, "subjects", editingSubject.id), {
-        name: editSubjectName
+        name: editSubjectName,
+        // 🚨 Database mein naya selected semester update karein
+        semesterId: editSubjectSem,
+        semId: editSubjectSem // Backup for backwards compatibility
       });
       toast.success("Subject Updated!");
       setEditingSubject(null);
       setEditSubjectName("");
+      setEditSubjectSem(""); // Clear state
     } catch (error) {
       toast.error("Error updating subject: " + error.message);
     }
@@ -2300,6 +2308,18 @@ export default function Admin() {
                   required
                 />
               </div>
+
+              {/* 🚨 Naya Semester Selection Dropdown */}
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Semester</label>
+                <CustomSelect
+                  value={editSubjectSem}
+                  onChange={(val) => setEditSubjectSem(val)}
+                  options={(semesters || []).map(sem => ({ value: sem.id, label: sem.name }))}
+                  placeholder="Select Semester"
+                />
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors">
                   Save Changes
