@@ -312,12 +312,12 @@ function AdminPageSkeleton() {
 }
 
 // Route-aware global skeleton.
-// Uses window.location.hash (HashRouter) to pick the right page skeleton,
+// Uses useLocation (HashRouter compatible location.pathname) to pick the right page skeleton,
 // so the AppContext loading phase and page-level loading phase are visually identical.
 function AppSkeleton() {
-  const hash = window.location.hash.replace(/^#\/?/, '');
-  const parts = hash.split('/').filter(Boolean);
-  const path = '/' + hash;
+  const location = useLocation();
+  const path = location.pathname;
+  const parts = path.split('/').filter(Boolean);
 
   let PageSkeleton = HomePageSkeleton;
   if (path === '/library') {
@@ -344,9 +344,9 @@ function AppSkeleton() {
 
 // Route transition fallback (keeps navbar mounted, only renders the page skeleton)
 function RouteSuspenseFallback() {
-  const hash = window.location.hash.replace(/^#\/?/, '');
-  const parts = hash.split('/').filter(Boolean);
-  const path = '/' + hash;
+  const location = useLocation();
+  const path = location.pathname;
+  const parts = path.split('/').filter(Boolean);
 
   let PageSkeleton = HomePageSkeleton;
   if (path === '/library') {

@@ -88,7 +88,7 @@ const Navbar = () => {
       return currentPath === '/' || currentPath.startsWith('/semester');
     }
     if (path === '/admin') {
-      return currentPath.startsWith('/admin');
+      return currentPath === '/admin' || currentPath.startsWith('/admin/');
     }
     // Baaki tabs ke liye EXACT match chahiye taaki /admin aur /admin-upload mix na hon
     return currentPath === path;
