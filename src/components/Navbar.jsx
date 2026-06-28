@@ -72,7 +72,7 @@ const Navbar = () => {
     { icon: <Home size={22} />, label: "Home", path: "/" },
     { icon: <Library size={22} />, label: "Library", path: "/library" },
     { icon: <Upload size={22} />, label: "Upload", path: "/admin-upload" },
-    { icon: <Shield size={22} />, label: "Admin", path: "/admin" },
+    { icon: <Shield size={22} />, label: "Admin", path: "/admin/analytics" },
     { icon: <User size={22} />, label: "Profile", path: "/profile" },
   ] : [
     { icon: <Home size={22} />, label: "Home", path: "/" },
@@ -87,7 +87,7 @@ const Navbar = () => {
       // Home tab tabhi active hoga jab actual path '/' ho ya koi andar ka '/semester' page ho
       return currentPath === '/' || currentPath.startsWith('/semester');
     }
-    if (path === '/admin') {
+    if (path === '/admin' || path === '/admin/analytics') {
       return currentPath === '/admin' || currentPath.startsWith('/admin/');
     }
     // Baaki tabs ke liye EXACT match chahiye taaki /admin aur /admin-upload mix na hon
@@ -126,7 +126,7 @@ const Navbar = () => {
               {item.path === "/profile" && hasUnread && loadingPath !== item.path && (
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black"></span>
               )}
-              {item.path === "/admin" && unresolvedCount > 0 && loadingPath !== item.path && (
+              {item.path === "/admin/analytics" && unresolvedCount > 0 && loadingPath !== item.path && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border border-black">
                   {unresolvedCount}
                 </span>
