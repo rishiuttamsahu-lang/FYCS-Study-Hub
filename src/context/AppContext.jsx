@@ -276,7 +276,19 @@ export const AppProvider = ({ children }) => {
                 setUserRole("student");
               } catch (err) {
                 console.error("Error creating user doc:", err);
-                toast.error("Failed to create user profile");
+                
+                // 🚨 FIX 2: Set user state anyway! Agar database block bhi kare, 
+                // toh user loop mein na fase aur kam se kam login ho jaye.
+                setUser({
+                  uid: firebaseUser.uid,
+                  displayName: firebaseUser.displayName,
+                  email: firebaseUser.email,
+                  photoURL: firebaseUser.photoURL,
+                  id: firebaseUser.uid
+                });
+                setUserRole("student");
+                
+                toast.error("Connected, but database profile creation delayed.");
               } finally {
                 setAuthLoading(false);
               }
@@ -321,11 +333,12 @@ export const AppProvider = ({ children }) => {
   // Detect mobile devices / in-app webviews (Instagram, WhatsApp, Facebook, etc.)
   // where signInWithPopup silently fails to return control to the opener.
   // Standard mobile browsers (Chrome/Safari) support popups perfectly.
+  // 🚨 FIX 1: Force Redirect for ALL Mobile devices to prevent Tab-Kill Loop
   const shouldUseRedirect = () => {
     const ua = navigator.userAgent || navigator.vendor || "";
+    // Ab isme isInAppWebview ki zaroorat nahi, har mobile device redirect use karega
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-    const isInAppWebview = /FBAN|FBAV|Instagram|Line|WhatsApp|Twitter|wv\)/i.test(ua);
-    return isMobile && isInAppWebview;
+    return isMobile;
   };
 
   // Authentication functions
