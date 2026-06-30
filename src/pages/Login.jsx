@@ -35,8 +35,10 @@ export default function Login() {
         code === "auth/popup-closed-by-user" ||
         code === "auth/cancelled-popup-request"
       ) {
-        // User closed the popup themselves — silent, no toast needed
-        // Spinner already reset above, nothing else to do
+        // A genuine fast manual close (the AppContext login() function
+        // already auto-retries via redirect for the "disguised storage
+        // block" case, so anything that reaches here really was the user
+        // backing out quickly). Silent, no toast needed.
         return;
       }
 

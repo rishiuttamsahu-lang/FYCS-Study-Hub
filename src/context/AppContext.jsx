@@ -341,22 +341,61 @@ export const AppProvider = ({ children }) => {
       return { success: true, redirecting: true };
     }
 
-    // NOTE: We intentionally do NOT catch here.
-    // Errors (popup closed, network fail, etc.) are thrown up to the caller
-    // (Login.jsx handleLogin) so it can reset its own isLoading state and
-    // show the user a proper error message.
-    const result = await signInWithPopup(auth, googleProvider);
-    
-    // Save Google OAuth access token for Drive Picker
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (credential?.accessToken) {
-      sessionStorage.setItem('google_access_token', credential.accessToken);
+    // 🛡️ Browsers that block third-party storage (Safari ITP, Brave,
+    // Chrome with "Block third-party cookies" enabled, etc.) cannot
+    // complete the popup→opener relay that Firebase Auth uses internally.
+    // Crucially, this failure does NOT surface as a distinct error code —
+    // it disguises itself as "auth/popup-closed-by-user", exactly as if
+    // the user had manually closed the window, even when they actually
+    // picked an account and clicked Continue. We track how long the popup
+    // was open: a genuine manual close usually happens almost instantly
+    // (user backs out at the account picker), whereas a real
+    // pick-account-then-continue flow takes several seconds. If we see
+    // "popup closed" AFTER a realistic interaction window, we treat it as
+    // a disguised storage-block failure and automatically retry via
+    // signInWithRedirect instead of leaving the user stuck.
+    const popupOpenedAt = Date.now();
+    const REALISTIC_INTERACTION_MS = 2500;
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+
+      // Save Google OAuth access token for Drive Picker
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        sessionStorage.setItem('google_access_token', credential.accessToken);
+      }
+
+      // Force immediate state update for snappy UI
+      setUser(result.user);
+
+      return { success: true, user: result.user };
+    } catch (error) {
+      const elapsed = Date.now() - popupOpenedAt;
+      const looksLikeDisguisedStorageBlock =
+        (error?.code === "auth/popup-closed-by-user" ||
+         error?.code === "auth/cancelled-popup-request") &&
+        elapsed > REALISTIC_INTERACTION_MS;
+
+      if (looksLikeDisguisedStorageBlock) {
+        console.warn(
+          `Popup closed after ${elapsed}ms with code ${error.code} — ` +
+          `this looks like a third-party storage block (Safari ITP / Brave / ` +
+          `Chrome 3rd-party cookies off) disguised as a manual close. ` +
+          `Falling back to signInWithRedirect.`
+        );
+        toast("Your browser's privacy settings are blocking popup sign-in. Redirecting you to Google instead...", {
+          icon: "🔄",
+          duration: 4000
+        });
+        await signInWithRedirect(auth, googleProvider);
+        return { success: true, redirecting: true };
+      }
+
+      // Genuine fast manual close, or any other error — let the caller
+      // (Login.jsx) handle it as before.
+      throw error;
     }
-    
-    // Force immediate state update for snappy UI
-    setUser(result.user);
-    
-    return { success: true, user: result.user };
   };
 
   // Function to retrieve Google Drive token from cache (no redundant popup)
