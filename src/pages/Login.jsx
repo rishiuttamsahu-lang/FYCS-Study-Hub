@@ -18,7 +18,11 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       setIsLoading(true);
-      await login();
+      const result = await login();
+      // If a redirect-based login was triggered, the page is about to
+      // navigate away to Google — don't call navigate('/') here, it'll
+      // just be discarded. The redirect result is handled on the next load.
+      if (result?.redirecting) return;
       navigate('/');
     } catch (error) {
       // Always reset spinner — no matter what went wrong

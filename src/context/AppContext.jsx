@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { db, auth, googleProvider, authReady } from '../firebase';
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy, where, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
-import { signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { toast } from 'react-hot-toast';
 import { CheckCircle, X } from 'lucide-react';
 
@@ -203,6 +203,27 @@ export const AppProvider = ({ children }) => {
       }
       
       if (!isMounted) return;
+
+      // Pick up the result of a signInWithRedirect() call (mobile/webview
+      // login flow). Must run BEFORE/alongside onAuthStateChanged so we can
+      // capture the Drive OAuth access token from the redirect, same as the
+      // popup flow does.
+      try {
+        const redirectResult = await getRedirectResult(auth);
+        if (redirectResult) {
+          const credential = GoogleAuthProvider.credentialFromResult(redirectResult);
+          if (credential?.accessToken) {
+            sessionStorage.setItem('google_access_token', credential.accessToken);
+          }
+        }
+      } catch (err) {
+        console.error("Redirect sign-in error:", err);
+        if (err?.code && err.code !== "auth/no-auth-event") {
+          toast.error("Sign in failed. Please try again.");
+        }
+      }
+
+      if (!isMounted) return;
       
       unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
         // Clean up previous doc listener immediately when auth state changes
@@ -297,8 +318,25 @@ export const AppProvider = ({ children }) => {
     };
   }, [materials, subjects, semesters]);
 
+  // Detect mobile devices / in-app webviews (Instagram, WhatsApp, Facebook, etc.)
+  // where signInWithPopup silently fails to return control to the opener,
+  // causing the classic "select account -> continue -> back to login" loop.
+  const shouldUseRedirect = () => {
+    const ua = navigator.userAgent || navigator.vendor || "";
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    const isInAppWebview = /FBAN|FBAV|Instagram|Line|WhatsApp|Twitter|wv\)/i.test(ua);
+    return isMobile || isInAppWebview;
+  };
+
   // Authentication functions
   const login = async () => {
+    if (shouldUseRedirect()) {
+      // Redirect flow: navigates away and comes back. Result is picked up
+      // by getRedirectResult() in the useEffect below on next mount.
+      await signInWithRedirect(auth, googleProvider);
+      return { success: true, redirecting: true };
+    }
+
     // NOTE: We intentionally do NOT catch here.
     // Errors (popup closed, network fail, etc.) are thrown up to the caller
     // (Login.jsx handleLogin) so it can reset its own isLoading state and
