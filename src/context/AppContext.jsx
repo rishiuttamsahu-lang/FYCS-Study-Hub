@@ -319,18 +319,22 @@ export const AppProvider = ({ children }) => {
   }, [materials, subjects, semesters]);
 
   // Detect mobile devices / in-app webviews (Instagram, WhatsApp, Facebook, etc.)
-  // where signInWithPopup silently fails to return control to the opener,
-  // causing the classic "select account -> continue -> back to login" loop.
+  // where signInWithPopup silently fails to return control to the opener.
+  // Standard mobile browsers (Chrome/Safari) support popups perfectly.
   const shouldUseRedirect = () => {
     const ua = navigator.userAgent || navigator.vendor || "";
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
     const isInAppWebview = /FBAN|FBAV|Instagram|Line|WhatsApp|Twitter|wv\)/i.test(ua);
-    return isMobile || isInAppWebview;
+    return isMobile && isInAppWebview;
   };
 
   // Authentication functions
   const login = async () => {
     if (shouldUseRedirect()) {
+      toast("In-app webview detected. Redirecting to Google. For a smoother experience, please open this site in Chrome or Safari.", {
+        icon: "ℹ️",
+        duration: 5000
+      });
       // Redirect flow: navigates away and comes back. Result is picked up
       // by getRedirectResult() in the useEffect below on next mount.
       await signInWithRedirect(auth, googleProvider);
