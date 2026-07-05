@@ -3,6 +3,9 @@
 
 /* 🚨 YEH NAYA SECTION ADD KAREIN GLOBAL CONSISTENCY KE LIYE 🚨 */
 @layer base {
+  html {
+    overflow-anchor: none;
+  }
   
   /* 1. Select Box Styling: Default ugly arrow ko hatakar custom sleek arrow lagana */
   select {

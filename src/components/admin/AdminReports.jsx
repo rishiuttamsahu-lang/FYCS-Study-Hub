@@ -1,36 +1,17 @@
-import { useState, useEffect } from "react";
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, addDoc, serverTimestamp } from "firebase/firestore";
+import { useState } from "react";
+import { doc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
 import { Flag, CheckCircle, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 
-export default function AdminReports() {
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+// 🚀 `reports` now comes from the real-time onSnapshot listener that
+// already lives in Admin.jsx (previously used only for the unresolved
+// badge count). Reports no longer does its own one-off getDocs() fetch on
+// every tab switch — that was the reason this tab always felt slow to
+// open: it re-fetched the entire collection over the network from
+// scratch every single time, instead of reusing data that was already
+// being kept in sync in the background.
+export default function AdminReports({ reports, setReports, loading }) {
   const [resolvingId, setResolvingId] = useState(null);
-
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
-  const fetchReports = async () => {
-    try {
-      setLoading(true);
-      const reportsQuery = query(
-        collection(db, "reports"),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(reportsQuery);
-      const reportsData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setReports(reportsData);
-    } catch (error) {
-      console.error("Error fetching reports:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleResolve = async (id) => {
     // Set the resolving ID at the beginning

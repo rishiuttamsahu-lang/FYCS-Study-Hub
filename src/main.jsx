@@ -6,6 +6,10 @@ import App from './App.jsx'
 import { AppProvider } from './context/AppContext'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
+if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>

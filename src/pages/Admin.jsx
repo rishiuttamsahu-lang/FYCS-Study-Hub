@@ -100,6 +100,8 @@ export default function Admin() {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [sentNotifications, setSentNotifications] = useState([]);
   const [isSending, setIsSending] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(true);
 
   // 🌟 BULK ACTIONS LOGIC 🌟
   const togglePendingSelection = (id) => {
@@ -207,13 +209,16 @@ export default function Admin() {
 
   // 4. UseEffects
   useEffect(() => {
-    const q = query(collection(db, 'reports'));
+    const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const unresolved = snapshot.docs.filter(doc => {
-        const data = doc.data();
-        return data.status !== 'resolved';
-      }).length;
+      const reportsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setReports(reportsData);
+      setReportsLoading(false);
+      const unresolved = reportsData.filter(r => r.status !== 'resolved').length;
       setUnresolvedCount(unresolved);
+    }, (error) => {
+      console.error('Error listening to reports:', error);
+      setReportsLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -1199,7 +1204,13 @@ export default function Admin() {
           )}
 
           {/* Reports Tab */}
-          {activeTab === "reports" && <AdminReports />}
+          {activeTab === "reports" && (
+            <AdminReports
+              reports={reports}
+              setReports={setReports}
+              loading={reportsLoading}
+            />
+          )}
 
           {activeTab === "subjects" && (
             <AdminSubjects

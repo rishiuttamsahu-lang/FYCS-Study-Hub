@@ -380,6 +380,15 @@ function App() {
     document.documentElement.style.zoom = `${siteZoom / 100}`;
   }, [siteZoom]);
 
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    const raf = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [location.pathname]);
+
   // Track daily visitor
   useEffect(() => {
     const trackDailyVisitor = async () => {
