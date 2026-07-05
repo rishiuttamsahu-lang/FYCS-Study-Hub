@@ -97,26 +97,6 @@ export default function AdminSettings({
           )}
         </div>
       </div>
-
-      <div className="glass-card p-4 md:p-6 border border-rose-500/20 bg-rose-500/5">
-        <h3 className="font-bold text-base md:text-lg mb-2 text-rose-300">Danger Zone</h3>
-        <p className="text-white/50 text-xs md:text-sm mb-3 md:mb-4">
-          These actions cannot be undone. Proceed with caution.
-        </p>
-        {CREATOR_EMAILS.includes(user.email) && (
-          <button
-            type="button"
-            onClick={handleResetAnalytics}
-            className="btn-danger px-4 py-2 md:px-6 md:py-3 font-bold flex items-center gap-2 mb-3 md:mb-4"
-          >
-            <Trash2 size={18} />
-            Reset All Analytics
-          </button>
-        )}
-        <p className="text-xs text-white/40 mt-2 mb-4">
-          This will reset all views and downloads to zero
-        </p>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useEffect, useState, useRef, lazy, Suspense } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, lazy, Suspense } from "react";
 import { doc, setDoc, increment, arrayUnion } from "firebase/firestore";
 import { db } from "./firebase";
 import { Bot, X, Loader2 } from "lucide-react";
@@ -380,13 +380,22 @@ function App() {
     document.documentElement.style.zoom = `${siteZoom / 100}`;
   }, [siteZoom]);
 
-  // Scroll to top on route change
-  useEffect(() => {
+  // Scroll to top synchronously before paint to prevent visible flash / layout shift jump
+  useLayoutEffect(() => {
+    console.log("[Scroll Restoration] Route change triggered:", location.pathname);
+    console.log("[Scroll Restoration] scrollRestoration setting is:", window.history.scrollRestoration);
+    console.log("[Scroll Restoration] window.scrollY before reset:", window.scrollY);
+    
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    const raf = requestAnimationFrame(() => {
+    console.log("[Scroll Restoration] window.scrollY after instant reset:", window.scrollY);
+    
+    // Safety net: scroll again after a short delay once Suspense chunk/Firestore data resolves
+    const timer = setTimeout(() => {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    });
-    return () => cancelAnimationFrame(raf);
+      console.log("[Scroll Restoration] window.scrollY after 100ms safety-net reset:", window.scrollY);
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   // Track daily visitor
