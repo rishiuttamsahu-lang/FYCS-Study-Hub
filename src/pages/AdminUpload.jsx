@@ -376,6 +376,7 @@ export default function AdminUpload() {
         // Ensure admin uploads also start as Pending so they require approval
         status: "Pending",
         uploadedBy: user?.displayName || user?.email.split('@')[0] || "Student",
+        uploadedByUid: user?.uid || null,
       });
       
       if (result.success) {

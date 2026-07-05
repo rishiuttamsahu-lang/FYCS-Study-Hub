@@ -1,6 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { FileText, Eye, Users, Clock } from "lucide-react";
 
 export default function AdminAnalytics({ safeStats, todayVisitors, uniqueUsers, formatNumber }) {
+  const navigate = useNavigate();
+
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
@@ -20,14 +23,18 @@ export default function AdminAnalytics({ safeStats, todayVisitors, uniqueUsers, 
           <div className="text-2xl font-extrabold">{formatNumber(safeStats.totalViews)}</div>
         </div>
         
-        <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-4 flex flex-col justify-center hover:border-cyan-500/30 transition-colors">
+        <div 
+          onClick={() => navigate("/admin/visitors")}
+          className="bg-zinc-900/50 border border-zinc-800/80 rounded-xl p-4 flex flex-col justify-center hover:border-cyan-500/50 transition-all cursor-pointer hover:bg-zinc-800/50 group"
+        >
           <div className="flex items-center justify-between mb-2">
-            <p className="text-zinc-400 text-xs sm:text-sm font-bold tracking-wider uppercase flex items-center gap-1.5">
+            <p className="text-zinc-400 text-xs sm:text-sm font-bold tracking-wider uppercase flex items-center gap-1.5 group-hover:text-cyan-300 transition-colors">
               Today's Visitors
             </p>
-            <Users size={16} className="text-cyan-400" />
+            <Users size={16} className="text-cyan-400 group-hover:scale-110 transition-transform" />
           </div>
           <h3 className="text-3xl font-bold text-white">{todayVisitors}</h3>
+          <p className="text-[10px] text-cyan-500/70 mt-1">Click to view details &rarr;</p>
         </div>
         
         <div className="glass-card p-5 border border-amber-500/30 bg-amber-500/5">

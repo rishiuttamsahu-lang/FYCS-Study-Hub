@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef, lazy, Suspense } from "react";
-import { doc, setDoc, increment } from "firebase/firestore";
+import { doc, setDoc, increment, arrayUnion } from "firebase/firestore";
 import { db } from "./firebase";
 import { Bot, X, Loader2 } from "lucide-react";
 import BrainCircuitIcon from "./components/AnimatedIcons";
@@ -383,20 +383,37 @@ function App() {
   useEffect(() => {
     const trackDailyVisitor = async () => {
       try {
-        const today = new Date().toLocaleDateString('en-CA'); // 'YYYY-MM-DD' format based on local time
+        const today = new Date().toLocaleDateString('en-CA'); 
         const lastVisit = localStorage.getItem('lastVisitDate');
         
         if (lastVisit !== today) {
           localStorage.setItem('lastVisitDate', today);
           const statRef = doc(db, 'analytics', today);
-          await setDoc(statRef, { visitors: increment(1) }, { merge: true });
+          
+          // Data prepare karein
+          const updateData = { visitors: increment(1) };
+          
+          // Agar user logged in hai, toh uski details array mein push karein
+          if (user) {
+            updateData.visitorDetails = arrayUnion({
+              name: user.displayName || user.name || "Unknown User",
+              email: user.email || "Unknown Email",
+              time: new Date().toISOString()
+            });
+          }
+
+          await setDoc(statRef, updateData, { merge: true });
         }
       } catch (error) {
         console.error("Analytics error:", error);
       }
     };
-    trackDailyVisitor();
-  }, []);
+    
+    // Sirf tabhi track karein jab user state load ho chuki ho
+    if (!loading) {
+      trackDailyVisitor();
+    }
+  }, [user, loading]);
 
   // Loading state
   if (loading) {

@@ -1,9 +1,8 @@
 import { User, LogOut, ExternalLink, Clock, Trash2, Settings, X, Sparkles, Bell, Bookmark, FileText, Upload, Monitor, ChevronRight, Minus, Plus, Check } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useState, useEffect, useRef } from "react";
-import { updateProfile } from "firebase/auth";
 import { collection, addDoc, getDocs, query, where, serverTimestamp, updateDoc, doc, arrayUnion, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { auth, db } from "../firebase";
+import { db } from "../firebase";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { BiMessageDetail } from 'react-icons/bi';
@@ -28,7 +27,7 @@ const SUBJECT_SHORT_NAMES = {
 };
 
 export default function Profile() {
-  const { user, login, logout, materials, toggleFavorite, getSubjectById, siteZoom, updateSiteZoom } = useApp();
+  const { user, login, logout, materials, toggleFavorite, getSubjectById, siteZoom, updateSiteZoom, updateUserProfile } = useApp();
   const [recentHistory, setRecentHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("recent");
   const [showClearModal, setShowClearModal] = useState(false);
@@ -219,31 +218,17 @@ export default function Profile() {
     }
   };
 
-  // Yeh function manual save aur auto-save dono ke liye hai
-  const executeSave = async (name, photoUrl, showToast = true) => { // showToast default true hai
-    try {
-      // 1. Update Firebase Auth Profile
-      await updateProfile(auth.currentUser, { 
-        displayName: name, 
-        photoURL: photoUrl || null 
-      });
+  // Real-time global profile save — updates Auth, Firestore, all materials, and global context
+  const executeSave = async (name, photoUrl, showToast = true) => {
+    const result = await updateUserProfile({
+      displayName: name,
+      photoURL: photoUrl,
+    });
 
-      // 2. Update Firestore User Document
-      const userRef = doc(db, "users", auth.currentUser.uid);
-      await updateDoc(userRef, {
-        displayName: name,
-        photoURL: photoUrl || null
-      });
-
-      // Sirf tabhi toast dikhega agar showToast true hoga
-      if (showToast) {
-        toast.success("Profile Updated Successfully!");
-      }
-      
-      // 🚨 YAHAN SE window.location.reload(); HATA DIYA GAYA HAI 🚨
-      // Firebase real-time listeners will handle UI updates automatically
-    } catch (error) {
-      toast.error("Error: " + error.message);
+    if (result.success) {
+      if (showToast) toast.success("Profile Updated Successfully!");
+    } else {
+      toast.error("Error: " + (result.error || "Update failed"));
     }
   };
   
