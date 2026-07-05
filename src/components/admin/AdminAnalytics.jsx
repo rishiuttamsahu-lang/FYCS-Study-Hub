@@ -34,7 +34,6 @@ export default function AdminAnalytics({ safeStats, todayVisitors, uniqueUsers, 
             <Users size={16} className="text-cyan-400 group-hover:scale-110 transition-transform" />
           </div>
           <h3 className="text-3xl font-bold text-white">{todayVisitors}</h3>
-          <p className="text-[10px] text-cyan-500/70 mt-1">Click to view details &rarr;</p>
         </div>
         
         <div className="glass-card p-5 border border-amber-500/30 bg-amber-500/5">
