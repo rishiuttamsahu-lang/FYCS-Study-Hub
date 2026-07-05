@@ -261,7 +261,10 @@ export default function Admin() {
     const statRef = doc(db, 'analytics', today);
     const unsubscribe = onSnapshot(statRef, (docSnap) => {
       if (docSnap.exists()) {
-        setTodayVisitors(docSnap.data().visitors || 0);
+        const data=docSnap.data();
+        const details=data.visitorDetails||[];
+        const uniqueEmailsToday=new Set(details.map(v=>v.email));
+        setTodayVisitors(uniqueEmailsToday.size);
       } else {
         setTodayVisitors(0);
       }
