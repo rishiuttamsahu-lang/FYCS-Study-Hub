@@ -1,4 +1,8 @@
-import { Trash2, Loader2, Send, Eye } from "lucide-react";
+import { Trash2, Loader2, Send, Eye, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { CapacitorUpdater } from "@capgo/capacitor-updater";
+import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 
 export default function AdminSettings({
   notificationEmail, setNotificationEmail,
@@ -8,8 +12,113 @@ export default function AdminSettings({
   sentNotifications, handleDeleteGlobal,
   CREATOR_EMAILS, user, handleResetAnalytics
 }) {
+  const [updateInfo, setUpdateInfo] = useState({ checking: false, version: "v1.0.0", latest: null });
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      CapacitorUpdater.getLatest().then(v => {
+        if (v) setUpdateInfo(prev => ({ ...prev, version: v.version || "bundled" }));
+      });
+    }
+  }, []);
+
+  const handleSyncApp = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      toast.error("OTA Sync is only available on native Android/iOS apps.");
+      return;
+    }
+
+    setUpdateInfo(prev => ({ ...prev, checking: true }));
+    const loadingToast = toast.loading("Checking for updates...");
+
+    try {
+      // 1. Fetch latest version info from GitHub Releases / JSON
+      // Update this URL to your public version.json
+      const VERSION_URL = "https://raw.githubusercontent.com/rishiuttamsahu-lang/FYCS-Study-Hub/ota-update-meta/version.json";
+      const response = await fetch(VERSION_URL, { cache: 'no-store' });
+
+      if (!response.ok) {
+        throw new Error(`Update server responded with ${response.status}. Please ensure version.json exists on the specified branch.`);
+      }
+
+      const data = await response.json();
+
+      setUpdateInfo(prev => ({ ...prev, latest: data.version }));
+
+      if (data.version === updateInfo.version) {
+        toast.dismiss(loadingToast);
+        toast.success("App is already up to date!");
+      } else {
+        toast.dismiss(loadingToast);
+        toast.loading(`Downloading v${data.version}...`);
+
+        // 2. Download and Install
+        const result = await CapacitorUpdater.download({
+          url: data.url,
+          version: data.version,
+        });
+
+        await CapacitorUpdater.set(result);
+        toast.dismiss();
+        toast.success("Update installed! Reloading...");
+
+        setTimeout(() => {
+          CapacitorUpdater.reload();
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Sync Error:", error);
+      toast.dismiss(loadingToast);
+      toast.error("Failed to check for updates. Check your internet connection.");
+    } finally {
+      setUpdateInfo(prev => ({ ...prev, checking: false }));
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* 🔄 OTA Sync Section - ONLY on native mobile apps */}
+      {Capacitor.isNativePlatform() && (
+        <div className="glass-card p-4 sm:p-5 border-emerald-500/20 bg-emerald-500/5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-400">
+              <RefreshCw size={20} className={updateInfo.checking ? "animate-spin" : ""} />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-white">OTA Sync System</h3>
+              <p className="text-[10px] text-emerald-400/70 uppercase tracking-widest font-bold">App Content Updater</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5">
+            <div className="space-y-1 text-center sm:text-left">
+              <p className="text-xs text-white/50">Current Local Bundle</p>
+              <p className="text-sm font-mono font-bold text-white bg-white/5 px-3 py-1 rounded-lg inline-block">
+                {updateInfo.version}
+              </p>
+            </div>
+
+            <button
+              onClick={handleSyncApp}
+              disabled={updateInfo.checking}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-zinc-700 text-black font-bold rounded-xl transition-all shadow-[0_10px_20px_rgba(16,185,129,0.2)]"
+            >
+              {updateInfo.checking ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <RefreshCw size={18} />
+              )}
+              Sync Latest Content
+            </button>
+          </div>
+
+          <p className="mt-3 text-[10px] text-center sm:text-left text-white/30 leading-relaxed">
+            Syncing will pull the latest code from GitHub and install it offline.
+            Use this when you update the website but don't want to release a new APK.
+          </p>
+        </div>
+      )}
+
       <div className="glass-card p-3 sm:p-4">
         <h3 className="font-bold text-sm sm:text-base mb-2 sm:mb-3 text-white/90">📢 Send Notification</h3>
         <div className="space-y-3">

@@ -97,10 +97,44 @@ const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "N
 
 export default function AdminUpload() {
   const navigate = useNavigate();
-  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial } = useApp();
+  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial, uploadFormData, setUploadFormData, globalUploadState } = useApp();
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'pending_admin'
   const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
-  
+
+  // Sync form with shared file data from context
+  useEffect(() => {
+    if (uploadFormData && uploadFormData.files && uploadFormData.files.length > 0) {
+      setForm(prev => {
+        const updated = { ...prev };
+        if (!prev.title && uploadFormData.title) {
+          updated.title = uploadFormData.title;
+        }
+        if (!prev.semester && uploadFormData.semester) {
+          updated.semester = uploadFormData.semester;
+        }
+        if (!prev.subject && uploadFormData.subject) {
+          updated.subject = uploadFormData.subject;
+        }
+        if (!prev.type && uploadFormData.type) {
+          updated.type = uploadFormData.type;
+        }
+        if (uploadFormData.sharedFileResult && uploadFormData.sharedFileResult.fileUrl) {
+          updated.driveLink = uploadFormData.sharedFileResult.fileUrl;
+        }
+        return updated;
+      });
+    }
+  }, [uploadFormData]);
+
+  const clearSharedFile = () => {
+    setUploadFormData({ title: "", semester: "", subject: "", type: "Notes", files: [] });
+    setForm(prev => ({
+      ...prev,
+      title: "",
+      driveLink: "",
+    }));
+  };
+
   // Extract file ID from Google Drive URL
   const extractFileId = (url) => {
     const match = url.match(/\/d\/([^/]+)|id=([^&]+)/);
@@ -127,10 +161,12 @@ export default function AdminUpload() {
 
   // Dynamically load Google scripts on mount
   useEffect(() => {
+    let isMounted = true;
+
     const loadGapi = () => new Promise(res => {
       if (window.gapi) { 
-        window.gapi.load('picker');
-        res(); 
+        if (window.gapi.picker) { res(); return; }
+        window.gapi.load('picker', { callback: res, onerror: () => { console.error("Gapi picker failed"); res(); } });
         return; 
       }
       const s = document.createElement("script");
@@ -138,9 +174,9 @@ export default function AdminUpload() {
       s.async = true;
       s.defer = true;
       s.onload = () => {
-        window.gapi.load('picker'); // Pre-load the picker module
-        res();
+        window.gapi.load('picker', { callback: res, onerror: () => { console.error("Gapi picker load failed"); res(); } });
       };
+      s.onerror = () => { console.error("Gapi script load failed"); res(); };
       document.head.appendChild(s);
     });
     
@@ -151,16 +187,20 @@ export default function AdminUpload() {
       s.async = true;
       s.defer = true;
       s.onload = res;
+      s.onerror = () => { console.error("GIS script load failed"); res(); };
       document.head.appendChild(s);
     });
     
     Promise.all([loadGapi(), loadGis()]).then(() => {
-      // Set a small delay to ensure everything is fully initialized
-      setTimeout(() => {
-        setIsGoogleApiLoaded(true);
-        console.log('✅ Google API fully loaded and ready');
-      }, 100);
+      if (isMounted) {
+        setTimeout(() => {
+          setIsGoogleApiLoaded(true);
+          console.log('✅ Google API state updated');
+        }, 500);
+      }
     });
+
+    return () => { isMounted = false; };
   }, []);
 
   // Google Drive Picker with silent token approach
@@ -388,6 +428,9 @@ export default function AdminUpload() {
           uploadDate: new Date().toLocaleDateString(),
         }));
         
+        // Also clear shared file state
+        setUploadFormData({ title: "", semester: "", subject: "", type: "Notes", files: [] });
+        
         toast.success("Material submitted successfully! Pending approval.");
       } else {
         const msg = result.error || "An unknown error occurred during submission";
@@ -449,6 +492,54 @@ export default function AdminUpload() {
             Fill in the details exactly so students can find it easily.
           </div>
         </div>
+
+        {/* Shared File Status / Progress */}
+        {uploadFormData && uploadFormData.files && uploadFormData.files.length > 0 && (
+          <div className="mb-5 glass-card p-3.5 bg-white/5 border border-white/10 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-white/50 uppercase text-[9px] tracking-widest font-bold flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 bg-[#FFD700] rounded-full animate-ping"></div>
+                Shared File Uploading
+              </div>
+              <button
+                type="button"
+                onClick={clearSharedFile}
+                className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                title="Cancel Shared File"
+              >
+                <XCircle size={15} />
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-black/30 p-2.5 rounded-xl border border-white/5">
+              <FileText className="text-[#FFD700] flex-shrink-0" size={20} />
+              <div className="flex-1 overflow-hidden">
+                <p className="text-xs text-white/80 font-bold truncate">{uploadFormData.files[0]?.name}</p>
+                <p className="text-[10px] text-white/40 mt-0.5">
+                  {globalUploadState.uploading ? "Uploading to Google Drive..." : uploadFormData.sharedFileResult ? "Uploaded successfully!" : "Waiting..."}
+                </p>
+              </div>
+              {globalUploadState.uploading && (
+                <div className="text-xs text-zinc-400 font-bold">{Math.round(globalUploadState.realProgress)}%</div>
+              )}
+            </div>
+            
+            {globalUploadState.uploading && (
+              <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3 border border-white/5">
+                <div 
+                  className="bg-[#FFD700] h-full transition-all duration-150 rounded-full shadow-[0_0_10px_#FFD700]"
+                  style={{ width: `${globalUploadState.realProgress}%` }}
+                ></div>
+              </div>
+            )}
+            
+            {uploadFormData.sharedFileResult && (
+              <div className="mt-2.5 flex items-center gap-1.5 text-[10px] text-green-400 font-bold bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20 w-fit">
+                <CheckCircle className="text-green-400" size={11} /> Drive link populated automatically
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Title */}
         <label className="block mb-4">
@@ -532,8 +623,8 @@ export default function AdminUpload() {
               disabled={!isGoogleApiLoaded}
               title={!isGoogleApiLoaded ? "Loading Google Drive..." : "Pick from Google Drive"}
               className={`flex-shrink-0 p-1.5 rounded-lg transition-all border ${
-                !isGoogleApiLoaded 
-                  ? "bg-white/5 border-white/10 cursor-not-allowed opacity-50" 
+                !isGoogleApiLoaded
+                  ? "bg-white/5 border-white/10 cursor-not-allowed opacity-50"
                   : "bg-white/10 hover:bg-white/20 border-white/20"
               }`}
             >

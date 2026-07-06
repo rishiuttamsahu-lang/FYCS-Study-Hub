@@ -280,10 +280,12 @@ export default function Admin() {
 
   // Dynamically load Google scripts on mount
   useEffect(() => {
+    let isMounted = true;
+
     const loadGapi = () => new Promise(res => {
       if (window.gapi) { 
-        window.gapi.load('picker');
-        res(); 
+        if (window.gapi.picker) { res(); return; }
+        window.gapi.load('picker', { callback: res, onerror: () => { console.error("Gapi picker failed"); res(); } });
         return; 
       }
       const s = document.createElement("script");
@@ -291,9 +293,9 @@ export default function Admin() {
       s.async = true;
       s.defer = true;
       s.onload = () => {
-        window.gapi.load('picker');
-        res();
+        window.gapi.load('picker', { callback: res, onerror: () => { console.error("Gapi picker load failed"); res(); } });
       };
+      s.onerror = () => { console.error("Gapi script load failed"); res(); };
       document.head.appendChild(s);
     });
     
@@ -304,14 +306,20 @@ export default function Admin() {
       s.async = true;
       s.defer = true;
       s.onload = res;
+      s.onerror = () => { console.error("GIS script load failed"); res(); };
       document.head.appendChild(s);
     });
     
     Promise.all([loadGapi(), loadGis()]).then(() => {
-      setTimeout(() => {
-        setIsGoogleApiLoaded(true);
-      }, 100);
+      if (isMounted) {
+        setTimeout(() => {
+          setIsGoogleApiLoaded(true);
+          console.log('✅ Google API state updated');
+        }, 500);
+      }
     });
+
+    return () => { isMounted = false; };
   }, []);
 
   // 5. Loading State Check

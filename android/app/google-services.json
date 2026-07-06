@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "308883339928",
+    "project_id": "fycs-study-hub",
+    "storage_bucket": "fycs-study-hub.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:308883339928:android:36ecb8c12de6810b4b2eed",
+        "android_client_info": {
+          "package_name": "com.fycsstudyhub.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "308883339928-a2s29qbeh35qhnjpur0alac9rf49g8g3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fycsstudyhub.app",
+            "certificate_hash": "e83d9382952c71f1f74b520e6e93ef6c58cf2978"
+          }
+        },
+        {
+          "client_id": "308883339928-j8gaougcqfeq5s9ineiposmcvcdf28do.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCD2-4YTjVuKAFC0m41m7HhEzKbikYd9yg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "308883339928-j8gaougcqfeq5s9ineiposmcvcdf28do.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

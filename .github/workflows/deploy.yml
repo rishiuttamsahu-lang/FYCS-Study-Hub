@@ -1,0 +1,67 @@
+name: Release OTA Update
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Create Version ID
+        id: version
+        run: echo "id=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+        
+      - name: Zip Build
+        run: |
+          cd dist
+          zip -r ../update.zip .
+          cd ..
+          
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ota-${{ steps.version.outputs.id }}
+          name: OTA Update ${{ steps.version.outputs.id }}
+          files: update.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate version.json
+        run: |
+          echo '{
+            "version": "${{ steps.version.outputs.id }}",
+            "url": "https://github.com/${{ github.repository }}/releases/download/ota-${{ steps.version.outputs.id }}/update.zip"
+          }' > version.json
+          
+      - name: Upload version.json to separate branch or gist
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan ota-update-meta
+          git rm -rf .
+          mv ../version.json .
+          git add version.json
+          git commit -m "Update OTA metadata: ${{ steps.version.outputs.id }}"
+          git push origin ota-update-meta --force
+        working-directory: .
