@@ -115,7 +115,7 @@ export default function TodayVisitorsPage() {
                   <div className="flex-shrink-0">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/10 text-cyan-400 text-[10px] font-bold rounded-md border border-cyan-500/15">
                       <Clock size={10} />
-                      {new Date(visitor.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(visitor.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                     </span>
                   </div>
                 </div>

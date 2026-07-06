@@ -256,12 +256,21 @@ export default function Admin() {
     return () => unsubscribe();
   }, []);
   
+  // 🌟 Real-time dynamic visitor verification array lookup filter setup
   useEffect(() => {
     const today = new Date().toLocaleDateString('en-CA');
     const statRef = doc(db, 'analytics', today);
     const unsubscribe = onSnapshot(statRef, (docSnap) => {
       if (docSnap.exists()) {
-        setTodayVisitors(docSnap.data().visitors || 0);
+        const data = docSnap.data();
+        const details = data.visitorDetails || [];
+        
+        // 🚨 CRITICAL DE-DUPLICATION ENGINE LAYER
+        // Sirf unique emails ko count karega
+        const uniqueEmailsToday = new Set(details.map(v => v.email));
+        
+        // Dashboard card ko unique value pass karega
+        setTodayVisitors(uniqueEmailsToday.size);
       } else {
         setTodayVisitors(0);
       }
