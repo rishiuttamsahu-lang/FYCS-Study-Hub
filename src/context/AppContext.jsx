@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { db, auth, googleProvider, authReady } from '../firebase';
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, getDoc, Timestamp, setDoc, query, orderBy, where, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
-import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, GoogleAuthProvider, updateProfile } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, GoogleAuthProvider, updateProfile, signInWithCredential } from 'firebase/auth';
 import { toast } from 'react-hot-toast';
-import { CheckCircle, X } from 'lucide-react';
+import { CheckCircle, X, Loader2 } from 'lucide-react';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem } from '@capacitor/filesystem';
 
 // Create Context
 const AppContext = createContext();
@@ -357,6 +360,22 @@ export const AppProvider = ({ children }) => {
 
   // Authentication functions
   const login = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        const credential = GoogleAuthProvider.credential(result.credential.idToken);
+        const userCredential = await signInWithCredential(auth, credential);
+        return { success: true, user: userCredential.user };
+      } catch (error) {
+        console.error("Native Google Sign-In error:", error);
+        // If it's cancelled by user, don't throw an error to avoid toast
+        if (error.message?.includes("cancel")) {
+          return { success: false, cancelled: true };
+        }
+        throw error;
+      }
+    }
+
     if (shouldUseRedirect()) {
       toast("In-app webview detected. Redirecting to Google. For a smoother experience, please open this site in Chrome or Safari.", {
         icon: "ℹ️",
@@ -482,6 +501,79 @@ export const AppProvider = ({ children }) => {
       // Return a safe error message
       const errorMessage = error?.message || error?.toString() || "Failed to add material";
       return { success: false, error: errorMessage };
+    }
+  };
+
+  const handleSharedFile = async (uri, mimeType) => {
+    if (!user) {
+      toast.error("Please login to upload materials");
+      return;
+    }
+
+    try {
+      // 1. Read file as Base64 from Native URI
+      const fileData = await Filesystem.readFile({ path: uri });
+      const base64Data = fileData.data;
+
+      // 2. Extract filename
+      const fileName = uri.split('/').pop() || "shared_file";
+      const cleanName = fileName.replace(/\.[^/.]+$/, "");
+
+      // 3. Set form data for the UI
+      setUploadFormData({
+        title: cleanName,
+        semester: "1",
+        subject: "",
+        type: "Notes",
+        files: [{ name: fileName, size: 0 }] // Placeholder
+      });
+
+      // 4. Start background upload to Google Drive immediately
+      setGlobalUploadState({ uploading: true, current: 0, total: 1, realProgress: 0 });
+
+      const userName = user.displayName || "Admin";
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec";
+
+      const emailPrefix = user.email?.split('@')[0] || "Admin";
+      const sanitizedName = fileName.replace(/[\\/:*?"<>|]+/g, "-");
+      const uploadName = `${emailPrefix}-${sanitizedName}`;
+
+      toast.loading("Background upload started...", { id: "share-upload" });
+
+      const response = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ base64: base64Data, name: uploadName, mimeType: mimeType }),
+        headers: { 'Content-Type': 'text/plain' }
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        const directDownloadLink = `https://drive.google.com/uc?export=download&id=${result.fileId}`;
+
+        // Update form with the result
+        setUploadFormData(prev => ({
+          ...prev,
+          sharedFileResult: {
+            fileUrl: directDownloadLink,
+            fileId: result.fileId,
+            fileName: uploadName
+          }
+        }));
+
+        setGlobalUploadState(prev => ({ ...prev, realProgress: 100, current: 1 }));
+        toast.success("File ready to publish!", { id: "share-upload" });
+
+        // Navigate to upload page
+        window.location.hash = "#/upload"; // Assuming HashRouter or similar
+      } else {
+        throw new Error(result.message || "Upload failed");
+      }
+
+    } catch (error) {
+      console.error("Shared file error:", error);
+      toast.error("Failed to process shared file", { id: "share-upload" });
+      setGlobalUploadState({ uploading: false, current: 0, total: 0, realProgress: 0 });
     }
   };
 
@@ -951,14 +1043,32 @@ export const AppProvider = ({ children }) => {
     uploadFormData,
     setUploadFormData,
     startGlobalUpload,
-    uploadSingleFile
+    uploadSingleFile,
+    handleSharedFile
   };
 
   return (
     <AppContext.Provider value={contextValue}>
       {children}
+      <ShareIntentListener />
     </AppContext.Provider>
   );
 };
+
+function ShareIntentListener() {
+  const { handleSharedFile } = useApp();
+
+  useEffect(() => {
+    const handleIntent = (event) => {
+      const { uri, type } = event.detail;
+      handleSharedFile(uri, type);
+    };
+
+    window.addEventListener('appSendIntent', handleIntent);
+    return () => window.removeEventListener('appSendIntent', handleIntent);
+  }, [handleSharedFile]);
+
+  return null;
+}
 
 export default AppContext;
