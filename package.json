@@ -24,7 +24,7 @@
     "@paper-design/shaders": "^0.0.72",
     "@tailwindcss/postcss": "^4.1.18",
     "clsx": "^2.1.1",
-    "firebase": "^12.8.0",
+    "firebase": "^11.10.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.563.0",
     "pdfjs-dist": "^6.0.227",
