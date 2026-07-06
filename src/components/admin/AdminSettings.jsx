@@ -34,7 +34,7 @@ export default function AdminSettings({
     try {
       // 1. Fetch latest version info from GitHub Releases / JSON
       // Update this URL to your public version.json
-      const VERSION_URL = "https://raw.githubusercontent.com/rishiuttamsahu-lang/cs-study-hub/main/version.json";
+      const VERSION_URL = "https://raw.githubusercontent.com/rishiuttamsahu-lang/cs-study-hub/ota-update-meta/version.json";
       const response = await fetch(VERSION_URL, { cache: 'no-store' });
       const data = await response.json();
 
