@@ -52,7 +52,7 @@ jobs:
           echo '{
             "version": "${{ steps.version.outputs.id }}",
             "url": "https://github.com/${{ github.repository }}/releases/download/ota-${{ steps.version.outputs.id }}/update.zip"
-          }' > version.json
+          }' > ../version.json
           
       - name: Upload version.json to separate branch or gist
         run: |
