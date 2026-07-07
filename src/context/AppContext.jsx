@@ -1135,7 +1135,7 @@ function ShareIntentListener() {
             setPendingShare(null);
             toast.error("Please login to upload shared materials");
           }
-        }, 2000);
+        }, 6000);
       }
     }
 
