@@ -6,32 +6,13 @@ import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-    private static String pendingUri = null;
-    private static String pendingType = null;
+    public static String pendingUri = null;
+    public static String pendingType = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Register Javascript Interface for cold starts
-        getBridge().getWebView().post(new Runnable() {
-            @Override
-            public void run() {
-                getBridge().getWebView().addJavascriptInterface(new Object() {
-                    @android.webkit.JavascriptInterface
-                    public String getPendingShare() {
-                        if (pendingUri != null) {
-                            String result = pendingUri + "|" + pendingType;
-                            pendingUri = null;
-                            pendingType = null;
-                            return result;
-                        }
-                        return null;
-                    }
-                }, "AndroidShareHandler");
-            }
-        });
-
+        registerPlugin(ShareReceiverPlugin.class);
         handleIntent(getIntent());
     }
 

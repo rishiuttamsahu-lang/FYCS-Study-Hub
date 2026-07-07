@@ -5,8 +5,10 @@ import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuth
 import { toast } from 'react-hot-toast';
 import { CheckCircle, X, Loader2 } from 'lucide-react';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Filesystem } from '@capacitor/filesystem';
+
+const ShareReceiver = Capacitor.isNativePlatform() ? registerPlugin('ShareReceiver') : null;
 
 // Create Context
 const AppContext = createContext();
@@ -1090,22 +1092,19 @@ function ShareIntentListener() {
     return () => window.removeEventListener('appSendIntent', handleIntent);
   }, []);
 
-  // 2. Check for cold-start share intent via Javascript Interface
+  // 2. Check for cold-start share intent via custom Capacitor Plugin
   useEffect(() => {
-    const checkColdStartIntent = () => {
-      console.log("[ShareIntent] Checking cold-start intent. AndroidShareHandler exists:", !!window.AndroidShareHandler);
-      if (window.AndroidShareHandler) {
+    const checkColdStartIntent = async () => {
+      console.log("[ShareIntent] Checking cold-start intent via ShareReceiver plugin. Plugin registered:", !!ShareReceiver);
+      if (ShareReceiver) {
         try {
-          const pending = window.AndroidShareHandler.getPendingShare();
-          console.log("[ShareIntent] Pending share received from native interface:", pending);
-          if (pending) {
-            const parts = pending.split('|');
-            if (parts.length === 2) {
-              setPendingShare({ uri: parts[0], type: parts[1] });
-            }
+          const result = await ShareReceiver.getPendingShare();
+          console.log("[ShareIntent] Pending share received from native plugin:", result);
+          if (result && result.uri) {
+            setPendingShare({ uri: result.uri, type: result.type });
           }
         } catch (e) {
-          console.error("[ShareIntent] Error reading pending share from AndroidShareHandler", e);
+          console.error("[ShareIntent] Error reading pending share from ShareReceiver plugin", e);
         }
       }
     };
