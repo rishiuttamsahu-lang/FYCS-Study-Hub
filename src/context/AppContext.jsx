@@ -1082,6 +1082,7 @@ function ShareIntentListener() {
   useEffect(() => {
     const handleIntent = (event) => {
       const { uri, type } = event.detail;
+      console.log("[ShareIntent] Hot intent received via CustomEvent:", uri, type);
       setPendingShare({ uri, type });
     };
 
@@ -1092,9 +1093,11 @@ function ShareIntentListener() {
   // 2. Check for cold-start share intent via Javascript Interface
   useEffect(() => {
     const checkColdStartIntent = () => {
+      console.log("[ShareIntent] Checking cold-start intent. AndroidShareHandler exists:", !!window.AndroidShareHandler);
       if (window.AndroidShareHandler) {
         try {
           const pending = window.AndroidShareHandler.getPendingShare();
+          console.log("[ShareIntent] Pending share received from native interface:", pending);
           if (pending) {
             const parts = pending.split('|');
             if (parts.length === 2) {
@@ -1102,7 +1105,7 @@ function ShareIntentListener() {
             }
           }
         } catch (e) {
-          console.error("Error reading pending share from AndroidShareHandler", e);
+          console.error("[ShareIntent] Error reading pending share from AndroidShareHandler", e);
         }
       }
     };
@@ -1120,6 +1123,7 @@ function ShareIntentListener() {
     let timeoutId;
 
     if (!authLoading && pendingShare) {
+      console.log("[ShareIntent] Processing pending share. User exists:", !!user, "Email:", user?.email, "Role:", user?.role);
       if (user) {
         const { uri, type } = pendingShare;
         setPendingShare(null); // Clear it first to prevent double triggers
