@@ -1117,17 +1117,28 @@ function ShareIntentListener() {
 
   // 3. Process the pending share when auth state is resolved and user is logged in
   useEffect(() => {
+    let timeoutId;
+
     if (!authLoading && pendingShare) {
       if (user) {
         const { uri, type } = pendingShare;
         setPendingShare(null); // Clear it first to prevent double triggers
         handleSharedFile(uri, type);
       } else {
-        // Not logged in: Clear pending share and show toast
-        setPendingShare(null);
-        toast.error("Please login to upload shared materials");
+        // Wait a short moment to ensure Firebase Auth didn't just fire null temporarily
+        timeoutId = setTimeout(() => {
+          // Double check if user is still null
+          if (!user) {
+            setPendingShare(null);
+            toast.error("Please login to upload shared materials");
+          }
+        }, 2000);
       }
     }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [authLoading, user, pendingShare, handleSharedFile]);
 
   return null;
