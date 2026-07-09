@@ -34,7 +34,7 @@ const Sk = ({ className, style }) => (
 function NavbarSkeleton() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 border-t border-white/10 z-50 px-2 py-3"
-         style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(24px)' }}>
+      style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(24px)' }}>
       <div className="flex justify-around items-center max-w-md mx-auto">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
@@ -110,8 +110,8 @@ function LibraryPageSkeleton() {
           <div key={i} className="glass-card p-4 flex items-start gap-3">
             <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
             <div className="flex-1 space-y-2">
-              <Sk className="h-3.5" style={{ width: `${[70,55,80,60,75][i]}%` }} />
-              <Sk className="h-3" style={{ width: `${[45,40,50,42,48][i]}%` }} />
+              <Sk className="h-3.5" style={{ width: `${[70, 55, 80, 60, 75][i]}%` }} />
+              <Sk className="h-3" style={{ width: `${[45, 40, 50, 42, 48][i]}%` }} />
               <Sk className="h-2.5 w-1/3" />
             </div>
             <Sk className="w-7 h-7 rounded-md flex-shrink-0" />
@@ -139,7 +139,7 @@ function SubjectsPageSkeleton() {
           <div key={i} className="glass-card p-4 flex items-center gap-3">
             <Sk className="w-10 h-10 rounded-xl flex-shrink-0" />
             <div className="flex-1 space-y-2">
-              <Sk className="h-3.5" style={{ width: `${[70,55,80,60,75,50][i]}%` }} />
+              <Sk className="h-3.5" style={{ width: `${[70, 55, 80, 60, 75, 50][i]}%` }} />
               <Sk className="h-2.5 w-28" />
             </div>
             <Sk className="w-5 h-5 flex-shrink-0" />
@@ -173,8 +173,8 @@ function MaterialsPageSkeleton() {
           <div key={i} className="glass-card p-4 flex items-start gap-3">
             <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
             <div className="flex-1 space-y-2">
-              <Sk className="h-3.5" style={{ width: `${[70,55,80,60,75][i]}%` }} />
-              <Sk className="h-3" style={{ width: `${[45,40,50,42,48][i]}%` }} />
+              <Sk className="h-3.5" style={{ width: `${[70, 55, 80, 60, 75][i]}%` }} />
+              <Sk className="h-3" style={{ width: `${[45, 40, 50, 42, 48][i]}%` }} />
               <Sk className="h-2.5 w-24" />
             </div>
             <Sk className="w-9 h-9 rounded-full flex-shrink-0" />
@@ -222,7 +222,7 @@ function ProfilePageSkeleton() {
             <div key={i} className="glass-card p-4 flex items-start gap-3">
               <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
               <div className="flex-1 space-y-2">
-                <Sk className="h-3.5" style={{ width: `${[65,75,55][i]}%` }} />
+                <Sk className="h-3.5" style={{ width: `${[65, 75, 55][i]}%` }} />
                 <Sk className="h-2.5 w-1/3" />
               </div>
             </div>
@@ -298,7 +298,7 @@ function AdminPageSkeleton() {
           <div key={i} className="glass-card p-4 flex items-start gap-3">
             <Sk className="w-10 h-10 rounded-lg flex-shrink-0" />
             <div className="flex-1 space-y-2">
-              <Sk className="h-3.5" style={{ width: `${[70,55,80,60][i]}%` }} />
+              <Sk className="h-3.5" style={{ width: `${[70, 55, 80, 60][i]}%` }} />
               <Sk className="h-2.5 w-1/2" />
             </div>
             <div className="flex gap-2 flex-shrink-0">
@@ -385,16 +385,16 @@ function App() {
     console.log("[Scroll Restoration] Route change triggered:", location.pathname);
     console.log("[Scroll Restoration] scrollRestoration setting is:", window.history.scrollRestoration);
     console.log("[Scroll Restoration] window.scrollY before reset:", window.scrollY);
-    
+
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     console.log("[Scroll Restoration] window.scrollY after instant reset:", window.scrollY);
-    
+
     // Safety net: scroll again after a short delay once Suspense chunk/Firestore data resolves
     const timer = setTimeout(() => {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
       console.log("[Scroll Restoration] window.scrollY after 100ms safety-net reset:", window.scrollY);
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, [location.pathname]);
 
@@ -402,16 +402,16 @@ function App() {
   useEffect(() => {
     const trackDailyVisitor = async () => {
       try {
-        const today = new Date().toLocaleDateString('en-CA'); 
+        const today = new Date().toLocaleDateString('en-CA');
         const lastVisit = localStorage.getItem('lastVisitDate');
-        
+
         if (lastVisit !== today) {
           localStorage.setItem('lastVisitDate', today);
           const statRef = doc(db, 'analytics', today);
-          
+
           // Data prepare karein
           const updateData = { visitors: increment(1) };
-          
+
           // Agar user logged in hai, toh uski details array mein push karein
           if (user) {
             updateData.visitorDetails = arrayUnion({
@@ -427,7 +427,7 @@ function App() {
         console.error("Analytics error:", error);
       }
     };
-    
+
     // Sirf tabhi track karein jab user state load ho chuki ho
     if (!loading) {
       trackDailyVisitor();
@@ -500,7 +500,7 @@ function App() {
 
         <Navbar />
         <GlobalUploadBlob />
-        
+
         {/* Floating AI Assistant Button */}
         <FloatingAIButton />
       </main>
@@ -511,13 +511,9 @@ function App() {
 function FloatingAIButton() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-  
-  // Define allowed paths
   const showAiButton = ['/', '/library', '/profile'].includes(location.pathname);
-  
-  const toggleModal = () => {
-    setIsOpen(!isOpen);
-  };
+
+  if (!showAiButton) return null;
 
   const closeModal = () => {
     setIsOpen(false);
@@ -535,131 +531,257 @@ function FloatingAIButton() {
 
   return (
     <>
-      {showAiButton && (
-        <>
-          {/* Floating Button (Now with mobile-only float animation) */}
-          <button
-            onClick={toggleModal}
-            className="fixed bottom-24 right-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-full shadow-lg z-50 hover:scale-105 transition-transform duration-200 flex items-center gap-2 mobile-float-btn"
-            aria-label="Open Assignment AI assistant"
+      <style>
+        {`
+          .ai-option-btn {
+            --black-700: hsla(0 0% 12% / 1);
+            --border_radius: 20px;
+            --transtion: 0.3s ease-in-out;
+            --offset: 2px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            width: 100%;
+            transform-origin: center;
+            padding: 1.25rem 1.5rem;
+            background-color: transparent;
+            border: none;
+            border-radius: var(--border_radius);
+            transform: scale(calc(1 + (var(--active, 0) * 0.05)));
+            transition: transform var(--transtion);
+          }
+          .ai-option-btn::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background-color: var(--black-700);
+            border-radius: var(--border_radius);
+            box-shadow: inset 0 0.5px hsl(0, 0%, 100%), inset 0 -1px 2px 0 hsl(0, 0%, 0%),
+              0px 4px 10px -4px hsla(0 0% 0% / calc(1 - var(--active, 0))),
+              0 0 0 calc(var(--active, 0) * 0.375rem) hsl(260 97% 50% / 0.75);
+            transition: all var(--transtion);
+            z-index: 0;
+          }
+          .ai-option-btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background-color: hsla(260 97% 61% / 0.75);
+            background-image: radial-gradient(
+                at 51% 89%,
+                hsla(266, 45%, 74%, 1) 0px,
+                transparent 50%
+              ),
+              radial-gradient(at 100% 100%, hsla(266, 36%, 60%, 1) 0px, transparent 50%),
+              radial-gradient(at 22% 91%, hsla(266, 36%, 60%, 1) 0px, transparent 50%);
+            background-position: top;
+            opacity: var(--active, 0);
+            border-radius: var(--border_radius);
+            transition: opacity var(--transtion);
+            z-index: 2;
+          }
+          .ai-option-btn:is(:hover, :focus-visible) {
+            --active: 1;
+          }
+          .ai-option-btn:active {
+            transform: scale(1);
+          }
+          .ai-option-btn .ai-btn-dots-border {
+            --size_border: calc(100% + 2px);
+            overflow: hidden;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: var(--size_border);
+            height: var(--size_border);
+            background-color: transparent;
+            border-radius: var(--border_radius);
+            z-index: -10;
+          }
+          .ai-option-btn .ai-btn-dots-border::before {
+            content: "";
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transform-origin: left;
+            transform: rotate(0deg);
+            width: 100%;
+            height: 2.5rem;
+            background-color: white;
+            mask: linear-gradient(transparent 0%, white 120%);
+            -webkit-mask: linear-gradient(transparent 0%, white 120%);
+            animation: rotate-dots-border 2s linear infinite;
+          }
+          @keyframes rotate-dots-border {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+          .ai-option-btn > * {
+            position: relative;
+            z-index: 10;
+          }
+          .ai-option-btn .ai-btn-sparkle {
+            position: relative;
+            z-index: 10;
+            width: 1.75rem;
+          }
+          .ai-option-btn .ai-btn-sparkle .path {
+            fill: currentColor;
+            stroke: currentColor;
+            transform-origin: center;
+            color: hsl(0, 0%, 100%);
+          }
+          .ai-option-btn:is(:hover, :focus) .ai-btn-sparkle .path {
+            animation: path-sparkle 1.5s linear 0.5s infinite;
+          }
+          .ai-option-btn .ai-btn-sparkle .path:nth-child(1) {
+            --scale_path_1: 1.2;
+          }
+          .ai-option-btn .ai-btn-sparkle .path:nth-child(2) {
+            --scale_path_2: 1.2;
+          }
+          .ai-option-btn .ai-btn-sparkle .path:nth-child(3) {
+            --scale_path_3: 1.2;
+          }
+          @keyframes path-sparkle {
+            0%, 34%, 71%, 100% {
+              transform: scale(1);
+            }
+            17% {
+              transform: scale(var(--scale_path_1, 1));
+            }
+            49% {
+              transform: scale(var(--scale_path_2, 1));
+            }
+            83% {
+              transform: scale(var(--scale_path_3, 1));
+            }
+          }
+          .ai-option-btn .ai-btn-text {
+            position: relative;
+            z-index: 10;
+            background-image: linear-gradient(
+              90deg,
+              hsla(0 0% 100% / 1) 0%,
+              hsla(0 0% 100% / var(--active, 0)) 120%
+            );
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: #ffffff17;
+          }
+        `}
+      </style>
+
+      {/* ✨ NAYA SHINY CURVY BUTTON (Desktop par Pill-shape, Mobile par Circular) */}
+      <div className="fixed bottom-24 right-6 z-50 group mobile-float-btn">
+        {/* Glow Layer */}
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 group-hover:blur-[15px] active:blur-[5px] transition-all duration-300"
+          style={{
+            background: 'conic-gradient(#00000000 80deg, #40baf7, #f34ad7, #5bfcc4, #00000000 280deg)'
+          }}
+        />
+
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          // 🌟 'rounded-full' isko curvy banata hai. 
+          // 🌟 'p-4 sm:px-5 sm:py-3' padding se mobile par circle aur PC par lamba rakhega.
+          className="relative flex items-center justify-center gap-2 p-4 sm:px-5 sm:py-3 text-white rounded-full border-none cursor-pointer transition-all duration-300 active:translate-y-[3px]"
+          style={{
+            background: 'linear-gradient(90deg, #5bfcc4, #f593e4, #71a4f0)',
+            boxShadow: 'inset 0px 0px 5px rgba(255,255,255,0.66), inset 0px 35px 30px #000, 0px 5px 10px rgba(0,0,0,0.8)',
+            textShadow: '1px 1px 1px #000'
+          }}
+        >
+          <svg viewBox="0 0 24 24" height={24} width={24} xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 text-white">
+            <g fill="none">
+              <path d="m12.594 23.258l-.012.002l-.071.035l-.02.004l-.014-.004l-.071-.036q-.016-.004-.024.006l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.016-.018m.264-.113l-.014.002l-.184.093l-.01.01l-.003.011l.018.43l.005.012l.008.008l.201.092q.019.005.029-.008l.004-.014l-.034-.614q-.005-.019-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.003-.011l.018-.43l-.003-.012l-.01-.01z" />
+              <path d="M9.107 5.448c.598-1.75 3.016-1.803 3.725-.159l.06.16l.807 2.36a4 4 0 0 0 2.276 2.411l.217.081l2.36.806c1.75.598 1.803 3.016.16 3.725l-.16.06l-2.36.807a4 4 0 0 0-2.412 2.276l-.081.216l-.806 2.361c-.598 1.75-3.016 1.803-3.724.16l-.062-.16l-.806-2.36a4 4 0 0 0-2.276-2.412l-.216-.081l-2.36-.806c-1.751-.598-1.804-3.016-.16-3.724l.16-.062l2.36-.806A4 4 0 0 0 8.22 8.025l.081-.216zM11 6.094l-.806 2.36a6 6 0 0 1-3.49 3.649l-.25.091l-2.36.806l2.36.806a6 6 0 0 1 3.649 3.49l.091.25l.806 2.36l.806-2.36a6 6 0 0 1 3.49-3.649l.25-.09l2.36-.807l-2.36-.806a6 6 0 0 1-3.649-3.49l-.09-.25zM19 2a1 1 0 0 1 .898.56l.048.117l.35 1.026l1.027.35a1 1 0 0 1 .118 1.845l-.118.048l-1.026.35l-.35 1.027a1 1 0 0 1-1.845.117l-.048-.117l-.35-1.026l-1.027-.35a1 1 0 0 1-.118-1.845l.118-.048l1.026-.35l.35-1.027A1 1 0 0 1 19 2" fill="currentColor" />
+            </g>
+          </svg>
+          {/* 🌟 'hidden sm:inline' - Mobile par text gayab, sirf gol icon bachega */}
+          <span className="hidden sm:inline font-bold text-sm tracking-wide text-white">Assignment AI</span>
+        </button>
+      </div>
+
+      {/* 🔒 PURANA WALA ANDAR KA POPUP EKDUM SAME */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300"
+          onClick={closeModal}
+        >
+          {/* Decorative Glow Blob */}
+          <div className="absolute w-64 h-64 bg-gradient-to-r from-purple-600/30 to-blue-600/30 rounded-full blur-3xl -top-10 -right-10"></div>
+          <div className="absolute w-56 h-56 bg-gradient-to-r from-emerald-600/30 to-cyan-600/30 rounded-full blur-3xl -bottom-10 -left-10"></div>
+
+          {/* Modal Box */}
+          <div
+            className="w-full max-w-sm bg-[#09090b] border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
           >
-            <BrainCircuitIcon size={20} />
-            <span className="hidden sm:inline font-medium text-sm">Assignment AI</span>
-          </button>
-
-          {/* Modal Backdrop */}
-          {isOpen && (
-            <div 
-              className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in zoom-in-95 duration-300"
-              onClick={closeModal}
-            >
-              {/* Decorative Glow Blob */}
-              <div className="absolute w-64 h-64 bg-gradient-to-r from-purple-600/30 to-blue-600/30 rounded-full blur-3xl -top-10 -right-10"></div>
-              <div className="absolute w-56 h-56 bg-gradient-to-r from-emerald-600/30 to-cyan-600/30 rounded-full blur-3xl -bottom-10 -left-10"></div>
-              
-              {/* Modal Box */}
-              <div 
-                className="w-full max-w-sm bg-[#09090b] border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl relative"
-                onClick={(e) => e.stopPropagation()}
+            {/* Header */}
+            <div className="p-5 border-b border-zinc-800 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-white tracking-wide">AI Assignment Writer</h2>
+              <button
+                onClick={closeModal}
+                className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors"
+                aria-label="Close AI assistant modal"
               >
-                {/* Header */}
-                <div className="p-5 border-b border-zinc-800 flex justify-between items-center">
-                  <h2 className="text-lg font-bold text-white tracking-wide">AI Assignment Writer</h2>
-                  <button
-                    onClick={closeModal}
-                    className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors"
-                    aria-label="Close AI assistant modal"
-                  >
-                    <X size={16} className="text-white" />
-                  </button>
-                </div>
-
-                {/* Content - Compact Horizontal Layout */}
-                <div className="p-5 space-y-3">
-                  {/* Card 1: ChatGPT Bot */}
-                  <div
-                    onClick={handleChatGPTClick}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-emerald-500/20 hover:border-emerald-400 bg-gradient-to-r from-emerald-900/40 to-zinc-900/60 hover:bg-emerald-900/50 transition-all duration-300 group cursor-pointer"
-                  >
-                    <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400 flex-shrink-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" className="w-7 h-7" fill="currentColor">
-                        <style>
-                          {`
-                            .spin {
-                              transform-origin: 160px 160px;
-                              animation: rotate 4s linear infinite;
-                            }
-                            @keyframes rotate {
-                              100% {
-                                transform: rotate(360deg);
-                              }
-                            }
-                          `}
-                        </style>
-                        <path className="spin" d="m297.06 130.97c7.26-21.79 4.76-45.66-6.85-65.48-17.46-30.4-52.56-46.04-86.84-38.68-15.25-17.18-37.16-26.95-60.13-26.81-35.04-.08-66.13 22.48-76.91 55.82-22.51 4.61-41.94 18.7-53.31 38.67-17.59 30.32-13.58 68.54 9.92 94.54-7.26 21.79-4.76 45.66 6.85 65.48 17.46 30.4 52.56 46.04 86.84 38.68 15.24 17.18 37.16 26.95 60.13 26.8 35.06.09 66.16-22.49 76.94-55.86 22.51-4.61 41.94-18.7 53.31-38.67 17.57-30.32 13.55-68.51-9.94-94.51zm-120.28 168.11c-14.03.02-27.62-4.89-38.39-13.88.49-.26 1.34-.73 1.89-1.07l63.72-36.8c3.26-1.85 5.26-5.32 5.24-9.07v-89.83l26.93 15.55c.29.14.48.42.52.74v74.39c-.04 33.08-26.83 59.9-59.91 59.97zm-128.84-55.03c-7.03-12.14-9.56-26.37-7.15-40.18.47.28 1.3.79 1.89 1.13l63.72 36.8c3.23 1.89 7.23 1.89 10.47 0l77.79-44.92v31.1c.02.32-.13.63-.38.83l-64.41 37.19c-28.69 16.52-65.33 6.7-81.92-21.95zm-16.77-139.09c7-12.16 18.05-21.46 31.21-26.29 0 .55-.03 1.52-.03 2.2v73.61c-.02 3.74 1.98 7.21 5.23 9.06l77.79 44.91-26.93 15.55c-.27.18-.61.21-.91.08l-64.42-37.22c-28.63-16.58-38.45-53.21-21.95-81.89zm221.26 51.49-77.79-44.92 26.93-15.54c.27-.18.61-.21.91-.08l64.42 37.19c28.68 16.57 38.51 53.26 21.94 81.94-7.01 12.14-18.05 21.44-31.2 26.28v-75.81c.03-3.74-1.96-7.2-5.2-9.06zm26.8-40.34c-.47-.29-1.3-.79-1.89-1.13l-63.72-36.8c-3.23-1.89-7.23-1.89-10.47 0l-77.79 44.92v-31.1c-.02-.32.13-.63.38-.83l64.41-37.16c28.69-16.55 65.37-6.7 81.91 22 6.99 12.12 9.52 26.31 7.15 40.1zm-168.51 55.43-26.94-15.55c-.29-.14-.48-.42-.52-.74v-74.39c.02-33.12 26.89-59.96 60.01-59.94 14.01 0 27.57 4.92 38.34 13.88-.49.26-1.33.73-1.89 1.07l-63.72 36.8c-3.26 1.85-5.26 5.31-5.24 9.06l-.04 89.79zm14.63-31.54 34.65-20.01 34.65 20v40.01l-34.65 20-34.65-20z"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white">ChatGPT Edition</h3>
-                      <p className="text-xs text-emerald-200/70">Logical & Precise.</p>
-                    </div>
-                  </div>
-
-                  {/* Card 2: Gemini Bot */}
-                  <div
-                    onClick={handleGeminiClick}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-blue-500/20 hover:border-blue-400 bg-gradient-to-r from-blue-900/40 to-purple-900/40 hover:bg-blue-900/50 transition-all duration-300 group cursor-pointer"
-                  >
-                    <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400 flex-shrink-0">
-                      
-                      {/* 🌟 Naya animated Gemini SVG 🌟 */}
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-7 h-7" style={{ flex: "none", lineHeight: 1 }}>
-                        <style>
-                          {`
-                            .spin-gemini {
-                              transform-origin: 12px 12px;
-                              animation: rotate-gemini 8s linear infinite;
-                            }
-                            @keyframes rotate-gemini {
-                              100% {
-                                transform: rotate(360deg);
-                              }
-                            }
-                          `}
-                        </style>
-                        <g className="spin-gemini">
-                          <path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="#3186FF"/>
-                          <path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-0-_R_0_)"/>
-                          <path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-1-_R_0_)"/>
-                          <path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-2-_R_0_)"/>
-                        </g>
-                        <defs>
-                          <linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-0-_R_0_" x1="7" x2="11" y1="15.5" y2="12">
-                            <stop stopColor="#08B962"/>
-                            <stop offset="1" stopColor="#08B962" stopOpacity="0"/>
-                          </linearGradient>
-                          <linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-1-_R_0_" x1="8" x2="11.5" y1="5.5" y2="11">
-                            <stop stopColor="#F94543"/>
-                            <stop offset="1" stopColor="#F94543" stopOpacity="0"/>
-                          </linearGradient>
-                          <linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-2-_R_0_" x1="3.5" x2="17.5" y1="13.5" y2="12">
-                            <stop stopColor="#FABC12"/>
-                            <stop offset=".46" stopColor="#FABC12" stopOpacity="0"/>
-                          </linearGradient>
-                        </defs>
-                      </svg>
-
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white">Gemini Edition</h3>
-                      <p className="text-xs text-blue-200/70">Creative & Fast.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <X size={16} className="text-white" />
+              </button>
             </div>
-          )}
-        </>
+
+            {/* Content - Compact Horizontal Layout */}
+            <div className="p-5 space-y-3">
+              {/* Card 1: ChatGPT Bot */}
+              <button
+                onClick={handleChatGPTClick}
+                className="ai-option-btn"
+              >
+                <div className="ai-btn-dots-border" />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="ai-btn-sparkle">
+                  <path className="path" strokeLinejoin="round" strokeLinecap="round" stroke="black" fill="black" d="M14.187 8.096L15 5.25L15.813 8.096C16.0231 8.83114 16.4171 9.50062 16.9577 10.0413C17.4984 10.5819 18.1679 10.9759 18.903 11.186L21.75 12L18.904 12.813C18.1689 13.0231 17.4994 13.4171 16.9587 13.9577C16.4181 14.4984 16.0241 15.1679 15.814 15.903L15 18.75L14.187 15.904C13.9769 15.1689 13.5829 14.4994 13.0423 13.9587C12.5016 13.4181 11.8321 13.0241 11.097 12.814L8.25 12L11.096 11.187C11.8311 10.9769 12.5006 10.5829 13.0423 10.0423C13.5819 9.50162 13.9759 8.83214 14.186 8.097L14.187 8.096Z" />
+                  <path className="path" strokeLinejoin="round" strokeLinecap="round" stroke="black" fill="black" d="M6 14.25L5.741 15.285C5.59267 15.8785 5.28579 16.4206 4.85319 16.8532C4.42059 17.2858 3.87853 17.5927 3.285 17.741L2.25 18L3.285 18.259C3.87853 18.4073 4.42059 18.7142 4.85319 19.1468C5.28579 19.5794 5.59267 20.1215 5.741 20.715L6 21.75L6.259 20.715C6.40725 20.1216 6.71398 19.5796 7.14639 19.147C7.5788 18.7144 8.12065 18.4075 8.714 18.259L9.75 18L8.714 17.741C8.12065 17.5925 7.5788 17.2856 7.14639 16.853C6.71398 16.4204 6.40725 15.8784 6.259 15.285L6 14.25Z" />
+                  <path className="path" strokeLinejoin="round" strokeLinecap="round" stroke="black" fill="black" d="M6.5 4L6.303 4.5915C6.24777 4.75718 6.15472 4.90774 6.03123 5.03123C5.90774 5.15472 5.75718 5.24777 5.5915 5.303L5 5.5L5.5915 5.697C5.75718 5.75223 5.90774 5.84528 6.03123 5.96877C6.15472 6.09226 6.24777 6.24282 6.303 6.4085L6.5 7L6.697 6.4085C6.75223 6.24282 6.84528 6.09226 6.96877 5.96877C7.09226 5.84528 7.24282 5.75223 7.4085 5.697L8 5.5L7.4085 5.303C7.24282 5.24777 7.09226 5.15472 6.96877 5.03123C6.84528 4.90774 6.75223 4.75718 6.697 4.5915L6.5 4Z" />
+                </svg>
+                <div className="flex flex-col items-start text-left">
+                  <span className="ai-btn-text text-sm font-bold tracking-wide">ChatGPT Edition</span>
+                  <span className="text-xs text-emerald-200/70 mt-0.5">Logical & Precise.</span>
+                </div>
+              </button>
+
+              {/* Card 2: Gemini Bot */}
+              <button
+                onClick={handleGeminiClick}
+                className="ai-option-btn"
+              >
+                <div className="ai-btn-dots-border" />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="ai-btn-sparkle">
+                  <path className="path" strokeLinejoin="round" strokeLinecap="round" stroke="black" fill="black" d="M14.187 8.096L15 5.25L15.813 8.096C16.0231 8.83114 16.4171 9.50062 16.9577 10.0413C17.4984 10.5819 18.1679 10.9759 18.903 11.186L21.75 12L18.904 12.813C18.1689 13.0231 17.4994 13.4171 16.9587 13.9577C16.4181 14.4984 16.0241 15.1679 15.814 15.903L15 18.75L14.187 15.904C13.9769 15.1689 13.5829 14.4994 13.0423 13.9587C12.5016 13.4181 11.8321 13.0241 11.097 12.814L8.25 12L11.096 11.187C11.8311 10.9769 12.5006 10.5829 13.0423 10.0423C13.5819 9.50162 13.9759 8.83214 14.186 8.097L14.187 8.096Z" />
+                  <path className="path" strokeLinejoin="round" strokeLinecap="round" stroke="black" fill="black" d="M6 14.25L5.741 15.285C5.59267 15.8785 5.28579 16.4206 4.85319 16.8532C4.42059 17.2858 3.87853 17.5927 3.285 17.741L2.25 18L3.285 18.259C3.87853 18.4073 4.42059 18.7142 4.85319 19.1468C5.28579 19.5794 5.59267 20.1215 5.741 20.715L6 21.75L6.259 20.715C6.40725 20.1216 6.71398 19.5796 7.14639 19.147C7.5788 18.7144 8.12065 18.4075 8.714 18.259L9.75 18L8.714 17.741C8.12065 17.5925 7.5788 17.2856 7.14639 16.853C6.71398 16.4204 6.40725 15.8784 6.259 15.285L6 14.25Z" />
+                  <path className="path" strokeLinejoin="round" strokeLinecap="round" stroke="black" fill="black" d="M6.5 4L6.303 4.5915C6.24777 4.75718 6.15472 4.90774 6.03123 5.03123C5.90774 5.15472 5.75718 5.24777 5.5915 5.303L5 5.5L5.5915 5.697C5.75718 5.75223 5.90774 5.84528 6.03123 5.96877C6.15472 6.09226 6.24777 6.24282 6.303 6.4085L6.5 7L6.697 6.4085C6.75223 6.24282 6.84528 6.09226 6.96877 5.96877C7.09226 5.84528 7.24282 5.75223 7.4085 5.697L8 5.5L7.4085 5.303C7.24282 5.24777 7.09226 5.15472 6.96877 5.03123C6.84528 4.90774 6.75223 4.75718 6.697 4.5915L6.5 4Z" />
+                </svg>
+                <div className="flex flex-col items-start text-left">
+                  <span className="ai-btn-text text-sm font-bold tracking-wide">Gemini Edition</span>
+                  <span className="text-xs text-blue-200/70 mt-0.5">Creative & Fast.</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
