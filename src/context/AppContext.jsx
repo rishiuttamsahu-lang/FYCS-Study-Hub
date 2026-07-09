@@ -197,45 +197,67 @@ export const AppProvider = ({ children }) => {
     }
 
     const welcomeTemplate = `
-      <div style="margin:0; padding:0; background-color:#0a0a0a; width:100%;">
-        <div style="max-width:480px; margin:0 auto; padding:32px 20px; font-family:'Segoe UI', Arial, sans-serif;">
-          
-          <!-- Card -->
-          <div style="background:linear-gradient(180deg,#151515 0%,#0d0d0d 100%); border:1px solid rgba(255,215,0,0.25); border-radius:16px; overflow:hidden;">
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          /* Mobile-first responsive rules */
+          @media screen and (max-width: 480px) {
+            .container { width: 100% !important; padding: 20px 12px !important; }
+            .card { border-radius: 12px !important; }
+            .header { padding: 20px 16px !important; }
+            .body { padding: 20px 16px !important; }
+            .footer { padding: 16px !important; }
+            h1 { font-size: 18px !important; }
+            p { font-size: 13px !important; }
+            .cta-btn { display: block !important; max-width: 100% !important; margin: 0 auto !important; }
+          }
+        </style>
+      </head>
+      <body style="margin:0; padding:0; background-color:#0a0a0a; -webkit-font-smoothing:antialiased;">
+        <div style="width:100%; table-layout:fixed; background-color:#0a0a0a;">
+          <!-- Container with max-width for desktop, fluid for mobile -->
+          <div class="container" style="max-width:480px; margin:0 auto; padding:32px 20px; font-family:'Segoe UI', Arial, sans-serif; box-sizing:border-box;">
+            
+            <!-- Card -->
+            <div class="card" style="background:linear-gradient(180deg,#151515 0%,#0d0d0d 100%); border:1px solid rgba(255,215,0,0.25); border-radius:16px; overflow:hidden;">
 
-            <!-- Header with logo -->
-            <div style="background:linear-gradient(135deg,#1a1a1a,#0a0a0a); padding:28px 24px; text-align:center; border-bottom:1px solid rgba(255,215,0,0.15);">
-              <img src="https://fycs-study-hub.vercel.app/logo192.png" alt="BNN CS Study Hub" width="56" height="56" style="border-radius:12px; margin-bottom:12px;" />
-              <div style="color:#FFD700; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;">BNN CS Study Hub</div>
-            </div>
-
-            <!-- Body -->
-            <div style="padding:28px 24px;">
-              <h1 style="color:#ffffff; font-size:20px; margin:0 0 14px 0; font-weight:700;">Welcome aboard, ${userName} 👋</h1>
-              <p style="color:#d4d4d8; font-size:14px; line-height:1.6; margin:0 0 16px 0;">
-                Your account has been successfully created on the official study portal for BNN Computer Science students. You now have access to notes, practicals, previous year questions, and assignments — all organized by semester and subject.
-              </p>
-              <p style="color:#d4d4d8; font-size:14px; line-height:1.6; margin:0 0 24px 0;">
-                Everything is free, community-driven, and built specifically for our CS batch.
-              </p>
-
-              <!-- CTA button -->
-              <div style="text-align:center; margin:24px 0;">
-                <a href="https://fycs-study-hub.vercel.app/" style="background-color:#FFD700; color:#0a0a0a; text-decoration:none; font-weight:700; font-size:14px; padding:12px 28px; border-radius:8px; display:inline-block;">
-                  Go to Study Hub →
-                </a>
+              <!-- Header -->
+              <div class="header" style="background:linear-gradient(135deg,#1a1a1a,#0a0a0a); padding:28px 24px; text-align:center; border-bottom:1px solid rgba(255,215,0,0.15);">
+                <img src="https://fycs-study-hub.vercel.app/logo192.png" alt="BNN CS Study Hub" width="52" height="52" style="border-radius:12px; margin-bottom:12px;" />
+                <div style="color:#FFD700; font-size:11px; letter-spacing:2px; text-transform:uppercase; font-weight:700;">BNN CS Study Hub</div>
               </div>
-            </div>
 
-            <!-- Footer -->
-            <div style="padding:18px 24px; border-top:1px solid rgba(255,255,255,0.08); text-align:center;">
-              <p style="color:#71717a; font-size:11px; margin:0 0 4px 0;">This is an automated message from BNN CS Study Hub.</p>
-              <p style="color:#52525b; font-size:11px; margin:0;">Questions? Reach out at <a href="mailto:rishiuttamsahu@gmail.com" style="color:#a1a1aa;">rishiuttamsahu@gmail.com</a></p>
-            </div>
+              <!-- Body -->
+              <div class="body" style="padding:28px 24px;">
+                <h1 style="color:#ffffff; font-size:20px; margin:0 0 14px 0; font-weight:700;">Welcome aboard, ${userName} 👋</h1>
+                <p style="color:#d4d4d8; font-size:14px; line-height:1.6; margin:0 0 16px 0;">
+                  Your account has been successfully created on the official study portal for BNN Computer Science students. You now have access to notes, practicals, previous year questions, and assignments.
+                </p>
+                <p style="color:#d4d4d8; font-size:14px; line-height:1.6; margin:0 0 24px 0;">
+                  Everything is free, community-driven, and built specifically for our CS batch.
+                </p>
 
+                <!-- CTA button -->
+                <div style="text-align:center; margin:24px 0;">
+                  <a href="https://fycs-study-hub.vercel.app/" class="cta-btn" style="background-color:#FFD700; color:#0a0a0a; text-decoration:none; font-weight:700; font-size:14px; padding:14px 28px; border-radius:8px; display:inline-block;">
+                    Go to Study Hub →
+                  </a>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="footer" style="padding:18px 24px; border-top:1px solid rgba(255,255,255,0.08); text-align:center;">
+                <p style="color:#71717a; font-size:11px; margin:0 0 4px 0;">This is an automated message from BNN CS Study Hub.</p>
+                <p style="color:#52525b; font-size:11px; margin:0;">Questions? Reach out at <a href="mailto:rishiuttamsahu@gmail.com" style="color:#a1a1aa;">rishiuttamsahu@gmail.com</a></p>
+              </div>
+
+            </div>
           </div>
         </div>
-      </div>
+      </body>
+      </html>
     `;
 
     try {
@@ -311,36 +333,58 @@ export const AppProvider = ({ children }) => {
               setUserRole(userData.role || "student");
               setAuthLoading(false);
             } else {
-              // Create user document if it doesn't exist
-              const newUser = {
-                uid: firebaseUser.uid,
-                displayName: firebaseUser.displayName,
-                email: firebaseUser.email,
-                photoURL: firebaseUser.photoURL,
-                role: "student", // Default role
-                isBanned: false, // Default to not banned
-                favorites: [], // Initialize empty favorites array
-                createdAt: serverTimestamp() // Use serverTimestamp for consistency
-              };
-              
+              // 🚨 DUPLICATE EMAIL CHECK: Naya doc banane se pehle email check karo
               try {
-                await setDoc(userDocRef, newUser);
-                setUser({
-                  uid: firebaseUser.uid,
-                  displayName: firebaseUser.displayName,
-                  email: firebaseUser.email,
-                  photoURL: firebaseUser.photoURL,
-                  id: firebaseUser.uid
-                });
-                setUserRole("student");
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("email", "==", firebaseUser.email));
+                const querySnapshot = await getDocs(q);
                 
-                // Trigger welcome email silently in the background
-                sendWelcomeEmail(firebaseUser.email, firebaseUser.displayName || "Student");
+                if (!querySnapshot.empty) {
+                  // Duplicate found! Purana data naye UID me migrate karo
+                  const oldDoc = querySnapshot.docs[0];
+                  const oldData = oldDoc.data();
+                  
+                  // Pura purana data (role, favorites) save karo naye UID ke sath
+                  await setDoc(userDocRef, {
+                    ...oldData,
+                    uid: firebaseUser.uid 
+                  });
+                  
+                  // Purana duplicate document delete kar do taaki db clean rahe
+                  await deleteDoc(doc(db, "users", oldDoc.id));
+                  
+                  // (User state onSnapshot ke agle trigger me auto-update ho jayegi)
+                  
+                } else {
+                  // Fresh user - Koi duplicate nahi mila, normal create karo
+                  const newUser = {
+                    uid: firebaseUser.uid,
+                    displayName: firebaseUser.displayName,
+                    email: firebaseUser.email,
+                    photoURL: firebaseUser.photoURL,
+                    role: "student", // Default role
+                    isBanned: false, // Default to not banned
+                    favorites: [], // Initialize empty favorites array
+                    createdAt: serverTimestamp() // Use serverTimestamp for consistency
+                  };
+                  
+                  await setDoc(userDocRef, newUser);
+                  
+                  setUser({
+                    uid: firebaseUser.uid,
+                    displayName: firebaseUser.displayName,
+                    email: firebaseUser.email,
+                    photoURL: firebaseUser.photoURL,
+                    id: firebaseUser.uid
+                  });
+                  setUserRole("student");
+                  
+                  // Trigger welcome email silently in the background
+                  sendWelcomeEmail(firebaseUser.email, firebaseUser.displayName || "Student");
+                }
               } catch (err) {
-                console.error("Error creating user doc:", err);
-                
-                // 🚨 FIX 2: Set user state anyway! Agar database block bhi kare, 
-                // toh user loop mein na fase aur kam se kam login ho jaye.
+                console.error("Error creating/migrating user doc:", err);
+                // Fallback UI unlock (Agar database fail bhi ho jaye toh login na ruke)
                 setUser({
                   uid: firebaseUser.uid,
                   displayName: firebaseUser.displayName,
@@ -349,8 +393,7 @@ export const AppProvider = ({ children }) => {
                   id: firebaseUser.uid
                 });
                 setUserRole("student");
-                
-                toast.error("Connected, but database profile creation delayed.");
+                toast.error("Connected, but database profile sync delayed.");
               } finally {
                 setAuthLoading(false);
               }

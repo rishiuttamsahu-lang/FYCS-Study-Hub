@@ -1045,30 +1045,40 @@ export default function Admin() {
     setShowResetModal(true);
   };
 
-  const handleSendNotification = async () => {
+  const handleSendNotification = async (emailBodyText) => {
     if (!notificationTitle.trim() || !notificationMessage.trim()) {
       toast.error("Please fill in both title and message");
       return;
     }
     setIsSending(true);
     try {
-      const targetEmailVal = notificationEmail.trim() || 'ALL';
-      const notificationData = {
-        targetEmail: targetEmailVal,
-        title: notificationTitle.trim(),
-        message: notificationMessage.trim(),
-        createdAt: serverTimestamp(),
-        readBy: []
-      };
-      await addDoc(collection(db, "notifications"), notificationData);
+      const rawTarget = notificationEmail.trim();
+      const targetEmails = rawTarget ? rawTarget.split(",").map(e => e.trim()).filter(Boolean) : ['ALL'];
+
+      // Send Firestore notifications for each target email (stores the short app marquee message)
+      for (const targetEmail of targetEmails) {
+        const notificationData = {
+          targetEmail: targetEmail,
+          title: notificationTitle.trim(),
+          message: notificationMessage.trim(),
+          createdAt: serverTimestamp(),
+          readBy: []
+        };
+        await addDoc(collection(db, "notifications"), notificationData);
+      }
 
       const mailScriptUrl = import.meta.env.VITE_MAIL_SCRIPT_URL;
       if (mailScriptUrl && mailScriptUrl !== "YOUR_NEWLY_DEPLOYED_APPS_SCRIPT_URL") {
+        // Use custom email body if provided, fallback to short message
+        const emailContent = (emailBodyText && typeof emailBodyText === 'string' && emailBodyText.trim())
+          ? emailBodyText.trim()
+          : notificationMessage.trim();
+
         const sendEmail = async (toEmail) => {
           const globalNoticeTemplate = `
             <div style="background-color:#0a0a0a; color:#ffffff; padding:20px; font-family:sans-serif; border-radius:12px; border:1px solid #FFD700;">
               <h2 style="color:#FFD700; margin-bottom:10px;">📢 New Announcement: ${notificationTitle.trim()}</h2>
-              <p>${notificationMessage.trim()}</p>
+              <p>${emailContent}</p>
               <hr style="border-color:rgba(255,255,255,0.1); margin:20px 0;"/>
               <p style="font-size:11px; color:rgba(255,255,255,0.4);">Check the live updates feed directly on the BNN CS Study Hub app/website.</p>
             </div>
@@ -1088,14 +1098,16 @@ export default function Admin() {
           }
         };
 
-        if (targetEmailVal === 'ALL') {
-          users.forEach((u) => {
-            if (u.email) {
-              sendEmail(u.email);
-            }
-          });
-        } else {
-          sendEmail(targetEmailVal);
+        for (const targetEmail of targetEmails) {
+          if (targetEmail === 'ALL') {
+            users.forEach((u) => {
+              if (u.email) {
+                sendEmail(u.email);
+              }
+            });
+          } else {
+            sendEmail(targetEmail);
+          }
         }
         toast.success("Notification published & Emails sent for Free!");
       } else {
@@ -1106,7 +1118,8 @@ export default function Admin() {
       setNotificationTitle("");
       setNotificationMessage("");
     } catch (error) {
-      toast.error("Error sending notification: " + error.message);
+      console.error("Error sending notification:", error);
+      toast.error("Failed to send notification");
     } finally {
       setIsSending(false);
     }
@@ -1306,6 +1319,7 @@ export default function Admin() {
 
           {activeTab === "settings" && (
             <AdminSettings
+              users={users}
               notificationEmail={notificationEmail}
               setNotificationEmail={setNotificationEmail}
               notificationTitle={notificationTitle}
