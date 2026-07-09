@@ -195,14 +195,46 @@ export const AppProvider = ({ children }) => {
       console.warn("Mail script URL is not configured. Skipping welcome email.");
       return;
     }
-    
+
     const welcomeTemplate = `
-      <div style="background-color:#0a0a0a; color:#ffffff; padding:20px; font-family:sans-serif; border-radius:12px; border:1px solid #FFD700; max-w:400px; margin:auto;">
-        <h1 style="color:#FFD700; margin-bottom:10px; font-size:20px;">Welcome to BNN CS Study Hub! 🚀</h1>
-        <p style="font-size:14px; line-height:1.5;">Hey <b>${userName}</b>,</p>
-        <p style="font-size:14px; line-height:1.5; color:#e4e4e7;">We are absolutely thrilled to have you here. Your journey to cracking computer science references, notes, and assignments smoothly starts right now!</p>
-        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:20px 0;"/>
-        <p style="font-size:11px; color:#a1a1aa; text-align:center;">This is a system generated free notification from BNN CS Study Hub Team.</p>
+      <div style="margin:0; padding:0; background-color:#0a0a0a; width:100%;">
+        <div style="max-width:480px; margin:0 auto; padding:32px 20px; font-family:'Segoe UI', Arial, sans-serif;">
+          
+          <!-- Card -->
+          <div style="background:linear-gradient(180deg,#151515 0%,#0d0d0d 100%); border:1px solid rgba(255,215,0,0.25); border-radius:16px; overflow:hidden;">
+
+            <!-- Header with logo -->
+            <div style="background:linear-gradient(135deg,#1a1a1a,#0a0a0a); padding:28px 24px; text-align:center; border-bottom:1px solid rgba(255,215,0,0.15);">
+              <img src="https://fycs-study-hub.vercel.app/logo192.png" alt="BNN CS Study Hub" width="56" height="56" style="border-radius:12px; margin-bottom:12px;" />
+              <div style="color:#FFD700; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600;">BNN CS Study Hub</div>
+            </div>
+
+            <!-- Body -->
+            <div style="padding:28px 24px;">
+              <h1 style="color:#ffffff; font-size:20px; margin:0 0 14px 0; font-weight:700;">Welcome aboard, ${userName} 👋</h1>
+              <p style="color:#d4d4d8; font-size:14px; line-height:1.6; margin:0 0 16px 0;">
+                Your account has been successfully created on the official study portal for BNN Computer Science students. You now have access to notes, practicals, previous year questions, and assignments — all organized by semester and subject.
+              </p>
+              <p style="color:#d4d4d8; font-size:14px; line-height:1.6; margin:0 0 24px 0;">
+                Everything is free, community-driven, and built specifically for our CS batch.
+              </p>
+
+              <!-- CTA button -->
+              <div style="text-align:center; margin:24px 0;">
+                <a href="https://fycs-study-hub.vercel.app/" style="background-color:#FFD700; color:#0a0a0a; text-decoration:none; font-weight:700; font-size:14px; padding:12px 28px; border-radius:8px; display:inline-block;">
+                  Go to Study Hub →
+                </a>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="padding:18px 24px; border-top:1px solid rgba(255,255,255,0.08); text-align:center;">
+              <p style="color:#71717a; font-size:11px; margin:0 0 4px 0;">This is an automated message from BNN CS Study Hub.</p>
+              <p style="color:#52525b; font-size:11px; margin:0;">Questions? Reach out at <a href="mailto:rishiuttamsahu@gmail.com" style="color:#a1a1aa;">rishiuttamsahu@gmail.com</a></p>
+            </div>
+
+          </div>
+        </div>
       </div>
     `;
 
@@ -212,7 +244,7 @@ export const AppProvider = ({ children }) => {
         mode: "no-cors",
         body: JSON.stringify({
           email: userEmail,
-          subject: "Welcome to BNN CS Study Hub! 🎉",
+          subject: "Welcome to BNN CS Study Hub 🎓",
           messageHtml: welcomeTemplate
         })
       });

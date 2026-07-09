@@ -25,7 +25,7 @@ export default function Login() {
     const welcomeTemplate = `
       <div style="margin:0; padding:0; background-color:#0a0a0a; width:100%;">
         <div style="max-width:480px; margin:0 auto; padding:32px 20px; font-family:'Segoe UI', Arial, sans-serif;">
-
+          
           <!-- Card -->
           <div style="background:linear-gradient(180deg,#151515 0%,#0d0d0d 100%); border:1px solid rgba(255,215,0,0.25); border-radius:16px; overflow:hidden;">
 
@@ -68,14 +68,13 @@ export default function Login() {
       await fetch(mailScriptUrl, {
         method: "POST",
         mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: userEmail,
           subject: "Welcome to BNN CS Study Hub 🎓",
           messageHtml: welcomeTemplate
         })
       });
-      console.log("Welcome trigger sent successfully!");
+      console.log("Welcome email triggered successfully");
     } catch (err) {
       console.error("Welcome email failed silently", err);
     }
