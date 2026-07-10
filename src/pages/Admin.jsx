@@ -1201,32 +1201,80 @@ export default function Admin() {
           return false;
         };
 
-        let successCount = 0;
-        let failCount = 0;
-
+        // Flatten all target emails to unique recipient addresses
+        const recipients = [];
         for (const targetEmail of targetEmails) {
           if (targetEmail === 'ALL') {
-            for (const u of users) {
-              if (u.email) {
-                const ok = await sendEmail(u.email);
-                if (ok) successCount++;
-                else failCount++;
+            users.forEach((u) => {
+              if (u.email && !recipients.includes(u.email)) {
+                recipients.push(u.email);
               }
-            }
+            });
           } else {
-            const ok = await sendEmail(targetEmail);
-            if (ok) successCount++;
-            else failCount++;
+            if (!recipients.includes(targetEmail)) {
+              recipients.push(targetEmail);
+            }
+          }
+        }
+        
+        const totalEmails = recipients.length;
+        const loadingToast = toast.loading(`Initializing email dispatch for ${totalEmails} users...`);
+        let successCount = 0;
+        let failCount = 0;
+        const failedEmails = [];
+        let currentCount = 0;
+
+        for (const email of recipients) {
+          currentCount++;
+          toast.loading(`[${currentCount}/${totalEmails}] Sending email to ${email}...`, { id: loadingToast });
+          const ok = await sendEmail(email);
+          if (ok) {
+            successCount++;
+          } else {
+            failCount++;
+            failedEmails.push(email);
           }
         }
 
-        if (failCount > 0 && successCount === 0) {
-          toast.error("Failed to send emails. Daily quota exceeded on all script URLs.");
-        } else if (failCount > 0) {
-          toast.success(`Notification published! Sent ${successCount} emails, failed ${failCount} (quota limits).`);
-        } else {
-          toast.success("Notification published & Emails sent successfully! 🚀");
-        }
+        toast.dismiss(loadingToast);
+
+        // Show SweetAlert2 Summary Modal matching Dark Theme
+        Swal.fire({
+          title: "Broadcast Summary 📢",
+          html: `
+            <div class="text-left text-xs space-y-3 text-zinc-300">
+              <div class="flex justify-between border-b border-zinc-800 pb-2">
+                <span>Total Recipients:</span>
+                <span class="font-bold text-white">${totalEmails}</span>
+              </div>
+              <div class="flex justify-between text-emerald-400">
+                <span>Successfully Sent:</span>
+                <span class="font-bold">${successCount}</span>
+              </div>
+              <div class="flex justify-between text-rose-400">
+                <span>Failed Dispatch:</span>
+                <span class="font-bold">${failCount}</span>
+              </div>
+              ${failedEmails.length > 0 ? `
+                <div class="mt-3">
+                  <p class="font-bold text-rose-300 mb-1">Failed Recipients (Check Quotas):</p>
+                  <div class="max-h-24 overflow-y-auto bg-zinc-900/50 p-2 rounded-lg font-mono text-[10px] break-all border border-zinc-800 leading-relaxed text-zinc-400">
+                    ${failedEmails.join("<br/>")}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `,
+          icon: failCount === 0 ? "success" : failCount === totalEmails ? "error" : "warning",
+          buttonsStyling: false,
+          background: "#0c0c0e",
+          color: "#ffffff",
+          confirmButtonText: "Close Summary",
+          customClass: {
+            popup: "border border-zinc-800 rounded-3xl p-5 shadow-2xl",
+            confirmButton: "w-full bg-zinc-800 hover:bg-zinc-700 py-2.5 rounded-xl text-xs font-bold text-white transition-colors cursor-pointer"
+          }
+        });
       } else {
         toast.success("Notification sent successfully (Mailing script url not configured).");
       }
