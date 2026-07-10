@@ -22,6 +22,7 @@ export default function AdminSettings({
   notificationEmail, setNotificationEmail,
   notificationTitle, setNotificationTitle,
   notificationMessage, setNotificationMessage,
+  emailMessage, setEmailMessage,
   handleSendNotification, isSending,
   sentNotifications, handleDeleteGlobal,
   CREATOR_EMAILS, user, handleResetAnalytics
@@ -29,9 +30,6 @@ export default function AdminSettings({
   const [inputValue, setInputValue] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
-  
-  // 🌟 Local state for Email Draft
-  const [emailMessage, setEmailMessage] = useState("");
 
   const tags = notificationEmail ? notificationEmail.split(",").map(t => t.trim()).filter(Boolean) : [];
 
@@ -53,15 +51,9 @@ export default function AdminSettings({
     }
   }, [notificationEmail]);
 
-  useEffect(() => {
-    if (!notificationMessage) {
-      setEmailMessage("");
-    }
-  }, [notificationMessage]);
-
   const handleAiEnhance = async () => {
-    if (!notificationMessage.trim()) {
-      toast.error("Please enter a rough message in the 'App Notification' box first!");
+    if (!emailMessage.trim()) {
+      toast.error("Please type your detailed draft in the 'Professional Email Message (Long)' box first!");
       return;
     }
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -69,41 +61,84 @@ export default function AdminSettings({
       toast.error("Gemini API key is not configured.");
       return;
     }
-    const loadingToast = toast.loading("AI is drafting your messages...");
-    try {
-      const prompt = `Convert this rough message into TWO formats for college students:
-      1. 'shortMessage': A crisp, 1-line engaging notification for an app marquee (max 60 chars, with 1-2 emojis).
-      2. 'emailBody': A professional, warm, detailed email body (2-3 paragraphs, use HTML like <br> and <b> for formatting).
-      
-      Rough message: "${notificationMessage}"
-      
-      Return ONLY a valid JSON object in this exact format:
-      { "shortMessage": "...", "emailBody": "..." }`;
+    const loadingToast = toast.loading("AI is parsing your email body...");
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+    let modelToUse = "gemini-3.5-flash";
+    const prompt = `You are the official AI Assistant for "BNN CS Study Hub" (an academic resource portal for Computer Science students at BNN College, covering FYCS and SYCS semesters 1 to 4. The portal offers Notes, Syllabus, Practical codes, Question papers, and Reference books, and features real-time notifications, top marquee announcements, and profile analytics).
+    
+    CRITICAL CONTEXT: The Admin is a classmate of the site's users. Write all announcements and notifications on behalf of this classmate admin. The tone should be friendly, supportive, and classmate-like, yet clear and professional for an announcement.
+    
+    Your task is to analyze the detailed email message draft written by the Admin and generate THREE properties strictly structured for BNN CS students:
+    1. 'title': A super short, punchy notification title (Strictly MAXIMUM 3 words long, without emoji).
+    2. 'shortMessage': A crisp, 1-line engaging notice tailored for the app's marquee banner layout (max 60 chars, with 1-2 emojis).
+    3. 'emailBody': The detailed email body cleaned up, professionalized, structured nicely using HTML tags like <br> and <b> for key bounds. Maintain the core academic/notification details provided by the admin.
+    
+    Admin's Raw Text: "${emailMessage}"
+    
+    Return ONLY a clean, valid JSON object in this exact schema without any markdown wraps:
+    { "title": "...", "shortMessage": "...", "emailBody": "..." }`;
+
+    const makeRequest = async (apiVersion, model) => {
+      const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${model}:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
-
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error?.message || "Failed to fetch from Gemini API");
+        throw new Error(data.error?.message || `HTTP ${response.status}`);
       }
+      return data;
+    };
+
+    try {
+      let data = null;
+      let successfulModel = "";
+
+      const attempts = [
+        { version: "v1", model: "gemini-3.5-flash" },
+        { version: "v1beta", model: "gemini-3.5-flash" },
+        { version: "v1", model: "gemini-2.5-flash" },
+        { version: "v1beta", model: "gemini-2.5-flash" },
+        { version: "v1", model: "gemini-2.0-flash" },
+        { version: "v1beta", model: "gemini-2.0-flash" },
+        { version: "v1", model: "gemini-1.5-flash" },
+        { version: "v1beta", model: "gemini-1.5-flash" },
+        { version: "v1", model: "gemini-1.5-flash-latest" },
+        { version: "v1beta", model: "gemini-1.5-flash-latest" }
+      ];
+
+      let lastErrorMessage = "";
+      for (const attempt of attempts) {
+        try {
+          data = await makeRequest(attempt.version, attempt.model);
+          successfulModel = attempt.model;
+          break;
+        } catch (err) {
+          console.warn(`Attempt failed for ${attempt.model} on ${attempt.version}:`, err.message);
+          lastErrorMessage = err.message;
+        }
+      }
+
+      if (!data) {
+        throw new Error(`All model attempts failed. Last error: ${lastErrorMessage}`);
+      }
+
       let aiText = data.candidates[0].content.parts[0].text;
-      
-      // JSON Clean up (in case AI wraps it in markdown)
+
+      // JSON Markdown cleaning wrapper boundaries bypass
       aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(aiText);
-      
-      // Auto-fill both boxes!
-      setNotificationMessage(parsed.shortMessage);
-      setEmailMessage(parsed.emailBody);
-      
-      toast.success("Messages drafted perfectly! ✨", { id: loadingToast });
+
+      // 🌟 TEENO FIELDS EK SATH AUTO-FILL
+      setNotificationTitle(parsed.title || "");
+      setNotificationMessage(parsed.shortMessage || "");
+      setEmailMessage(parsed.emailBody || "");
+
+      toast.success(`Enhanced perfectly using ${successfulModel}! ✨`, { id: loadingToast });
     } catch (error) {
       console.error(error);
-      toast.error("AI couldn't process this right now.", { id: loadingToast });
+      toast.error(`AI Error: ${error.message}`, { id: loadingToast });
     }
   };
 
@@ -179,21 +214,21 @@ export default function AdminSettings({
                 placeholder={tags.length === 0 ? "user@example.com" : ""}
               />
             </div>
-            
+
             {/* 🌟 USER EMAIL MATCHING RECOMMENDATIONS DROPDOWN */}
             {(() => {
               const currentQuery = inputValue.trim();
               const earlierEmails = tags.map(t => t.toLowerCase());
-              
+
               const matches = users && currentQuery.length > 0
-                ? users.filter(u => 
-                    u.email && 
-                    u.email.toLowerCase().includes(currentQuery.toLowerCase()) && 
-                    !earlierEmails.includes(u.email.toLowerCase()) && 
-                    u.email.toLowerCase() !== currentQuery.toLowerCase()
-                  )
+                ? users.filter(u =>
+                  u.email &&
+                  u.email.toLowerCase().includes(currentQuery.toLowerCase()) &&
+                  !earlierEmails.includes(u.email.toLowerCase()) &&
+                  u.email.toLowerCase() !== currentQuery.toLowerCase()
+                )
                 : [];
-                
+
               if (showDropdown && currentQuery.length > 0 && matches.length > 0) {
                 return (
                   <div className="absolute left-0 right-0 mt-1 max-h-40 overflow-y-auto bg-[#0f0f11] border border-white/10 rounded-lg shadow-xl z-50 no-scrollbar">
@@ -314,11 +349,10 @@ export default function AdminSettings({
             @keyframes rotate { to { transform: rotate(90deg); } }
           `}</style>
 
-          {/* 🌟 Magic Buttons Side-by-Side (Mobile Square AI + Max Width Send Grid) */}
-          {/* Mobile par AI button ko compact static square layout dene ke liye custom grid settings */}
+          {/* 🌟 Magic Buttons Side-by-Side */}
           <div className="flex flex-row gap-2 sm:gap-3 pt-2 w-full items-stretch justify-between">
-            
-            {/* 🚀 SEND BUTTON: Isko flex-grow de diya taaki jitni jagah bache yeh khud le le */}
+
+            {/* 🚀 SEND BUTTON: Max layout tracking stretch flex */}
             <button
               type="button"
               disabled={!notificationTitle || !notificationMessage || isSending}
@@ -329,36 +363,35 @@ export default function AdminSettings({
               <span className="truncate">{isSending ? "Sending..." : "Send Notification"}</span>
             </button>
 
-            {/* 🚀 GALAXY AI BUTTON: Mobile par square container layer block */}
+            {/* 🚀 GALAXY AI BUTTON: Compact mobile square frame setup */}
             <div className="w-[48px] h-[48px] sm:w-auto sm:flex-1 galaxy-btn-container relative shrink-0">
               <button
                 type="button"
                 onClick={handleAiEnhance}
-                disabled={!notificationMessage || isSending}
+                disabled={!emailMessage || isSending}
                 className="galaxy-btn w-full h-full !rounded-xl group disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 <span className="galaxy-spark"></span>
                 <span className="galaxy-backdrop"></span>
-                
+
                 <span className="galaxy-container">
                   {STATIC_STARS.map((style, i) => <span key={i} className="galaxy-star star-static" style={style}></span>)}
                 </span>
-                
+
                 <span className="galaxy-wrapper">
                   <span className="galaxy-ring">
                     {ORBIT_STARS.map((style, i) => <span key={i} className="galaxy-star" style={style}></span>)}
                   </span>
                 </span>
-                
+
                 <span className="relative z-10 flex items-center justify-center gap-2 text-white/90 group-disabled:text-white/50 text-[12px] sm:text-sm w-full px-1">
-                  {/* 🌟 TERA REQUESTED GALAXY STAR SVG ICON */}
+                  {/* 🌌 GALAXY STAR SVG ICON ACCENT */}
                   <svg viewBox="0 0 24 24" height={22} width={22} xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]">
                     <g fill="none">
                       <path d="m12.594 23.258l-.012.002l-.071.035l-.02.004l-.014-.004l-.071-.036q-.016-.004-.024.006l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.016-.018m.264-.113l-.014.002l-.184.093l-.01.01l-.003.011l.018.43l.005.012l.008.008l.201.092q.019.005.029-.008l.004-.014l-.034-.614q-.005-.019-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.003-.011l.018-.43l-.003-.012l-.01-.01z"></path>
                       <path d="M9.107 5.448c.598-1.75 3.016-1.803 3.725-.159l.06.16l.807 2.36a4 4 0 0 0 2.276 2.411l.217.081l2.36.806c1.75.598 1.803 3.016.16 3.725l-.16.06l-2.36.807a4 4 0 0 0-2.412 2.276l-.081.216l-.806 2.361c-.598 1.75-3.016 1.803-3.724.16l-.062-.16l-.806-2.36a4 4 0 0 0-2.276-2.412l-.216-.081l-2.36-.806c-1.751-.598-1.804-3.016-.16-3.724l.16-.062l2.36-.806A4 4 0 0 0 8.22 8.025l.081-.216zM11 6.094l-.806 2.36a6 6 0 0 1-3.49 3.649l-.25.091l-2.36.806l2.36.806a6 6 0 0 1 3.649 3.49l.091.25l.806 2.36l.806-2.36a6 6 0 0 1 3.49-3.649l.25-.09l2.36-.807l-2.36-.806a6 6 0 0 1-3.649-3.49l-.09-.25zM19 2a1 1 0 0 1 .898.56l.048.117l.35 1.026l1.027.35a1 1 0 0 1 .118 1.845l-.118.048l-1.026.35l-.35 1.027a1 1 0 0 1-1.845.117l-.048-.117l-.35-1.026l-1.027-.35a1 1 0 0 1-.118-1.845l.118-.048l1.026-.35l.35-1.027A1 1 0 0 1 19 2" fill="currentColor"></path>
                     </g>
                   </svg>
-                  {/* ⚡ Mobile screen par text automatic hidden rahega */}
                   <span className="hidden sm:inline font-bold tracking-wide text-shadow-sm truncate">AI Enhance ✨</span>
                 </span>
               </button>

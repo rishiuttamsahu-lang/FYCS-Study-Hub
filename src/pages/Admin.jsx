@@ -98,6 +98,7 @@ export default function Admin() {
   const [notificationEmail, setNotificationEmail] = useState("");
   const [notificationTitle, setNotificationTitle] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
   const [sentNotifications, setSentNotifications] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [reports, setReports] = useState([]);
@@ -1117,6 +1118,7 @@ export default function Admin() {
       setNotificationEmail("");
       setNotificationTitle("");
       setNotificationMessage("");
+      setEmailMessage("");
     } catch (error) {
       console.error("Error sending notification:", error);
       toast.error("Failed to send notification");
@@ -1326,6 +1328,8 @@ export default function Admin() {
               setNotificationTitle={setNotificationTitle}
               notificationMessage={notificationMessage}
               setNotificationMessage={setNotificationMessage}
+              emailMessage={emailMessage}
+              setEmailMessage={setEmailMessage}
               handleSendNotification={handleSendNotification}
               isSending={isSending}
               sentNotifications={sentNotifications}
