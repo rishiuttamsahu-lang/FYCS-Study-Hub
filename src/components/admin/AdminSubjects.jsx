@@ -36,14 +36,14 @@ export default function AdminSubjects({
           <button
             type="button"
             onClick={() => setShowAddSubjectForm(!showAddSubjectForm)}
-            className="glass-card border border-white/10 aspect-square p-3 sm:p-5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-xl hover:bg-white/5 transition-all text-center"
+            className="glass-card border border-white/10 p-3.5 sm:p-5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-xl hover:bg-white/5 transition-all text-center"
           >
             <Plus size={18} className="text-white/50" />
             <span className="font-bold text-white/70 text-[10px] sm:text-xs leading-tight">Add Single Subject (Manual)</span>
             <span className="text-[8px] sm:text-[10px] text-white/40 leading-tight">Type manually for Semester {newSubject.semesterId}</span>
           </button>
 
-          <label className={`glass-card border border-dashed aspect-square p-3 sm:p-5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-xl transition-all text-center group ${
+          <label className={`glass-card border border-dashed p-3.5 sm:p-5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-xl transition-all text-center group ${
             isAiProcessing
               ? 'border-zinc-700 bg-zinc-900/20 cursor-not-allowed opacity-50'
               : 'border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer'

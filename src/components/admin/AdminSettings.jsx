@@ -90,7 +90,7 @@ export default function AdminSettings({
       }`;
 
       const makeRequest = async (apiVersion) => {
-        const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -115,7 +115,7 @@ export default function AdminSettings({
           successfulVersion = version;
           break;
         } catch (err) {
-          console.warn(`Attempt failed for gemini-3.5-flash on ${version}:`, err.message);
+          console.warn(`Attempt failed for gemini-3.1-flash-lite on ${version}:`, err.message);
           lastErrorMessage = err.message;
         }
       }
