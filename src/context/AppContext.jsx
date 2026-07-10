@@ -229,19 +229,31 @@ export const AppProvider = ({ children }) => {
       </html>
     `;
 
-    try {
-      await fetch(mailScriptUrl, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify({
-          email: userEmail,
-          subject: "Welcome to BNN CS Study Hub 🎓",
-          messageHtml: welcomeTemplate
-        })
-      });
+    const urls = mailScriptUrl.split(",").map(u => u.trim()).filter(Boolean);
+    let success = false;
+
+    for (const url of urls) {
+      try {
+        await fetch(url, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify({
+            email: userEmail,
+            subject: "Welcome to BNN CS Study Hub 🎓",
+            messageHtml: welcomeTemplate
+          })
+        });
+        success = true;
+        break;
+      } catch (err) {
+        console.warn("Mail script failed, trying next:", err);
+      }
+    }
+
+    if (success) {
       console.log("Welcome email triggered successfully");
-    } catch (err) {
-      console.error("Welcome email failed silently", err);
+    } else {
+      console.error("All welcome email mail script URLs failed.");
     }
   };
   
