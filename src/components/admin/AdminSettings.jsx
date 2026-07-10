@@ -61,81 +61,78 @@ export default function AdminSettings({
       toast.error("Gemini API key is not configured.");
       return;
     }
-    const loadingToast = toast.loading("AI is parsing your email body...");
-
-    let modelToUse = "gemini-3.5-flash";
-    const prompt = `You are the official AI Assistant for "BNN CS Study Hub" (an academic resource portal for Computer Science students at BNN College, covering FYCS and SYCS semesters 1 to 4. The portal offers Notes, Syllabus, Practical codes, Question papers, and Reference books, and features real-time notifications, top marquee announcements, and profile analytics).
-    
-    CRITICAL CONTEXT: The Admin is a classmate of the site's users. Write all announcements and notifications on behalf of this classmate admin. The tone should be friendly, supportive, and classmate-like, yet clear and professional for an announcement.
-    
-    Your task is to analyze the detailed email message draft written by the Admin and generate THREE properties strictly structured for BNN CS students:
-    1. 'title': A super short, punchy notification title (Strictly MAXIMUM 3 words long, without emoji).
-    2. 'shortMessage': A crisp, 1-line engaging notice tailored for the app's marquee banner layout (max 60 chars, with 1-2 emojis).
-    3. 'emailBody': The detailed email body cleaned up, professionalized, structured nicely using HTML tags like <br> and <b> for key bounds. Maintain the core academic/notification details provided by the admin.
-    
-    Admin's Raw Text: "${emailMessage}"
-    
-    Return ONLY a clean, valid JSON object in this exact schema without any markdown wraps:
-    { "title": "...", "shortMessage": "...", "emailBody": "..." }`;
-
-    const makeRequest = async (apiVersion, model) => {
-      const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${model}:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error?.message || `HTTP ${response.status}`);
-      }
-      return data;
-    };
-
+    const loadingToast = toast.loading("AI is parsing your custom draft data...");
     try {
+      const prompt = `You are the Official Notification Architect for BNN CS Study Hub.
+      Analyze this detailed academic draft text and extract/generate THREE specific attributes:
+      
+      CRITICAL ROLE & STRICT TONAL BOUNDS:
+      - The tone for ALL generated text must be strictly formal, professional, and authoritative, adhering to standard Indian English academic communication.
+      - Completely eliminate any casual slang, friendly peer-to-peer phrases, or informal text configurations. 
+      - Ensure the communication is dignified, official, and direct, like a formal university circular or notice board broadcast.
+      - The tone for 'emailBody' must be highly sophisticated and structured for official broadcast. Use elegant structural HTML formatting tags like <br/> and <b>...</b>.
+      
+      STRICT CONSTRAINTS:
+      1. 'title': MAXIMUM 3 words long, strictly official and direct, with exactly 1 relevant academic/notice emoji.
+      2. 'shortMessage': A formal, single-line marquee notification text for the web header layout (MAX 60 characters with 1 emoji).
+      3. 'emailBody': The fully enhanced, dense, elite professional business HTML email text body parsed from the input.
+
+      Original Text Body to parse: "${emailMessage}"
+      
+      Return ONLY a pure valid JSON object string in this exact schema template without any markdown formatting wraps or codeblocks:
+      {
+        "title": "...",
+        "shortMessage": "...",
+        "emailBody": "..."
+      }`;
+
+      const makeRequest = async (apiVersion) => {
+        const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error?.message || `HTTP ${response.status}`);
+        }
+        return data;
+      };
+
       let data = null;
-      let successfulModel = "";
+      let successfulVersion = "";
 
-      const attempts = [
-        { version: "v1", model: "gemini-3.5-flash" },
-        { version: "v1beta", model: "gemini-3.5-flash" },
-        { version: "v1", model: "gemini-2.5-flash" },
-        { version: "v1beta", model: "gemini-2.5-flash" },
-        { version: "v1", model: "gemini-2.0-flash" },
-        { version: "v1beta", model: "gemini-2.0-flash" },
-        { version: "v1", model: "gemini-1.5-flash" },
-        { version: "v1beta", model: "gemini-1.5-flash" },
-        { version: "v1", model: "gemini-1.5-flash-latest" },
-        { version: "v1beta", model: "gemini-1.5-flash-latest" }
-      ];
-
+      // Try stable v1 first (highly available), then fallback to v1beta
+      const versions = ["v1", "v1beta"];
       let lastErrorMessage = "";
-      for (const attempt of attempts) {
+
+      for (const version of versions) {
         try {
-          data = await makeRequest(attempt.version, attempt.model);
-          successfulModel = attempt.model;
+          data = await makeRequest(version);
+          successfulVersion = version;
           break;
         } catch (err) {
-          console.warn(`Attempt failed for ${attempt.model} on ${attempt.version}:`, err.message);
+          console.warn(`Attempt failed for gemini-3.5-flash on ${version}:`, err.message);
           lastErrorMessage = err.message;
         }
       }
 
       if (!data) {
-        throw new Error(`All model attempts failed. Last error: ${lastErrorMessage}`);
+        throw new Error(lastErrorMessage);
       }
 
       let aiText = data.candidates[0].content.parts[0].text;
 
-      // JSON Markdown cleaning wrapper boundaries bypass
+      // Strict JSON extraction regex to clean markdown noise if any
       aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(aiText);
 
-      // 🌟 TEENO FIELDS EK SATH AUTO-FILL
+      // 🌟 AUTOMATIC TEENO NODES SIMULTANEOUS STREAM FILL
       setNotificationTitle(parsed.title || "");
       setNotificationMessage(parsed.shortMessage || "");
       setEmailMessage(parsed.emailBody || "");
 
-      toast.success(`Enhanced perfectly using ${successfulModel}! ✨`, { id: loadingToast });
+      toast.success("All fields filled with premium formats! ✨", { id: loadingToast });
     } catch (error) {
       console.error(error);
       toast.error(`AI Error: ${error.message}`, { id: loadingToast });
