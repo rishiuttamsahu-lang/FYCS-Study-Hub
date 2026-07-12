@@ -583,26 +583,28 @@ export const AppProvider = ({ children }) => {
     reader.onerror = error => reject(error);
   });
 
-  const uploadSingleFile = async (file, userName) => {
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec";
-    
+  // 🌟 UPDATED: Parameterized upload wrapper supporting custom dynamic filenames
+  const uploadSingleFile = async (file, userName, customFileName) => {
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec";
+         
     const cleanPart = (value) => (value || "")
       .toString()
       .trim()
       .replace(/[\\/:*?"<>|]+/g, "-")
       .replace(/\s+/g, " ");
-
+      
     const extension = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
     const originalNameWithoutExt = file.name.includes('.') ? file.name.substring(0, file.name.lastIndexOf('.')) : file.name;
     const cleanName = cleanPart(originalNameWithoutExt);
-    const customFileName = userName ? `${cleanPart(userName)}-${cleanName}${extension}` : `${cleanName}${extension}`;
-
+    
+    // 🚨 IF customFileName is provided, use it directly. Otherwise, fall back to standard format.
+    const finalFileName = customFileName ? customFileName.trim() : (userName ? `${cleanPart(userName)}-${cleanName}${extension}` : `${cleanName}${extension}`);
+    
     const base64Data = await toBase64(file);
     const response = await fetch(SCRIPT_URL, {
       method: "POST",
-      body: JSON.stringify({ base64: base64Data, name: customFileName, mimeType: file.type })
+      body: JSON.stringify({ base64: base64Data, name: finalFileName, mimeType: file.type })
     });
-
     const result = await response.json();
     if (result.status === "success") {
       return { success: true, fileUrl: result.fileUrl, fileId: result.fileId };
@@ -612,7 +614,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const startGlobalUpload = async (filesToUpload, metadata, userName, userEmail) => {
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec";
     const emailAccessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
     let successCount = 0;
 

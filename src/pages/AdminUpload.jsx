@@ -1,4 +1,4 @@
-import { CloudUpload, Link2, Tag, FileText, Code, Star, Edit3, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { CloudUpload, Link2, Tag, FileText, Code, Star, Edit3, CheckCircle, XCircle, RefreshCw, Plus } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -6,8 +6,6 @@ import { useApp } from "../context/AppContext";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../firebase";
 
-// 🚨 UPDATE THIS IN ADMIN.JSX, LIBRARY.JSX, AND UPLOAD.JSX
-// Yahan humne 'emptyMessage' prop add kiya hai
 const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "No options available" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -30,18 +28,15 @@ const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "N
         className="w-full glass-card px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 text-white hover:border-[#FFD700]/50 cursor-pointer flex justify-between items-center transition-all duration-300"
         onClick={() => setIsOpen(!isOpen)}
       >
-        {/* 🚨 Added 'truncate' and 'mr-2' so text never pushes the icon out */}
         <span className={`truncate mr-2 ${!selectedOption ? "text-white/40 text-sm" : "text-sm font-medium"}`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        {/* 🚨 Added 'flex-shrink-0' so icon stays perfect */}
         <svg className={`flex-shrink-0 transition-transform duration-300 text-white/40 ${isOpen ? 'rotate-180 text-[#FFD700]' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </div>
 
       {isOpen && (
-        /* 🚨 Update dropdown div width property */
         <div className="absolute left-0 z-[100] min-w-full w-max max-w-[90vw] mt-2 py-2 bg-[#0c0c0e] border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           <div className="max-h-60 overflow-y-auto custom-scrollbar">
             {options && options.length > 0 ? (
@@ -53,19 +48,16 @@ const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "N
                     onChange(opt.value);
                     setIsOpen(false);
                   }}
-                  // 🚨 Added 'w-full' and 'relative'
                   className={`px-4 py-2.5 cursor-pointer transition-all text-sm relative flex items-center ${
                     String(value) === String(opt.value) 
                       ? 'bg-[#FFD700]/15 text-[#FFD700] font-bold' 
                       : 'text-white/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  {/* 🚨 Added 'whitespace-nowrap' and 'block' to force single line */}
                   <span className="block whitespace-nowrap pr-6">
                     {opt.label}
                   </span>
                   
-                  {/* 🚨 Checkmark Icon - Positioned absolute so it doesn't push text */}
                   {String(value) === String(opt.value) && (
                     <svg 
                       width="14" 
@@ -97,35 +89,31 @@ const CustomSelect = ({ value, onChange, options, placeholder, emptyMessage = "N
 
 export default function AdminUpload() {
   const navigate = useNavigate();
-  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial } = useApp();
-  const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'pending_admin'
+  const { semesters, subjects, addMaterial, isAdmin, materials, user, approveMaterial, rejectMaterial, uploadSingleFile } = useApp();
+  
+  const [activeTab, setActiveTab] = useState('upload');
   const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
   
-  // Extract file ID from Google Drive URL
-  const extractFileId = (url) => {
-    const match = url.match(/\/d\/([^/]+)|id=([^&]+)/);
-    return match ? (match[1] || match[2]) : null;
-  };
-  
-  // Get pending materials (case-insensitive, trimmed)
+  // 🌟 NEW STATES FOR DIRECT UPLOAD WORKFLOW 🌟
+  const [isDirectUploading, setIsDirectUploading] = useState(false);
+  const [directUploadProgress, setDirectUploadProgress] = useState(0);
+  const directUploadRef = useRef(null);
+
   const pendingMaterials = materials.filter(material => {
     const stat = (material.status || '').toString().trim().toLowerCase();
     return stat === 'pending';
   });
   
-  // Redirect non-admin users
   useEffect(() => {
     if (isAdmin === false) {
       navigate("/");
     }
   }, [isAdmin, navigate]);
   
-  // Prevent rendering if not admin
   if (isAdmin === false) {
     return null;
   }
 
-  // Dynamically load Google scripts on mount
   useEffect(() => {
     const loadGapi = () => new Promise(res => {
       if (window.gapi) { 
@@ -138,7 +126,7 @@ export default function AdminUpload() {
       s.async = true;
       s.defer = true;
       s.onload = () => {
-        window.gapi.load('picker'); // Pre-load the picker module
+        window.gapi.load('picker');
         res();
       };
       document.head.appendChild(s);
@@ -155,15 +143,12 @@ export default function AdminUpload() {
     });
     
     Promise.all([loadGapi(), loadGis()]).then(() => {
-      // Set a small delay to ensure everything is fully initialized
       setTimeout(() => {
         setIsGoogleApiLoaded(true);
-        console.log('✅ Google API fully loaded and ready');
       }, 100);
     });
   }, []);
 
-  // Google Drive Picker with silent token approach
   const openDrivePicker = () => {
     const userEmail = auth.currentUser?.email;
     if (!userEmail) {
@@ -171,17 +156,15 @@ export default function AdminUpload() {
       return;
     }
 
-    // Safety check: Ensure Google Picker is fully loaded
     if (!window.google || !window.google.picker) {
       toast.error("Google Drive interface is still loading. Please try again in a few seconds.");
-      console.log('Google Picker not ready yet:', { google: !!window.google, picker: !!window.google?.picker });
       return;
     }
 
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       scope: "https://www.googleapis.com/auth/drive.readonly",
-      login_hint: userEmail, // THIS IS THE MAGIC THAT SKIPS THE ACCOUNT CHOOSER
+      login_hint: userEmail,
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
           showPicker(tokenResponse.access_token);
@@ -190,7 +173,7 @@ export default function AdminUpload() {
         }
       },
     });
-    client.requestAccessToken({ prompt: "" }); // prompt empty skips the chooser if possible
+    client.requestAccessToken({ prompt: "" });
   };
 
   const showPicker = (accessToken) => {
@@ -211,10 +194,7 @@ export default function AdminUpload() {
     picker.setVisible(true);
   };
 
-  const types = useMemo(
-    () => ["Notes", "Practicals", "IMP", "Assignment"],
-    []
-  );
+  const types = useMemo(() => ["Notes", "Practicals", "IMP", "Assignment"], []);
 
   const [form, setForm] = useState({
     title: "",
@@ -225,132 +205,161 @@ export default function AdminUpload() {
     uploadDate: new Date().toLocaleDateString(),
   });
 
-  // Get subjects filtered by selected semester
   const filteredSubjects = useMemo(
     () => subjects.filter(s => Number(s.semId) === Number(form.semester)),
     [subjects, form.semester]
   );
 
-  // Check if form is valid
   const isFormValid = form.title && form.semester && form.subject && form.driveLink;
-  
-  // Loading state for duplicate check
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
 
   function onChange(key) {
     return (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
   }
-  
-  // Function to convert Google Drive link to direct download link
-  const handleConvertLink = () => {
-    const link = form.driveLink.trim();
-    if (!link) {
-      toast.error("Please enter a Google Drive link first");
+
+  // 🌟 BOT REPLICATION DICTIONARY MAPPING FOR HIGH SPEED LOOKUPS 🌟
+  const getSubjectAbbreviation = (subjectName) => {
+    if (!subjectName) return "SUB";
+    const abbreviations = {
+      "Human Resource Management": "HRM",
+      "Web Development": "WD",
+      "Algorithm": "Algo",
+      "Number Theory": "Maths",
+      "Maths (Number Theory)": "Maths",
+      "Co-Curriculum": "CC",
+      "Environmental Management & Sustainability": "EMSD",
+      "Marketing Mix-2": "MM-2",
+      "Object Oriented Programming": "OOPs",
+      "OOPs (C++)": "OOPs",
+      "Hindi": "Hindi",
+      "Time Table": "TT",
+      "Certificate/Index/Page": "Certificate",
+      "Python": "Python"
+    };
+    if (abbreviations[subjectName]) return abbreviations[subjectName];
+    
+    // Telegram Bot inline fallback strategy
+    const bracketMatch = subjectName.match(/\(([^)]+)\)/);
+    if (bracketMatch && bracketMatch[1]) return bracketMatch[1].trim().toUpperCase();
+    const words = subjectName.trim().split(/\s+/);
+    if (words.length === 1) return words[0].substring(0, 3).toUpperCase();
+    return words.map(word => word.charAt(0)).join('').toUpperCase();
+  };
+
+  // 🌟 DIRECT BACKGROUND CLOUD UPLOAD ON PLUS CLICK 🌟
+  const handleDirectUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Direct guard validation: Semester aur Subject pehle se selected hone zaroori hain naming flow ke liye
+    if (!form.semester || !form.subject) {
+      toast.error("⚠️ Order Constraint: Please select Semester and Subject FIRST before uploading!");
+      e.target.value = "";
       return;
     }
+
+    if (!form.title.trim()) {
+      toast.error("⚠️ Input Constraint: Please type the target Document Title first!");
+      e.target.value = "";
+      return;
+    }
+
+    const selectedSubject = subjects.find(s => s.id === form.subject);
+    const subShort = selectedSubject ? getSubjectAbbreviation(selectedSubject.name) : "SUB";
+    const extension = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
     
-    // Extract file ID using regex
-    const match = link.match(/\/d\/(.+?)\/|id=(.+?)(\&|$)/);
-    const fileId = match ? (match[1] || match[2]) : null;
-    
-    if (fileId) {
-      // Create direct download link
-      const directLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
-      
-      // Update the form state with the converted link
-      setForm(prev => ({ ...prev, driveLink: directLink }));
-      
-      // Show success toast
-      toast.success("Link Converted to Direct Download");
-    } else {
-      toast.error("Invalid Google Drive link format");
+    // 🎯 TARGET TELEGRAM MATRIX FILE REPLICATION NAME FORMAT
+    const targetPremiumName = `${subShort} - ${form.title.trim()}${extension}`;
+
+    setIsDirectUploading(true);
+    setDirectUploadProgress(5);
+
+    const progressInterval = setInterval(() => {
+      setDirectUploadProgress(prev => {
+        if (prev < 40) return prev + 6;
+        if (prev < 75) return prev + 3;
+        if (prev < 95) return prev + 0.8;
+        return prev;
+      });
+    }, 150);
+
+    try {
+      // 🚀 Passing target Premium Name into the wrapper node directly
+      const result = await uploadSingleFile(file, "Admin_Direct", targetPremiumName);
+      clearInterval(progressInterval);
+      setDirectUploadProgress(100);
+
+      if (result.success) {
+        setForm(prev => ({ ...prev, driveLink: result.fileUrl }));
+        toast.success(`Uploaded and named: "${targetPremiumName}" successfully! 📦`);
+      }
+    } catch (error) {
+      clearInterval(progressInterval);
+      console.error(error);
+      toast.error("Direct upload stream rejected by Drive server configuration.");
+    } finally {
+      setTimeout(() => {
+        setIsDirectUploading(false);
+        setDirectUploadProgress(0);
+      }, 800);
+      e.target.value = ""; 
     }
   };
 
   async function onSubmit(e) {
     e.preventDefault();
     
-    // Validate required fields
     if (!form.title || !form.subject || !form.driveLink) {
       toast.error("Please fill in all required fields");
       return;
     }
     
     try {
-      // Set loading state for duplicate check
       setIsCheckingDuplicate(true);
-      
-      // Fetch all materials for comprehensive duplicate check
       const querySnapshot = await getDocs(collection(db, "materials"));
-      
-      // Normalize user input for comparison
       const normalizedInputTitle = form.title.toLowerCase().trim();
       
-      // Extract filename from Google Drive link if possible
       let inputFileName = "";
       const driveLink = form.driveLink.trim();
       if (driveLink) {
         try {
-          // Try to extract filename from Google Drive URL
           const urlObj = new URL(driveLink);
           const pathParts = urlObj.pathname.split('/');
-          // Look for filename in the URL path
           const fileNamePart = pathParts.find(part => part.includes('.') && !part.startsWith('d'));
-          if (fileNamePart) {
-            inputFileName = fileNamePart.toLowerCase().trim();
-          }
+          if (fileNamePart) inputFileName = fileNamePart.toLowerCase().trim();
         } catch (urlError) {
-          // If URL parsing fails, try to extract from the link text
           const fileNameMatch = driveLink.match(/[^/]+\.[^/]+$/);
-          if (fileNameMatch) {
-            inputFileName = fileNameMatch[0].toLowerCase().trim();
-          }
+          if (fileNameMatch) inputFileName = fileNameMatch[0].toLowerCase().trim();
         }
       }
       
-      // Get the subject name for better user feedback
       const selectedSubject = subjects.find(s => s.id === form.subject);
       const subjectName = selectedSubject ? selectedSubject.name : "this subject";
-      
-      // Check for duplicates in existing materials (scoped by subject)
       let isDuplicate = false;
+
       querySnapshot.forEach((doc) => {
         const dbData = doc.data();
-        
-        // ONLY check for duplicates IF the subject is the exact same
         if (dbData.subjectId === form.subject) {
-          // Check title duplication (case-insensitive and trimmed)
           const dbTitle = dbData.title ? dbData.title.toLowerCase().trim() : "";
           if (dbTitle === normalizedInputTitle) {
             isDuplicate = true;
             return;
           }
-          
-          // Check file name duplication if we have a filename to compare
           if (inputFileName) {
-            // Check if the database has a fileName field or extract from link
             const dbFileName = (dbData.fileName || "").toLowerCase().trim();
             const dbLink = (dbData.link || "").toLowerCase().trim();
-            
-            // Try to extract filename from database link
             let dbExtractedFileName = "";
             if (dbLink) {
               try {
                 const dbUrlObj = new URL(dbLink);
                 const dbPathParts = dbUrlObj.pathname.split('/');
                 const dbFileNamePart = dbPathParts.find(part => part.includes('.') && !part.startsWith('d'));
-                if (dbFileNamePart) {
-                  dbExtractedFileName = dbFileNamePart.toLowerCase().trim();
-                }
+                if (dbFileNamePart) dbExtractedFileName = dbFileNamePart.toLowerCase().trim();
               } catch (dbUrlError) {
                 const dbFileNameMatch = dbLink.match(/[^/]+\.[^/]+$/);
-                if (dbFileNameMatch) {
-                  dbExtractedFileName = dbFileNameMatch[0].toLowerCase().trim();
-                }
+                if (dbFileNameMatch) dbExtractedFileName = dbFileNameMatch[0].toLowerCase().trim();
               }
             }
-            
-            // Compare filenames
             if (dbFileName === inputFileName || dbExtractedFileName === inputFileName) {
               isDuplicate = true;
               return;
@@ -359,35 +368,30 @@ export default function AdminUpload() {
         }
       });
       
-      // If duplicate found, show warning and stop upload
       if (isDuplicate) {
         toast.error(`🚨 Wait! This material already exists in the "${subjectName}" subject. Check the Library!`);
         setIsCheckingDuplicate(false);
         return;
       }
       
-      // No duplicates found, proceed with upload
       const result = await addMaterial({
         title: form.title,
         semId: form.semester,
         subjectId: form.subject,
         type: form.type,
         link: form.driveLink,
-        // Ensure admin uploads also start as Pending so they require approval
         status: "Pending",
         uploadedBy: user?.displayName || user?.email.split('@')[0] || "Student",
         uploadedByUid: user?.uid || null,
       });
       
       if (result.success) {
-        // Reset form - preserve semester, subject, and type selections
         setForm(prevForm => ({
           ...prevForm,
           title: "",
           driveLink: "",
           uploadDate: new Date().toLocaleDateString(),
         }));
-        
         toast.success("Material submitted successfully! Pending approval.");
       } else {
         const msg = result.error || "An unknown error occurred during submission";
@@ -398,7 +402,6 @@ export default function AdminUpload() {
       const msg = error?.message || error?.toString() || "An unknown error occurred";
       toast.error("Error submitting material: " + msg);
     } finally {
-      // Always reset loading state
       setIsCheckingDuplicate(false);
     }
   }
@@ -412,15 +415,12 @@ export default function AdminUpload() {
         </p>
       </div>
       
-      {/* TOP TAB BAR */}
       <div className="flex w-full bg-zinc-900 rounded-lg p-1 mb-6">
         <button
           type="button"
           onClick={() => setActiveTab('upload')}
           className={`flex-1 py-2 text-center font-bold transition-colors ${
-            activeTab === 'upload'
-              ? 'bg-yellow-400 text-black rounded-md'
-              : 'text-white/70'
+            activeTab === 'upload' ? 'bg-yellow-400 text-black rounded-md' : 'text-white/70'
           }`}
         >
           Upload
@@ -429,169 +429,183 @@ export default function AdminUpload() {
           type="button"
           onClick={() => setActiveTab('pending_admin')}
           className={`flex-1 py-2 text-center font-bold transition-colors ${
-            activeTab === 'pending_admin'
-              ? 'bg-yellow-400 text-black rounded-md'
-              : 'text-white/70'
+            activeTab === 'pending_admin' ? 'bg-yellow-400 text-black rounded-md' : 'text-white/70'
           }`}
         >
           Pending (Admin)
         </button>
       </div>
       
-      {/* CONDITIONAL RENDERING */}
       {activeTab === 'upload' ? (
         <form className="glass-card p-4" onSubmit={onSubmit}>
-        <div className="mb-4">
-          <div className="text-white/50 uppercase text-[10px] tracking-widest font-bold">
-            Publish Material
-          </div>
-          <div className="text-[12px] text-white/70 mt-2">
-            Fill in the details exactly so students can find it easily.
-          </div>
-        </div>
-
-        {/* Title */}
-        <label className="block mb-4">
-          <div className="text-[11px] font-bold text-white/70 mb-2">Title</div>
-          <input
-            value={form.title}
-            onChange={onChange("title")}
-            placeholder='e.g., Unit 1 Notes'
-            className="w-full glass-card px-4 py-3 text-sm outline-hidden placeholder:text-white/35"
-            required
-          />
-        </label>
-
-        <div className="grid grid-cols-2 gap-3">
-          {/* Semester */}
           <div className="mb-4">
-            <label className="block text-white/70 text-sm mb-2">Semester *</label>
-            <CustomSelect
-              value={form.semester}
-              onChange={(val) => onChange("semester")({ target: { value: val } })}
-              placeholder="Select Semester"
-              options={[
-                ...(semesters || []).map(sem => ({ value: sem.id, label: sem.name }))
-              ]}
-            />
+            <div className="text-white/50 uppercase text-[10px] tracking-widest font-bold">
+              Publish Material
+            </div>
+            <div className="text-[12px] text-white/70 mt-2">
+              Fill in the details exactly so students can find it easily.
+            </div>
           </div>
 
-          {/* Type */}
-          <div className="mb-4">
-            <label className="block text-white/70 text-sm mb-2">Type *</label>
-            <CustomSelect
-              value={form.type}
-              onChange={(val) => onChange("type")({ target: { value: val } })}
-              placeholder="Select Type"
-              options={[
-                { value: "Notes", label: "Notes" },
-                { value: "Practicals", label: "Practicals" },
-                { value: "IMP", label: "IMP" },
-                { value: "Assignment", label: "Assignment" }
-              ]}
-            />
-          </div>
-
-          {/* Subject */}
-          <div className="mb-4 relative z-[90]">
-            <label className="block text-white/70 text-sm mb-2">Subject *</label>
-            <CustomSelect
-              value={form.subject}
-              onChange={(val) => onChange("subject")({ target: { value: val } })}
-              placeholder={form.semester ? "Select subject..." : "Select semester first"}
-              // 🚨 Agar semesterId select nahi hua hai, toh khali array bhejo
-              options={form.semester ? (filteredSubjects || []).map(sub => ({ value: sub.id, label: `${sub.name} (Sem ${sub.semId})` })) : []}
-              // 🚨 Ye message tab dikhega jab array khali hoga
-              emptyMessage="⚠️ Please select Semester first"
-            />
-            {!form.semester && (
-              <div className="text-[10px] text-amber-400 mt-1">
-                Please select a semester first
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Google Drive Link */}
-        <label className="block mb-4">
-          <div className="text-[11px] font-bold text-white/70 mb-2">
-            Google Drive Link *
-          </div>
-          <div className="glass-card px-4 py-3 flex items-center gap-3">
-            <Link2 size={18} className="text-white/55" />
+          <label className="block mb-4">
+            <div className="text-[11px] font-bold text-white/70 mb-2">Title</div>
             <input
-              value={form.driveLink}
-              onChange={onChange("driveLink")}
-              placeholder="https://drive.google.com/..."
-              className="w-full bg-transparent text-sm outline-hidden placeholder:text-white/35"
+              value={form.title}
+              onChange={onChange("title")}
+              placeholder='e.g., Unit 1 Notes'
+              className="w-full glass-card px-4 py-3 text-sm outline-hidden placeholder:text-white/35"
               required
             />
-            <button
-              type="button"
-              onClick={openDrivePicker}
-              disabled={!isGoogleApiLoaded}
-              title={!isGoogleApiLoaded ? "Loading Google Drive..." : "Pick from Google Drive"}
-              className={`flex-shrink-0 p-1.5 rounded-lg transition-all border ${
-                !isGoogleApiLoaded 
-                  ? "bg-white/5 border-white/10 cursor-not-allowed opacity-50" 
-                  : "bg-white/10 hover:bg-white/20 border-white/20"
-              }`}
-            >
-              {!isGoogleApiLoaded ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
-                  <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
-                  <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
-                  <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
-                  <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
-                  <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
-                  <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
-                </svg>
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="mb-4">
+              <label className="block text-white/70 text-sm mb-2">Semester *</label>
+              <CustomSelect
+                value={form.semester}
+                onChange={(val) => { setForm(prev => ({ ...prev, semester: val, subject: "" })); }}
+                placeholder="Select Semester"
+                options={[
+                  ...(semesters || []).map(sem => ({ value: sem.id, label: sem.name }))
+                ]}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-white/70 text-sm mb-2">Type *</label>
+              <CustomSelect
+                value={form.type}
+                onChange={(val) => onChange("type")({ target: { value: val } })}
+                placeholder="Select Type"
+                options={[
+                  { value: "Notes", label: "Notes" },
+                  { value: "Practicals", label: "Practicals" },
+                  { value: "IMP", label: "IMP" },
+                  { value: "Assignment", label: "Assignment" }
+                ]}
+              />
+            </div>
+
+            <div className="mb-4 relative z-[90]">
+              <label className="block text-white/70 text-sm mb-2">Subject *</label>
+              <CustomSelect
+                value={form.subject}
+                onChange={(val) => onChange("subject")({ target: { value: val } })}
+                placeholder={form.semester ? "Select subject..." : "Select semester first"}
+                options={form.semester ? (filteredSubjects || []).map(sub => ({ value: sub.id, label: `${sub.name} (Sem ${sub.semId})` })) : []}
+                emptyMessage="⚠️ Please select Semester first"
+              />
+              {!form.semester && (
+                <div className="text-[10px] text-amber-400 mt-1">
+                  Please select a semester first
+                </div>
               )}
-            </button>
+            </div>
           </div>
-        </label>
 
-        <label className="block mb-5">
-          <div className="text-[11px] font-bold text-white/70 mb-2">Upload Date</div>
-          <div className="glass-card px-4 py-3 flex items-center gap-3 bg-zinc-900/50">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/55">
-              <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-              <line x1="16" x2="16" y1="2" y2="6"/>
-              <line x1="8" x2="8" y1="2" y2="6"/>
-              <line x1="3" x2="21" y1="10" y2="10"/>
-            </svg>
-            <input
-              value={form.uploadDate}
-              readOnly
-              className="w-full bg-transparent text-sm outline-hidden text-zinc-400"
-            />
-          </div>
-        </label>
+          <label className="block mb-4">
+            <div className="text-[11px] font-bold text-white/70 mb-2">
+              Google Drive Link *
+            </div>
+            <div className="glass-card px-4 py-3 flex items-center gap-3">
+              {isDirectUploading ? (
+                <div className="relative w-5 h-5 flex items-center justify-center shrink-0" title="Uploading directly to Drive folder...">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="10" cy="10" r="8" stroke="rgba(255,255,255,0.1)" strokeWidth="2" fill="transparent" />
+                    <circle cx="10" cy="10" r="8" stroke="#FFD700" strokeWidth="2" fill="transparent"
+                      strokeDasharray={2 * Math.PI * 8}
+                      strokeDashoffset={(2 * Math.PI * 8) - (directUploadProgress / 100) * (2 * Math.PI * 8)}
+                      className="transition-all duration-100"
+                    />
+                  </svg>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => directUploadRef.current?.click()}
+                  className="w-6 h-6 rounded-full bg-white/10 hover:bg-[#FFD700]/20 flex items-center justify-center text-white/55 hover:text-[#FFD700] transition-colors shrink-0 shadow-inner"
+                  title="Direct Plus Upload to Drive (Bot Workflow)"
+                >
+                  <Plus size={14} strokeWidth={2.5} />
+                </button>
+              )}
+              
+              <input 
+                type="file" 
+                ref={directUploadRef} 
+                className="hidden" 
+                onChange={handleDirectUpload} 
+              />
 
-        {/* Submit */}
-        <button 
-          type="submit" 
-          className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
-            isFormValid && !isCheckingDuplicate
-              ? "btn-primary" 
-              : "bg-white/10 text-white/30 cursor-not-allowed"
-          }`}
-          disabled={!isFormValid || isCheckingDuplicate}
-        >
-          {isCheckingDuplicate 
-            ? "Checking for duplicates..." 
-            : isFormValid 
-              ? "Publish Material" 
-              : "Fill all required fields"}
-          {isCheckingDuplicate ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-          ) : (
-            <CloudUpload size={18} />
-          )}
-        </button>
-      </form>
+              <input
+                value={form.driveLink}
+                onChange={onChange("driveLink")}
+                placeholder="https://drive.google.com/..."
+                className="w-full bg-transparent text-sm outline-hidden placeholder:text-white/35"
+                required
+              />
+              
+              <button
+                type="button"
+                onClick={openDrivePicker}
+                disabled={!isGoogleApiLoaded}
+                title={!isGoogleApiLoaded ? "Loading Google Drive..." : "Pick from Google Drive"}
+                className={`flex-shrink-0 p-1.5 rounded-lg transition-all border ${
+                  !isGoogleApiLoaded 
+                    ? "bg-white/5 border-white/10 cursor-not-allowed opacity-50" 
+                    : "bg-white/10 hover:bg-white/20 border-white/20"
+                }`}
+              >
+                {!isGoogleApiLoaded ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                    <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+          </label>
+
+          <label className="block mb-5">
+            <div className="text-[11px] font-bold text-white/70 mb-2">Upload Date</div>
+            <div className="glass-card px-4 py-3 flex items-center gap-3 bg-zinc-900/50">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/55">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                <line x1="16" x2="16" y1="2" y2="6"/>
+                <line x1="8" x2="8" y1="2" y2="6"/>
+                <line x1="3" x2="21" y1="10" y2="10"/>
+              </svg>
+              <input
+                value={form.uploadDate}
+                readOnly
+                className="w-full bg-transparent text-sm outline-hidden text-zinc-400"
+              />
+            </div>
+          </label>
+
+          <button 
+            type="submit" 
+            className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+              isFormValid && !isCheckingDuplicate ? "btn-primary" : "bg-white/10 text-white/30 cursor-not-allowed"
+            }`}
+            disabled={!isFormValid || isCheckingDuplicate}
+          >
+            {isCheckingDuplicate 
+              ? "Checking for duplicates..." 
+              : isFormValid ? "Publish Material" : "Fill all required fields"}
+            {isCheckingDuplicate ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <CloudUpload size={18} />
+            )}
+          </button>
+        </form>
       ) : (
         <div className="glass-card p-4">
           <div className="mb-4">
