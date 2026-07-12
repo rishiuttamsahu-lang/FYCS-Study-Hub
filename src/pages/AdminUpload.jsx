@@ -247,29 +247,21 @@ export default function AdminUpload() {
   };
 
   // 🌟 DIRECT BACKGROUND CLOUD UPLOAD ON PLUS CLICK 🌟
+  // 🌟 SMART FALLBACK DIRECT UPLOAD WORKFLOW 🌟
   const handleDirectUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Direct guard validation: Semester aur Subject pehle se selected hone zaroori hain naming flow ke liye
-    if (!form.semester || !form.subject) {
-      toast.error("⚠️ Order Constraint: Please select Semester and Subject FIRST before uploading!");
-      e.target.value = "";
-      return;
-    }
+    let targetPremiumName = null;
+    let isMetadataMissing = !form.semester || !form.subject || !form.title.trim();
 
-    if (!form.title.trim()) {
-      toast.error("⚠️ Input Constraint: Please type the target Document Title first!");
-      e.target.value = "";
-      return;
+    // Agar saari fields filled hain, toh premium name banao (Bot Workflow)
+    if (!isMetadataMissing) {
+      const selectedSubject = subjects.find(s => s.id === form.subject);
+      const subShort = selectedSubject ? getSubjectAbbreviation(selectedSubject.name) : "SUB";
+      const extension = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
+      targetPremiumName = `${subShort} - ${form.title.trim()}${extension}`;
     }
-
-    const selectedSubject = subjects.find(s => s.id === form.subject);
-    const subShort = selectedSubject ? getSubjectAbbreviation(selectedSubject.name) : "SUB";
-    const extension = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
-    
-    // 🎯 TARGET TELEGRAM MATRIX FILE REPLICATION NAME FORMAT
-    const targetPremiumName = `${subShort} - ${form.title.trim()}${extension}`;
 
     setIsDirectUploading(true);
     setDirectUploadProgress(5);
@@ -284,14 +276,33 @@ export default function AdminUpload() {
     }, 150);
 
     try {
-      // 🚀 Passing target Premium Name into the wrapper node directly
+      // Background upload request trigger (targetPremiumName null hoga toh original name se upload hoga)
       const result = await uploadSingleFile(file, "Admin_Direct", targetPremiumName);
       clearInterval(progressInterval);
       setDirectUploadProgress(100);
 
       if (result.success) {
         setForm(prev => ({ ...prev, driveLink: result.fileUrl }));
-        toast.success(`Uploaded and named: "${targetPremiumName}" successfully! 📦`);
+        
+        // 🚨 FALLBACK TOAST TRIGGER
+        if (isMetadataMissing) {
+          toast(
+            `⚠️ Uploaded! Please rename on Drive (Subject or Title was missing during attach).`,
+            {
+              duration: 5000,
+              icon: '📂',
+              style: {
+                background: '#1c1917',
+                color: '#fbbf24',
+                border: '1px solid #d97706',
+                fontSize: '13px',
+                fontWeight: 'bold'
+              },
+            }
+          );
+        } else {
+          toast.success(`Uploaded and named: "${targetPremiumName}" successfully! 📦`);
+        }
       }
     } catch (error) {
       clearInterval(progressInterval);

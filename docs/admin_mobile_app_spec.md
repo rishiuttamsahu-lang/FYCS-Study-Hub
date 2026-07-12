@@ -156,7 +156,7 @@ These configuration options must be initialized in the Firebase App module of th
 ### 4.2 API Gateways & Integration Credentials
 * **Google Apps Script Web App Endpoint**:
   ```
-  https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec
+  https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec
   ```
   *Note: Standard native SDK calls to this endpoint will redirect with an HTTP 302. Mobile HTTP clients must be configured to automatically follow redirects.*
   
@@ -199,7 +199,7 @@ This method is responsible for uploading a single file to Google Drive via the A
 
 ```javascript
 const uploadSingleFile = async (file, userName) => {
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec";
   
   const cleanPart = (value) => (value || "")
     .toString()
@@ -238,7 +238,7 @@ This function manages bulk submissions and writes the metadata to Cloud Firestor
 
 ```javascript
 const startGlobalUpload = async (filesToUpload, metadata, userName, userEmail) => {
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec";
   const emailAccessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
   let successCount = 0;
 
@@ -322,7 +322,7 @@ The Google Apps Script serves as a serverless backend for file uploads to Google
 ### 7.1 Payload Specification
 The POST request sent to the script endpoint must follow these parameters:
 * **Method**: `POST`
-* **Endpoint URL**: `https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec`
+* **Endpoint URL**: `https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec`
 * **Headers**: `Content-Type: text/plain` (This bypasses CORS preflight checks in web contexts and matches the script's raw POST parsing handler).
 
 #### Body Schema (JSON Stringified)
@@ -511,7 +511,7 @@ import axios from 'axios';
 import { db, auth } from './firebaseConfig';
 import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec";
 
 export default function NativeUploader() {
   const [fileDetails, setFileDetails] = useState(null);
@@ -742,7 +742,7 @@ class ShareActivity : AppCompatActivity() {
                 put("mimeType", mimeType)
             }.toString()
 
-            val scriptUrl = URL("https://script.google.com/macros/s/AKfycbzc1QTM0qx8OPGs16QRXbtEevBgik4pceDjLpKKS98f8DBD7A8yszDjmibQb7cTQBs8tQ/exec")
+            val scriptUrl = URL("https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec")
             val connection = scriptUrl.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.doOutput = true
