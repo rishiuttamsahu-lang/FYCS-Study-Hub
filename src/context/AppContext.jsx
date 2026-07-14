@@ -30,13 +30,13 @@ export const AppProvider = ({ children }) => {
     { id: "3", name: "Semester 3", active: true },
     { id: "4", name: "Semester 4", active: true }
   ]);
-  
+
   // Authentication state
   const [user, setUser] = useState(null);
-  
+
   // Users state from Firestore
   const [users, setUsers] = useState([]);
-  
+
   // 🚀 GRANULAR LOADING STATES
   // Previously a single `loading` flag waited for materials + subjects +
   // auth to ALL resolve before ANY page could render anything. That meant
@@ -59,7 +59,7 @@ export const AppProvider = ({ children }) => {
   // before they can render (e.g. Library needs materials + subjects for
   // its filter dropdowns).
   const dataLoading = materialsLoading || subjectsLoading;
-  
+
   // 📱💻 Bi-Device Smart Zoom Logic (Breakpoint: 425px)
   const getIsMobile = () => window.innerWidth <= 425;
 
@@ -94,26 +94,26 @@ export const AppProvider = ({ children }) => {
         setSiteZoom(savedPC ? Number(savedPC) : 100);
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
+
   // User role state (separate from users array for real-time updates)
   const [userRole, setUserRole] = useState(null);
 
   // RBAC - Role-Based Access Control
-  const isAdmin = useMemo(() => 
+  const isAdmin = useMemo(() =>
     CREATOR_EMAILS.includes(user?.email) || userRole === "admin",
     [user?.email, userRole]
   );
 
   // 🌟 NAYA GLOBAL UPLOAD ENGINE 🌟
   const [globalUploadState, setGlobalUploadState] = useState({ uploading: false, current: 0, total: 0, realProgress: 0 });
-  
+
   // 🌟 GLOBAL UPLOAD FORM MEMORY (prevents form clearing on navigation)
   const [uploadFormData, setUploadFormData] = useState({ title: "", semester: "", subject: "", type: "Notes", files: [] });
-  
+
   // Real-time listeners for materials and subjects
   useEffect(() => {
     const unsubscribeMaterials = onSnapshot(
@@ -133,7 +133,7 @@ export const AppProvider = ({ children }) => {
         setMaterialsLoading(false);
       }
     );
-    
+
     const unsubscribeSubjects = onSnapshot(
       collection(db, "subjects"),
       (snapshot) => {
@@ -150,13 +150,13 @@ export const AppProvider = ({ children }) => {
         setSubjectsLoading(false);
       }
     );
-    
+
     return () => {
       unsubscribeMaterials();
       unsubscribeSubjects();
     };
   }, []);
-  
+
 
   const sendWelcomeEmail = async (userEmail, userName) => {
     const mailScriptUrl = import.meta.env.VITE_MAIL_SCRIPT_URL;
@@ -194,7 +194,7 @@ export const AppProvider = ({ children }) => {
 
               <!-- Header -->
               <div class="header" style="background:linear-gradient(135deg,#1a1a1a,#0a0a0a); padding:28px 24px; text-align:center; border-bottom:1px solid rgba(255,215,0,0.15);">
-                <img src="https://fycs-study-hub.vercel.app/logo192.png" alt="BNN CS Study Hub" width="52" height="52" style="border-radius:12px; margin-bottom:12px;" />
+                <img src="https://fycs-study-hub.vercel.app/logo-b.png" alt="BNN CS Study Hub" width="52" height="52" style="border-radius:12px; margin-bottom:12px;" />
                 <div style="color:#FFD700; font-size:11px; letter-spacing:2px; text-transform:uppercase; font-weight:700;">BNN CS Study Hub</div>
               </div>
 
@@ -256,20 +256,20 @@ export const AppProvider = ({ children }) => {
       console.error("All welcome email mail script URLs failed.");
     }
   };
-  
+
   // Authentication listener with user sync and ban flag
   useEffect(() => {
     let unsubscribeAuth = null;
     let unsubscribeDoc = null;
     let isMounted = true;
-    
+
     const initAuth = async () => {
       try {
         await authReady;
       } catch (err) {
         console.error("Auth persistence setup failed:", err);
       }
-      
+
       if (!isMounted) return;
 
       // Pick up the result of a signInWithRedirect() call (mobile/webview
@@ -286,19 +286,19 @@ export const AppProvider = ({ children }) => {
       }
 
       if (!isMounted) return;
-      
+
       unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
         // Clean up previous doc listener immediately when auth state changes
         if (unsubscribeDoc) {
           unsubscribeDoc();
           unsubscribeDoc = null;
         }
-        
+
         if (firebaseUser) {
           // Set loading true so UI doesn't render home page before fetching user doc
           setAuthLoading(true);
           const userDocRef = doc(db, "users", firebaseUser.uid);
-          
+
           unsubscribeDoc = onSnapshot(userDocRef, async (docSnap) => {
             if (docSnap.exists()) {
               const userData = docSnap.data();
@@ -319,23 +319,23 @@ export const AppProvider = ({ children }) => {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("email", "==", firebaseUser.email));
                 const querySnapshot = await getDocs(q);
-                
+
                 if (!querySnapshot.empty) {
                   // Duplicate found! Purana data naye UID me migrate karo
                   const oldDoc = querySnapshot.docs[0];
                   const oldData = oldDoc.data();
-                  
+
                   // Pura purana data (role, favorites) save karo naye UID ke sath
                   await setDoc(userDocRef, {
                     ...oldData,
-                    uid: firebaseUser.uid 
+                    uid: firebaseUser.uid
                   });
-                  
+
                   // Purana duplicate document delete kar do taaki db clean rahe
                   await deleteDoc(doc(db, "users", oldDoc.id));
-                  
+
                   // (User state onSnapshot ke agle trigger me auto-update ho jayegi)
-                  
+
                 } else {
                   // Fresh user - Koi duplicate nahi mila, normal create karo
                   const newUser = {
@@ -348,9 +348,9 @@ export const AppProvider = ({ children }) => {
                     favorites: [], // Initialize empty favorites array
                     createdAt: serverTimestamp() // Use serverTimestamp for consistency
                   };
-                  
+
                   await setDoc(userDocRef, newUser);
-                  
+
                   setUser({
                     uid: firebaseUser.uid,
                     displayName: firebaseUser.displayName,
@@ -359,7 +359,7 @@ export const AppProvider = ({ children }) => {
                     id: firebaseUser.uid
                   });
                   setUserRole("student");
-                  
+
                   // Trigger welcome email silently in the background
                   sendWelcomeEmail(firebaseUser.email, firebaseUser.displayName || "Student");
                 }
@@ -419,12 +419,12 @@ export const AppProvider = ({ children }) => {
       clearTimeout(authTimeout);
     };
   }, []);
-  
+
   // Derived state - Calculate statistics dynamically
   const stats = useMemo(() => {
     const approvedMaterials = materials.filter(m => (m.status || "").toLowerCase() === 'approved');
     const pendingMaterials = materials.filter(m => (m.status || "").toLowerCase() === 'pending');
-    
+
     return {
       totalViews: approvedMaterials.reduce((sum, material) => sum + (material.views || 0), 0),
       totalDownloads: approvedMaterials.reduce((sum, material) => sum + (material.downloads || 0), 0),
@@ -487,14 +487,14 @@ export const AppProvider = ({ children }) => {
       const elapsed = Date.now() - popupOpenedAt;
       const looksLikeDisguisedStorageBlock =
         (error?.code === "auth/popup-closed-by-user" ||
-         error?.code === "auth/cancelled-popup-request") &&
+          error?.code === "auth/cancelled-popup-request") &&
         elapsed > REALISTIC_INTERACTION_MS;
 
       if (looksLikeDisguisedStorageBlock || error?.code === "auth/popup-blocked") {
-        const reason = error?.code === "auth/popup-blocked" 
-          ? "Popup was blocked by the browser" 
+        const reason = error?.code === "auth/popup-blocked"
+          ? "Popup was blocked by the browser"
           : `Popup closed/cancelled after ${elapsed}ms (${error?.code})`;
-          
+
         console.warn(`${reason}. Falling back to signInWithRedirect.`);
         toast("Your browser's settings are blocking the popup. Redirecting you to Google instead...", {
           icon: "🔄",
@@ -514,7 +514,7 @@ export const AppProvider = ({ children }) => {
   const refreshDriveToken = async () => {
     return { success: false, error: "Google Drive token is no longer required or supported." };
   };
-  
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -524,32 +524,32 @@ export const AppProvider = ({ children }) => {
       return { success: false, error: error.message };
     }
   };
-  
+
   // Action Functions for Firestore
-  
+
   // 1. Add new material
   const addMaterial = async (formData) => {
     try {
       const title = formData.title.trim();
       const subjectId = formData.subjectId;
-      
+
       // Pre-upload check: Query for existing material with same title and subject
       const duplicateQuery = query(
         collection(db, "materials"),
         where("subjectId", "==", subjectId),
         where("title", "==", title)
       );
-      
+
       const duplicateSnapshot = await getDocs(duplicateQuery);
-      
+
       // Block duplicates
       if (!duplicateSnapshot.empty) {
-        return { 
-          success: false, 
-          error: "⚠️ Duplicate Found: A file with this Name and Subject already exists!" 
+        return {
+          success: false,
+          error: "⚠️ Duplicate Found: A file with this Name and Subject already exists!"
         };
       }
-      
+
       // Allow unique: Proceed with upload
       const newMaterial = {
         title: title,
@@ -565,7 +565,7 @@ export const AppProvider = ({ children }) => {
         date: serverTimestamp(), // Use Firestore timestamp
         createdAt: serverTimestamp() // Add creation timestamp for sorting
       };
-      
+
       const docRef = await addDoc(collection(db, "materials"), newMaterial);
       return { success: true, id: docRef.id };
     } catch (error) {
@@ -586,20 +586,20 @@ export const AppProvider = ({ children }) => {
   // 🌟 UPDATED: Parameterized upload wrapper supporting custom dynamic filenames
   const uploadSingleFile = async (file, userName, customFileName) => {
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmFWZ4-lWSzfRuPdvJgIKjNaXTFzxXFXRvJUAybpouTXYhQZSIMun5w6L-DiiJO-7QiA/exec";
-         
+
     const cleanPart = (value) => (value || "")
       .toString()
       .trim()
       .replace(/[\\/:*?"<>|]+/g, "-")
       .replace(/\s+/g, " ");
-      
+
     const extension = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
     const originalNameWithoutExt = file.name.includes('.') ? file.name.substring(0, file.name.lastIndexOf('.')) : file.name;
     const cleanName = cleanPart(originalNameWithoutExt);
-    
+
     // 🚨 IF customFileName is provided, use it directly. Otherwise, fall back to standard format.
     const finalFileName = customFileName ? customFileName.trim() : (userName ? `${cleanPart(userName)}-${cleanName}${extension}` : `${cleanName}${extension}`);
-    
+
     const base64Data = await toBase64(file);
     const response = await fetch(SCRIPT_URL, {
       method: "POST",
@@ -777,7 +777,7 @@ export const AppProvider = ({ children }) => {
   // 2. Approve material (Pending → Approved)
   const approveMaterial = async (id) => {
     try {
-      await updateDoc(doc(db, "materials", id), { 
+      await updateDoc(doc(db, "materials", id), {
         status: "Approved",
         approvedAt: serverTimestamp()
       });
@@ -822,7 +822,7 @@ export const AppProvider = ({ children }) => {
         icon: icon || "Book", // Default icon
         createdAt: new Date() // Useful for sorting
       };
-      
+
       const docRef = await addDoc(collection(db, "subjects"), newSubject);
       return { success: true, id: docRef.id };
     } catch (error) {
@@ -894,15 +894,15 @@ export const AppProvider = ({ children }) => {
   const getSubjectsBySemester = (semId) => {
     return subjects.filter(subject => Number(subject.semId) === Number(semId));
   };
-  
+
   // State for tracking if admin is viewing reports
   const [isViewingReports, setIsViewingReports] = useState(false);
-  
+
   // Function to set viewing reports status
   const setViewingReports = (status) => {
     setIsViewingReports(status);
   };
-  
+
   // Toggle favorite function
   const toggleFavorite = async (materialId) => {
     if (!user) {
@@ -912,10 +912,10 @@ export const AppProvider = ({ children }) => {
 
     const currentFavorites = user.favorites || [];
     const isFavorited = currentFavorites.includes(materialId);
-    
+
     // Calculate new favorites array
-    const newFavorites = isFavorited 
-      ? currentFavorites.filter(id => id !== materialId) 
+    const newFavorites = isFavorited
+      ? currentFavorites.filter(id => id !== materialId)
       : [...currentFavorites, materialId];
 
     // OPTIMISTIC UPDATE: Update local state instantly for snappy UI
@@ -927,7 +927,7 @@ export const AppProvider = ({ children }) => {
       await updateDoc(userRef, {
         favorites: isFavorited ? arrayRemove(materialId) : arrayUnion(materialId)
       });
-      
+
       toast.success(isFavorited ? "Removed from favorites" : "Saved to favorites!");
       return { success: true };
     } catch (error) {
@@ -938,7 +938,7 @@ export const AppProvider = ({ children }) => {
       return { success: false, error: error.message };
     }
   };
-  
+
   // Real-time profile update that propagates globally
   const updateUserProfile = async ({ displayName, photoURL }) => {
     if (!user || !auth.currentUser) return { success: false, error: "Not logged in" };
@@ -1007,15 +1007,15 @@ export const AppProvider = ({ children }) => {
     dataLoading,
     siteZoom,
     updateSiteZoom,
-    
+
     // RBAC
     isAdmin,
-    
+
     // Authentication functions
     login,
     logout,
     refreshDriveToken,
-    
+
     // Action Functions
     addMaterial,
     approveMaterial,
@@ -1023,7 +1023,7 @@ export const AppProvider = ({ children }) => {
     deleteMaterial,
     addSubject,
     incrementView,
-    
+
     // Utility Functions
     getSubjectById,
     getSemesterById,
@@ -1033,10 +1033,10 @@ export const AppProvider = ({ children }) => {
     getApprovedMaterials,
     getRecentMaterials,
     getSubjectsBySemester,
-    
+
     // Favorites Function
     toggleFavorite,
-    
+
     // Real-time Profile Update
     updateUserProfile,
     // Global Upload Engine

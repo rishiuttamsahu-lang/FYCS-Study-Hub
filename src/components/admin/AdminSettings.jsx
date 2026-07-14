@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Loader2, Send, Eye, Sparkles } from "lucide-react";
+import { Trash2, Loader2, Send, Eye, Sparkles, Image } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
@@ -30,6 +30,7 @@ export default function AdminSettings({
 }) {
   const [inputValue, setInputValue] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isUploadingImg, setIsUploadingImg] = useState(false);
   const dropdownRef = useRef(null);
 
   const tags = notificationEmail ? notificationEmail.split(",").map(t => t.trim()).filter(Boolean) : [];
@@ -70,15 +71,14 @@ export default function AdminSettings({
       Analyze this detailed academic draft text and extract/generate THREE specific attributes:
       
       CRITICAL ROLE & STRICT TONAL BOUNDS:
-      - The tone for ALL generated text must be strictly formal, professional, and authoritative, adhering to standard Indian English academic communication.
-      - Completely eliminate any casual slang, friendly peer-to-peer phrases, or informal text configurations. 
-      - Ensure the communication is dignified, official, and direct, like a formal university circular or notice board broadcast.
-      - The tone for 'emailBody' must be highly sophisticated and structured for official broadcast. Use elegant structural HTML formatting tags like <br/> and <b>...</b>.
+      - The tone for ALL generated text should be helpful, clear, and friendly, suitable for university students (peer-to-peer vibe but respectful).
+      - Use simple, easy-to-understand English. Avoid overly complex vocabulary or corporate jargon.
+      - Keep it structured and visually appealing using HTML tags like <br/> and <b>...</b>, but ensure it sounds like a helpful update from the platform creators, not a strict administrative circular.
       
       STRICT CONSTRAINTS:
-      1. 'title': MAXIMUM 3 words long, strictly official and direct, with exactly 1 relevant academic/notice emoji.
-      2. 'shortMessage': A formal, single-line marquee notification text for the web header layout (MAX 60 characters with 1 emoji).
-      3. 'emailBody': The fully enhanced, dense, elite professional business HTML email text body parsed from the input.
+      1. 'title': MAXIMUM 3-4 words long, engaging and clear, with exactly 1 relevant emoji.
+      2. 'shortMessage': A friendly, single-line marquee notification text for the web header layout (MAX 60 characters with 1 emoji).
+      3. 'emailBody': The clear, visually formatted HTML email text body parsed from the input.
 
       Original Text Body to parse: "${emailMessage}"
       
@@ -139,6 +139,62 @@ export default function AdminSettings({
     } catch (error) {
       console.error(error);
       toast.error(`AI Error: ${error.message}`, { id: loadingToast });
+    }
+  };
+
+  // 🌟 SCREENSHOT UPLOAD LOGIC FOR EMAILS
+  const handleImageUploadForEmail = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Screenshot must be under 2MB.");
+      e.target.value = '';
+      return;
+    }
+
+    const loadingToast = toast.loading("Uploading screenshot to cloud...");
+    setIsUploadingImg(true);
+
+    try {
+      // Base64 conversion (Exactly like your Profile.jsx feedback logic)
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          const base64Image = reader.result.split(',')[1];
+          const formData = new FormData();
+          formData.append('image', base64Image);
+
+          const imgbbKey = import.meta.env.VITE_IMGBB_KEY;
+
+          const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await res.json();
+
+          if (result.success) {
+            // HTML Image tag banakar email text me jod do
+            const imgHtml = `<br/><br/><img src="${result.data.url}" alt="Admin Screenshot" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #333;" /><br/>`;
+            
+            setEmailMessage((prev) => prev + imgHtml);
+            toast.success("Screenshot attached to email successfully!", { id: loadingToast });
+          } else {
+            throw new Error("ImgBB server rejected image");
+          }
+        } catch (err) {
+          toast.error("Upload failed.", { id: loadingToast });
+        } finally {
+          setIsUploadingImg(false);
+        }
+      };
+    } catch (error) {
+      toast.error("Failed to process image.", { id: loadingToast });
+      setIsUploadingImg(false);
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -285,8 +341,27 @@ export default function AdminSettings({
               value={emailMessage}
               onChange={(e) => setEmailMessage(e.target.value)}
               className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-purple-500/30 bg-purple-500/5 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm min-h-[150px] no-scrollbar"
-              placeholder="AI will automatically write the detailed professional email here..."
+              placeholder="AI will automatically write the detailed professional email here... (You can also type manually and attach screenshots)"
             />
+            
+            {/* 🌟 NAYA ATTACH SCREENSHOT BUTTON */}
+            <div className="flex justify-end mt-2">
+              <label className={`cursor-pointer text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all ${
+                isUploadingImg 
+                  ? 'bg-zinc-800 text-zinc-500 border-zinc-700' 
+                  : 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20'
+              }`}>
+                {isUploadingImg ? <Loader2 className="animate-spin" size={14} /> : <Image size={14} />}
+                {isUploadingImg ? "Uploading..." : "Attach Screenshot"}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleImageUploadForEmail} 
+                  disabled={isUploadingImg} 
+                />
+              </label>
+            </div>
           </div>
 
           {/* 🚀 INTERNAL CSS SIRF GALAXY BUTTON KE LIYE */}
