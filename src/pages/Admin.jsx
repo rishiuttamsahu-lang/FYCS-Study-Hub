@@ -1130,8 +1130,8 @@ export default function Admin() {
                 <tbody>
                   <tr>
                     <td style="padding-bottom:48px;">
-                      <!-- Site Logo -->
-                      <img src="https://fycs-study-hub.vercel.app/logo-b.png" width="48" height="48" alt="BNN CS Study Hub" style="display:block; border-radius:10px;">
+                      <!-- Site Logo (Placeholder for your logo) -->
+                      <img src="https://fycs-study-hub.vercel.app/favicon.png" width="32" height="32" alt="Study Hub" style="display:block;">
                     </td>
                   </tr>
                   <tr>
