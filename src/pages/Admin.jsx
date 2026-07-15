@@ -101,6 +101,7 @@ export default function Admin() {
   const [emailMessage, setEmailMessage] = useState("");
   const [sentNotifications, setSentNotifications] = useState([]);
   const [isSending, setIsSending] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(false);
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -1121,85 +1122,60 @@ export default function Admin() {
           : notificationMessage.trim();
 
         const urls = mailScriptUrl.split(",").map(u => u.trim()).filter(Boolean);
-        let currentScriptIndex = 0;
 
-        const sendEmail = async (toEmail) => {
-          const globalNoticeTemplate = `
-            <div style="background-color:#ffffff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:32px 16px;">
-              <table width="600" border="0" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%; margin:0 auto; background-color:#ffffff;">
-                <tbody>
-                  <tr>
-                    <td style="padding-bottom:48px;">
-                      <!-- Site Logo (Placeholder for your logo) -->
-                      <img src="https://fycs-study-hub.vercel.app/favicon.png" width="32" height="32" alt="Study Hub" style="display:block;">
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <h1 style="color:#171717; font-size:24px; font-weight:600; letter-spacing:-0.02em; margin:0 0 24px 0;">
-                        ${notificationTitle.trim()}
-                      </h1>
-                      <p style="color:#171717; font-size:16px; line-height:1.5; margin:0 0 16px 0;">
-                        ${emailContent}
-                      </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding-top:44px; border-top:1px solid #e6e6e6;">
-                      <p style="color:#7d7d7d; font-size:14px; line-height:1.5; margin:0 0 8px 0;">
-                        Check the live updates feed directly on the BNN CS Study Hub app/website.
-                      </p>
-                      <p style="color:#7d7d7d; font-size:14px; margin:0 0 8px 0;">
-                        Copyright © 2026 BNN CS Study Hub. All rights reserved.
-                      </p>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          `;
+        const globalNoticeTemplate = `
+          <div style="background-color:#ffffff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:32px 16px;">
+            <table width="600" border="0" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%; margin:0 auto; background-color:#ffffff;">
+              <tbody>
+                <tr>
+                  <td style="padding-bottom:48px;">
+                    <!-- Site Logo -->
+                    <img src="https://fycs-study-hub.vercel.app/favicon.png" width="32" height="32" alt="Study Hub" style="display:block;">
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <h1 style="color:#171717; font-size:24px; font-weight:600; letter-spacing:-0.02em; margin:0 0 24px 0;">
+                      ${notificationTitle.trim()}
+                    </h1>
+                    <p style="color:#171717; font-size:16px; line-height:1.5; margin:0 0 16px 0;">
+                      ${emailContent}
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top:44px; border-top:1px solid #e6e6e6;">
+                    <p style="color:#7d7d7d; font-size:14px; line-height:1.5; margin:0 0 8px 0;">
+                      Check the live updates feed directly on the BNN CS Study Hub app/website.
+                    </p>
+                    <p style="color:#7d7d7d; font-size:14px; margin:0 0 8px 0;">
+                      Copyright © 2026 BNN CS Study Hub. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
 
-          const payload = {
-            email: toEmail,
-            subject: `BNN CS Hub Update: ${notificationTitle.trim()}`,
-            messageHtml: globalNoticeTemplate
-          };
-
-          for (let i = currentScriptIndex; i < urls.length; i++) {
-            const url = urls[i];
+        // Chaaron account ka live quota check karo
+        const fetchAllQuotas = async () => {
+          return Promise.all(urls.map(async (url) => {
             try {
-              const response = await fetch(url, {
+              const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ action: "checkQuota" })
               });
-              const data = await response.json();
-              if (data && data.status === "error") {
-                console.warn(`Mail Script URL ${i + 1} returned quota error for ${toEmail}:`, data.message);
-                currentScriptIndex = i + 1; // Cache index increment to skip exhausted script
-                continue;
-              }
-              console.log(`Email successfully sent to ${toEmail} using script URL ${i + 1}`);
-              return true;
-            } catch (err) {
-              console.warn(`Mail Script URL ${i + 1} failed with CORS/network error, trying fallback no-cors mode...`);
-              try {
-                await fetch(url, {
-                  method: "POST",
-                  mode: "no-cors",
-                  body: JSON.stringify(payload)
-                });
-                console.log(`Email sent (no-cors mode fallback) to ${toEmail} using script URL ${i + 1}`);
-                return true;
-              } catch (noCorsErr) {
-                console.error(`Mail Script URL ${i + 1} failed completely:`, noCorsErr);
-                currentScriptIndex = i + 1; // Cache index increment to skip exhausted script
-              }
+              const data = await res.json();
+              return { url, remaining: data.remaining ?? 0 };
+            } catch {
+              return { url, remaining: 0 };
             }
-          }
-          console.error(`All configured email scripts failed for ${toEmail}. Quota exceeded or scripts down.`);
-          return false;
+          }));
         };
+
+        const quotas = await fetchAllQuotas();
 
         // Flatten all target emails to unique recipient addresses
         const recipients = [];
@@ -1216,54 +1192,75 @@ export default function Admin() {
             }
           }
         }
-        
-        const totalEmails = recipients.length;
-        const loadingToast = toast.loading(`Initializing email dispatch for ${totalEmails} users...`);
-        let successCount = 0;
-        let failCount = 0;
-        const failedEmails = [];
-        
-        // 🚀 NAYA SUPERFAST BATCHING LOGIC
-        const BATCH_SIZE = 10; // Ek baar mein 10 emails parallel jayenge
 
-        for (let i = 0; i < totalEmails; i += BATCH_SIZE) {
-          const batch = recipients.slice(i, i + BATCH_SIZE);
-          
-          toast.loading(`[Fast Mode] Sending batch ${Math.ceil(i/BATCH_SIZE) + 1} of ${Math.ceil(totalEmails/BATCH_SIZE)}...`, { id: loadingToast });
+        // Recipients ko quota ke hisaab se baanto (Greedy fill)
+        const batchesByUrl = {};
+        urls.forEach(u => batchesByUrl[u] = []);
 
-          // Ek saath 10 requests trigger karo
-          const batchPromises = batch.map(async (email) => {
-            const ok = await sendEmail(email);
-            return { email, ok };
-          });
+        const unsentUsers = [];
+        let recipientIndex = 0;
 
-          // Wait karo jab tak yeh 10 ka guccha send na ho jaye
-          const results = await Promise.all(batchPromises);
-
-          // Results count karo
-          results.forEach(res => {
-            if (res.ok) {
-              successCount++;
-            } else {
-              failCount++;
-              failedEmails.push(res.email);
-            }
-          });
+        for (const q of quotas) {
+          let taken = 0;
+          while (taken < q.remaining && recipientIndex < recipients.length) {
+            batchesByUrl[q.url].push({ email: recipients[recipientIndex] });
+            recipientIndex++;
+            taken++;
+          }
+        }
+        while (recipientIndex < recipients.length) {
+          unsentUsers.push(recipients[recipientIndex]);
+          recipientIndex++;
         }
 
+        const loadingToast = toast.loading(`Sending to ${recipients.length} users across ${urls.length} accounts...`);
+
+        const batchPromises = urls.map(async (url) => {
+          const list = batchesByUrl[url];
+          if (list.length === 0) return { sent: [], failed: [] };
+          try {
+            const res = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify({
+                action: "sendBatch",
+                recipients: list,
+                subject: `BNN CS Hub Update: ${notificationTitle.trim()}`,
+                messageHtml: globalNoticeTemplate,
+                dryRun: isTestMode
+              })
+            });
+            const data = await res.json();
+            return { sent: data.sent || [], failed: data.failed || [] };
+          } catch {
+            return { sent: [], failed: list.map(i => i.email) };
+          }
+        });
+
+        const allResults = await Promise.all(batchPromises);
         toast.dismiss(loadingToast);
+
+        const successCount = allResults.reduce((sum, r) => sum + r.sent.length, 0);
+        const failedEmails = allResults.flatMap(r => r.failed);
+        const failCount = failedEmails.length;
+        const totalEmails = recipients.length;
 
         // Show SweetAlert2 Summary Modal matching Dark Theme
         Swal.fire({
-          title: "Broadcast Summary 📢",
+          title: isTestMode ? "🧪 Test Mode — Simulated Broadcast" : "Broadcast Summary 📢",
           html: `
             <div class="text-left text-xs space-y-3 text-zinc-300">
+              ${isTestMode ? `
+                <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-medium text-[11px] mb-2 leading-relaxed">
+                  ⚠️ <b>Test Mode Active:</b> Real emails were NOT sent and daily quotas were NOT consumed. This was a dry-run simulation.
+                </div>
+              ` : ''}
               <div class="flex justify-between border-b border-zinc-800 pb-2">
                 <span>Total Recipients:</span>
                 <span class="font-bold text-white">${totalEmails}</span>
               </div>
               <div class="flex justify-between text-emerald-400">
-                <span>Successfully Sent:</span>
+                <span>${isTestMode ? 'Simulated Success:' : 'Successfully Sent:'}</span>
                 <span class="font-bold">${successCount}</span>
               </div>
               <div class="flex justify-between text-rose-400">
@@ -1278,9 +1275,18 @@ export default function Admin() {
                   </div>
                 </div>
               ` : ''}
+              ${unsentUsers.length > 0 ? `
+                <div class="mt-3">
+                  <p class="font-bold text-amber-300 mb-1">Quota khatam — inko email nahi bheji ja saki:</p>
+                  <div class="max-h-24 overflow-y-auto bg-zinc-900/50 p-2 rounded-lg font-mono text-[10px] break-all border border-zinc-800 leading-relaxed text-zinc-400">
+                    ${unsentUsers.join("<br/>")}
+                  </div>
+                  <p class="text-[10px] text-zinc-500 mt-1">Kal quota reset hone ke baad inhe dobara bhej sakte ho.</p>
+                </div>
+              ` : ''}
             </div>
           `,
-          icon: failCount === 0 ? "success" : failCount === totalEmails ? "error" : "warning",
+          icon: (failCount === 0 && unsentUsers.length === 0) ? "success" : (failCount === totalEmails ? "error" : "warning"),
           buttonsStyling: false,
           background: "#0c0c0e",
           color: "#ffffff",
@@ -1509,6 +1515,8 @@ export default function Admin() {
               setNotificationMessage={setNotificationMessage}
               emailMessage={emailMessage}
               setEmailMessage={setEmailMessage}
+              isTestMode={isTestMode}
+              setIsTestMode={setIsTestMode}
               handleSendNotification={handleSendNotification}
               isSending={isSending}
               sentNotifications={sentNotifications}

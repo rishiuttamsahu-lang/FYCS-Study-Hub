@@ -24,6 +24,7 @@ export default function AdminSettings({
   notificationTitle, setNotificationTitle,
   notificationMessage, setNotificationMessage,
   emailMessage, setEmailMessage,
+  isTestMode, setIsTestMode,
   handleSendNotification, isSending,
   sentNotifications, handleDeleteGlobal,
   CREATOR_EMAILS, user, handleResetAnalytics
@@ -31,7 +32,33 @@ export default function AdminSettings({
   const [inputValue, setInputValue] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [isUploadingImg, setIsUploadingImg] = useState(false);
+  const [accountQuotas, setAccountQuotas] = useState([]);
+  const [loadingQuotas, setLoadingQuotas] = useState(false);
   const dropdownRef = useRef(null);
+
+  const fetchAllQuotas = async () => {
+    setLoadingQuotas(true);
+    const urls = (import.meta.env.VITE_MAIL_SCRIPT_URL || "").split(",").map(u => u.trim()).filter(Boolean);
+    const results = await Promise.all(urls.map(async (url, idx) => {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ action: "checkQuota" })
+        });
+        const data = await res.json();
+        return { accountNo: idx + 1, remaining: data.remaining ?? 0 };
+      } catch {
+        return { accountNo: idx + 1, remaining: 0 };
+      }
+    }));
+    setAccountQuotas(results);
+    setLoadingQuotas(false);
+  };
+
+  useEffect(() => {
+    fetchAllQuotas();
+  }, []);
 
   const tags = notificationEmail ? notificationEmail.split(",").map(t => t.trim()).filter(Boolean) : [];
 
@@ -344,8 +371,19 @@ export default function AdminSettings({
               placeholder="AI will automatically write the detailed professional email here... (You can also type manually and attach screenshots)"
             />
             
-            {/* 🌟 NAYA ATTACH SCREENSHOT BUTTON */}
-            <div className="flex justify-end mt-2">
+            {/* 🌟 TEST MODE TOGGLE & ATTACH SCREENSHOT BUTTON */}
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+              <label className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer select-none bg-zinc-800/40 hover:bg-zinc-800/70 border border-zinc-700/50 px-3 py-1.5 rounded-lg transition-colors">
+                <input
+                  type="checkbox"
+                  checked={isTestMode}
+                  onChange={(e) => setIsTestMode(e.target.checked)}
+                  className="accent-amber-500 rounded cursor-pointer w-4 h-4"
+                />
+                <span className="font-semibold text-amber-400">🧪 Test Mode</span>
+                <span className="text-[10px] text-zinc-400 hidden sm:inline">(simulate - no real email sent)</span>
+              </label>
+
               <label className={`cursor-pointer text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all ${
                 isUploadingImg 
                   ? 'bg-zinc-800 text-zinc-500 border-zinc-700' 
@@ -472,6 +510,35 @@ export default function AdminSettings({
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 🌟 EMAIL QUOTA STATUS CARD */}
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-white">Email Quota Status</h3>
+          <button
+            type="button"
+            onClick={fetchAllQuotas}
+            className="text-xs bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg text-white font-medium transition-colors cursor-pointer"
+          >
+            {loadingQuotas ? "Checking..." : "Refresh"}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {accountQuotas.length > 0 ? (
+            accountQuotas.map((q) => (
+              <div key={q.accountNo} className="bg-zinc-800/50 rounded-lg p-2.5 text-center border border-zinc-700/30">
+                <p className="text-[10px] text-zinc-400">Account {q.accountNo}</p>
+                <p className="text-lg font-bold text-emerald-400 my-0.5">{q.remaining}</p>
+                <p className="text-[9px] text-zinc-500">emails left today</p>
+              </div>
+            ))
+          ) : (
+            <p className="col-span-full text-xs text-zinc-500 text-center py-2">
+              {loadingQuotas ? "Checking account quotas..." : "No email script URLs configured"}
+            </p>
+          )}
         </div>
       </div>
 
