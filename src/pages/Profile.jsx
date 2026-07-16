@@ -384,9 +384,9 @@ export default function Profile() {
     return (
       <div className="p-5 pt-4 max-w-md mx-auto">
         <div className="glass-card p-8 text-center">
-          <User size={48} className="mx-auto mb-4 text-white/30" />
+          <User size={48} className="mx-auto mb-4 text-white/70" />
           <div className="font-bold text-lg mb-2">Please Login</div>
-          <div className="text-white/55 text-sm mb-6">You need to be logged in to view your profile.</div>
+          <div className="text-white/75 text-sm mb-6">You need to be logged in to view your profile.</div>
           <button
             type="button"
             onClick={async () => {
@@ -410,8 +410,8 @@ export default function Profile() {
 
   return (
     <>
-      <main className="bg-black pt-4 min-h-screen">
-        <div className="h-25 bg-black"></div>
+      <main className="bg-app pt-4 min-h-screen">
+        <div className="h-25 bg-app"></div>
 
         <div className="px-5 pb-8 max-w-md mx-auto">
           <div className="-mt-16 mb-6 relative">
@@ -612,10 +612,10 @@ export default function Profile() {
                   );
                 })
               ) : (
-                <div className="p-8 text-center border-dashed border-2 border-white/10 rounded-xl glass-card">
-                  <Bookmark className="mx-auto text-white/20 mb-3" size={32} />
-                  <p className="text-white/50 font-medium">No saved materials yet</p>
-                  <p className="text-white/30 text-xs mt-1">Items you bookmark in the library will appear here.</p>
+                <div className="p-8 text-center border-dashed border-2 border-white/20 rounded-xl glass-card">
+                  <Bookmark className="mx-auto text-white/60 mb-3" size={32} />
+                  <p className="text-white/80 font-medium">No saved materials yet</p>
+                  <p className="text-white/60 text-xs mt-1">Items you bookmark in the library will appear here.</p>
                 </div>
               )}
             </div>

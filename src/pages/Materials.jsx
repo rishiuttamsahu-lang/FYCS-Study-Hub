@@ -186,14 +186,14 @@ export default function Materials() {
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={16} className="text-white/50" />
+            <Search size={16} className="text-white/70" />
           </div>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search notes, practicals..."
-            className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-zinc-800 text-white placeholder:text-white/30 focus:border-[#FFD700] focus:outline-none"
+            className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/20 bg-zinc-800 text-white placeholder:text-white/60 focus:border-[#FFD700] focus:outline-none"
           />
         </div>
         

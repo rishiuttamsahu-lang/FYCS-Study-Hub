@@ -39,7 +39,7 @@ export default function TodayVisitorsPage() {
   }, [visitorDetails, searchTerm]);
 
   return (
-    <div className="p-4 pt-6 max-w-md mx-auto min-h-[100dvh] pb-24 relative bg-[#0a0a0a]">
+    <div className="p-4 pt-6 max-w-md mx-auto min-h-[100dvh] pb-24 relative bg-app">
       {/* 📱 Mobile Optimized Header Row */}
       <div className="flex items-center gap-3 mb-5">
         <button
@@ -81,14 +81,14 @@ export default function TodayVisitorsPage() {
           <div className="p-3 border-b border-white/10 bg-black/20">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={14} className="text-white/40" />
+                <Search size={14} className="text-white/70" />
               </div>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name or email..."
-                className="w-full glass-card pl-9 pr-4 py-2 text-xs bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-[#FFD700] focus:outline-none transition-all duration-200"
+                className="w-full glass-card pl-9 pr-4 py-2 text-xs bg-white/5 border border-white/20 text-white placeholder:text-white/60 focus:border-[#FFD700] focus:outline-none transition-all duration-200"
               />
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function TodayVisitorsPage() {
                     <span className="font-bold text-white text-xs truncate tracking-wide">
                       {visitor.name}
                     </span>
-                    <span className="text-[10px] text-white/40 truncate mt-0.5">
+                    <span className="text-[10px] text-white/70 truncate mt-0.5">
                       {visitor.email}
                     </span>
                   </div>
@@ -122,9 +122,9 @@ export default function TodayVisitorsPage() {
               ))
             ) : (
               <div className="text-center py-12">
-                <Users size={28} className="mx-auto text-white/10 mb-2" />
-                <p className="text-xs font-bold text-white/50">No matching logins found.</p>
-                <p className="text-[10px] text-white/30 mt-0.5">Try refining your search keyword.</p>
+                <Users size={28} className="mx-auto text-white/40 mb-2" />
+                <p className="text-xs font-bold text-white/80">No matching logins found.</p>
+                <p className="text-[10px] text-white/60 mt-0.5">Try refining your search keyword.</p>
               </div>
             )}
           </div>

@@ -38,9 +38,9 @@ export default function AdminSubjects({
             onClick={() => setShowAddSubjectForm(!showAddSubjectForm)}
             className="glass-card border border-white/10 p-3.5 sm:p-5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-xl hover:bg-white/5 transition-all text-center"
           >
-            <Plus size={18} className="text-white/50" />
-            <span className="font-bold text-white/70 text-[10px] sm:text-xs leading-tight">Add Single Subject (Manual)</span>
-            <span className="text-[8px] sm:text-[10px] text-white/40 leading-tight">Type manually for Semester {newSubject.semesterId}</span>
+            <Plus size={18} className="text-white/70" />
+            <span className="font-bold text-white/90 text-[10px] sm:text-xs leading-tight">Add Single Subject (Manual)</span>
+            <span className="text-[8px] sm:text-[10px] text-white/60 leading-tight">Type manually for Semester {newSubject.semesterId}</span>
           </button>
 
           <label className={`glass-card border border-dashed p-3.5 sm:p-5 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-xl transition-all text-center group ${
@@ -71,12 +71,12 @@ export default function AdminSubjects({
           <h3 className="font-bold text-sm mb-4 text-white/90">Add Subject Manually to Semester {newSubject.semesterId}</h3>
           <form onSubmit={handleAddSubject} className="space-y-4">
             <div>
-              <label className="block text-white/50 text-xs mb-2">Subject Name</label>
+              <label className="block text-white/70 text-xs mb-2">Subject Name</label>
               <input
                 type="text"
                 value={newSubject.name}
                 onChange={(e) => setNewSubject(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full glass-card p-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-[#FFD700] focus:outline-none text-sm"
+                className="w-full glass-card p-3 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-[#FFD700] focus:outline-none text-sm"
                 placeholder="e.g. OS - Principles of Operating Systems"
                 required
               />
@@ -101,7 +101,7 @@ export default function AdminSubjects({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 mb-4 gap-2">
             <div>
               <h4 className="font-bold text-white text-sm">🤖 AI Structure Preview (Semester {newSubject.semesterId})</h4>
-              <p className="text-[11px] text-white/40">Review clean names before synchronizing database streams</p>
+              <p className="text-[11px] text-white/70">Review clean names before synchronizing database streams</p>
             </div>
           </div>
 
@@ -217,9 +217,9 @@ export default function AdminSubjects({
 
         {(!semesters || semesters.length === 0) && (
           <div className="glass-card p-8 text-center">
-            <Book size={32} className="mx-auto mb-3 text-white/30" />
+            <Book size={32} className="mx-auto mb-3 text-white/60" />
             <div className="font-semibold text-white mb-1">No semesters found</div>
-            <div className="text-sm text-white/40">Add semesters to manage subjects</div>
+            <div className="text-sm text-white/70">Add semesters to manage subjects</div>
           </div>
         )}
       </div>

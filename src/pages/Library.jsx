@@ -212,14 +212,14 @@ export default function Library() {
           <div className="flex gap-3">
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={16} className="text-white/50" />
+                <Search size={16} className="text-white/70" />
               </div>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search materials..."
-                className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-[#FFD700] focus:outline-none"
+                className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-[#FFD700] focus:outline-none"
               />
             </div>
             
@@ -227,7 +227,7 @@ export default function Library() {
               <button
                 type="button"
                 onClick={() => setShowSortMenu(!showSortMenu)}
-                className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50 text-zinc-400 hover:text-white transition-colors"
+                className="p-3 bg-zinc-800/80 rounded-xl border border-white/20 text-zinc-200 hover:text-white transition-colors"
                 aria-label="Sort materials"
                 title="Sort materials"
               >
@@ -343,15 +343,15 @@ export default function Library() {
                 {visibleCount < filteredMaterials.length && (
                   <div ref={lastElementRef} className="w-full py-8 flex justify-center items-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-500"></div>
-                    <span className="ml-3 text-zinc-400 text-sm">Loading more...</span>
+                    <span className="ml-3 text-zinc-300 text-sm font-medium">Loading more...</span>
                   </div>
                 )}
               </>
             ) : (
               <div className="glass-card p-12 text-center">
-                <FileText size={32} className="mx-auto mb-4 text-white/30" />
+                <FileText size={32} className="mx-auto mb-4 text-white/60" />
                 <div className="font-semibold text-white mb-2">No materials found</div>
-                <div className="text-sm text-zinc-400">
+                <div className="text-sm text-zinc-300">
                   Try adjusting your search or filter criteria
                 </div>
               </div>

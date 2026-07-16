@@ -293,7 +293,7 @@ export default function AdminSettings({
                   setShowDropdown(true);
                 }}
                 onKeyDown={handleKeyDown}
-                className="flex-grow bg-transparent text-white placeholder:text-white/30 focus:outline-none text-sm p-0.5 min-w-[150px]"
+                className="flex-grow bg-transparent text-white placeholder:text-white/60 focus:outline-none text-sm p-0.5 min-w-[150px]"
                 placeholder={tags.length === 0 ? "user@example.com" : ""}
               />
             </div>
@@ -339,35 +339,35 @@ export default function AdminSettings({
             })()}
           </div>
           <div>
-            <label className="block text-white/70 text-xs sm:text-sm mb-1">Notification Title</label>
+            <label className="block text-white/80 text-xs sm:text-sm font-medium mb-1">Notification Title</label>
             <input
               type="text"
               value={notificationTitle}
               onChange={(e) => setNotificationTitle(e.target.value)}
-              className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none text-sm"
+              className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-blue-500 focus:outline-none text-sm"
               placeholder="Notification title"
               required
             />
           </div>
           {/* Box 1: Short In-App Notification */}
           <div>
-            <label className="block text-white/70 text-xs sm:text-sm mb-1">App Notification (Short, 1-line marquee)</label>
+            <label className="block text-white/80 text-xs sm:text-sm font-medium mb-1">App Notification (Short, 1-line marquee)</label>
             <input
               type="text"
               value={notificationMessage}
               onChange={(e) => setNotificationMessage(e.target.value)}
-              className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none text-sm"
+              className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-blue-500 focus:outline-none text-sm"
               placeholder="e.g. Assignment date extended (Type here & click Enhance with AI)..."
             />
           </div>
 
           {/* Box 2: Long Professional Email */}
           <div>
-            <label className="block text-purple-300/80 text-xs sm:text-sm mb-1">Professional Email Message (Long)</label>
+            <label className="block text-purple-300 text-xs sm:text-sm font-medium mb-1">Professional Email Message (Long)</label>
             <textarea
               value={emailMessage}
               onChange={(e) => setEmailMessage(e.target.value)}
-              className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-purple-500/30 bg-purple-500/5 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm min-h-[150px] no-scrollbar"
+              className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-purple-500/40 bg-purple-500/5 text-white placeholder:text-purple-200/60 focus:border-purple-500 focus:outline-none text-sm min-h-[150px] no-scrollbar"
               placeholder="AI will automatically write the detailed professional email here... (You can also type manually and attach screenshots)"
             />
             

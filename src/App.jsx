@@ -5,6 +5,8 @@ import { doc, setDoc, increment, arrayUnion } from "firebase/firestore";
 import { db } from "./firebase";
 import { Bot, X, Loader2 } from "lucide-react";
 import BrainCircuitIcon from "./components/AnimatedIcons";
+import GlassBackdrop from "./components/GlassBackdrop";
+import ThemeToggle from "./components/ThemeToggle";
 
 import { useApp } from "./context/AppContext";
 
@@ -187,7 +189,7 @@ function MaterialsPageSkeleton() {
 
 function ProfilePageSkeleton() {
   return (
-    <div className="pt-4 min-h-screen bg-black">
+    <div className="pt-4 min-h-screen bg-app">
       {/* Cover banner */}
       <Sk className="h-24 w-full rounded-none" style={{ borderRadius: 0 }} />
       <div className="px-5 pb-8 max-w-md mx-auto">
@@ -336,7 +338,8 @@ function AppSkeleton() {
   }
 
   return (
-    <div className="bg-[#0a0a0a] text-white min-h-screen">
+    <div className="bg-app text-white min-h-screen">
+      <GlassBackdrop />
       <PageSkeleton />
       <NavbarSkeleton />
     </div>
@@ -483,7 +486,9 @@ function App() {
           }
         }
       />
-      <main className="bg-[#0a0a0a] text-white pb-24 relative min-h-screen">
+      <main className="bg-app text-white pb-24 relative min-h-screen">
+        <GlassBackdrop />
+        <ThemeToggle />
         <Suspense fallback={<RouteSuspenseFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />

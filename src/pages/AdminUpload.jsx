@@ -599,7 +599,7 @@ export default function AdminUpload() {
           <button 
             type="submit" 
             className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
-              isFormValid && !isCheckingDuplicate ? "btn-primary" : "bg-white/10 text-white/30 cursor-not-allowed"
+              isFormValid && !isCheckingDuplicate ? "btn-primary" : "bg-white/10 text-white/60 cursor-not-allowed border border-white/10"
             }`}
             disabled={!isFormValid || isCheckingDuplicate}
           >
@@ -644,10 +644,10 @@ export default function AdminUpload() {
                           </div>
                           <div>
                             <h3 className="font-bold text-white/90 text-sm">{material.title}</h3>
-                            <div className="text-xs text-white/50 mt-1">
+                            <div className="text-xs text-white/75 mt-1">
                               {semester?.name} • {subject?.name} • {material.type}
                             </div>
-                            <div className="text-xs text-white/40 mt-1">
+                            <div className="text-xs text-white/60 mt-1">
                               Uploaded by {material.uploadedBy} • {new Date(material.date).toLocaleDateString()}
                             </div>
                           </div>
@@ -700,9 +700,9 @@ export default function AdminUpload() {
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-white/40">
-              <p>No pending materials</p>
-              <p className="text-sm mt-1">All materials have been approved!</p>
+            <div className="text-center py-8 text-white/70">
+              <p className="font-semibold text-white/80">No pending materials</p>
+              <p className="text-sm mt-1 text-white/60">All materials have been approved!</p>
             </div>
           )}
         </div>

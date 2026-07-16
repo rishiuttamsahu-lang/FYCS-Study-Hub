@@ -52,14 +52,14 @@ export default function AdminMaterials({
           <div className="space-y-4 mb-6">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={16} className="text-white/50" />
+                <Search size={16} className="text-white/70" />
               </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by title..."
-                className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none text-sm"
+                className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-blue-500 focus:outline-none text-sm"
               />
             </div>
 
@@ -255,15 +255,15 @@ export default function AdminMaterials({
 
         {materialFilter === "Approved" && filteredMaterials.length === 0 && (
           <div className="glass-card p-12 text-center">
-            <div className="text-white/50 mb-2">No matching materials found</div>
-            <div className="text-sm text-white/40">Try adjusting your search, filter, or sort options</div>
+            <div className="text-white/80 font-medium mb-2">No matching materials found</div>
+            <div className="text-sm text-white/60">Try adjusting your search, filter, or sort options</div>
           </div>
         )}
 
         {materialFilter === "Pending" && materials.filter(m => m.status === materialFilter).length === 0 && (
           <div className="glass-card p-12 text-center">
-            <div className="text-white/50 mb-2">No pending materials found</div>
-            <div className="text-sm text-white/40">All materials are approved!</div>
+            <div className="text-white/80 font-medium mb-2">No pending materials found</div>
+            <div className="text-sm text-white/60">All materials are approved!</div>
           </div>
         )}
       </div>

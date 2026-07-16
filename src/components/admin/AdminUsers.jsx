@@ -23,7 +23,7 @@ export default function AdminUsers({
             value={userSearchTerm}
             onChange={(e) => setUserSearchTerm(e.target.value)}
             placeholder="Search by name or email..."
-            className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-[#FFD700] focus:outline-none"
+            className="w-full glass-card pl-10 pr-4 py-2 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-[#FFD700] focus:outline-none"
           />
         </div>
       </div>
@@ -130,9 +130,9 @@ export default function AdminUsers({
             ) : (
               <tr>
                 <td colSpan="4" className="p-8 text-center">
-                  <User size={32} className="mx-auto mb-3 text-white/30" />
-                  <p className="text-white/50 text-sm">No users found</p>
-                  {userSearchTerm && <p className="text-white/40 text-xs mt-1">Try a different search term</p>}
+                  <User size={32} className="mx-auto mb-3 text-white/60" />
+                  <p className="text-white/80 text-sm font-medium">No users found</p>
+                  {userSearchTerm && <p className="text-white/60 text-xs mt-1">Try a different search term</p>}
                 </td>
               </tr>
             )}
@@ -231,9 +231,9 @@ export default function AdminUsers({
           </>
         ) : (
           <div className="glass-card p-8 text-center">
-            <User size={32} className="mx-auto mb-3 text-white/30" />
-            <p className="text-white/50 text-sm">No users found</p>
-            {userSearchTerm && <p className="text-white/40 text-xs mt-1">Try a different search term</p>}
+            <User size={32} className="mx-auto mb-3 text-white/60" />
+            <p className="text-white/80 text-sm font-medium">No users found</p>
+            {userSearchTerm && <p className="text-white/60 text-xs mt-1">Try a different search term</p>}
           </div>
         )}
       </div>

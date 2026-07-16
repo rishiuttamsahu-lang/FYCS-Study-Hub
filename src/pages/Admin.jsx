@@ -366,7 +366,7 @@ export default function Admin() {
   // 5. Loading State Check
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-app text-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700] mx-auto mb-4"></div>
           <h2 className="text-xl mb-2">Loading Admin Dashboard...</h2>
@@ -1551,7 +1551,7 @@ export default function Admin() {
                   type="text"
                   value={editForm.title}
                   onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none"
+                  className="w-full glass-card px-4 py-3 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-blue-500 focus:outline-none"
                   required
                 />
               </div>
@@ -1585,7 +1585,7 @@ export default function Admin() {
                     type="url"
                     value={editForm.link}
                     onChange={(e) => setEditForm(prev => ({ ...prev, link: e.target.value }))}
-                    className="w-full glass-card px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-blue-500 focus:outline-none"
+                    className="w-full glass-card px-4 py-3 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/60 focus:border-blue-500 focus:outline-none"
                     required
                   />
                   <button

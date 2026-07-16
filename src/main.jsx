@@ -4,6 +4,7 @@ import { HashRouter as Router } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import { AppProvider } from './context/AppContext'
+import { ThemeProvider } from './context/ThemeContext'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
@@ -13,11 +14,13 @@ if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
-      <AppProvider>
-        <Router>
-          <App />
-        </Router>
-      </AppProvider>
+      <ThemeProvider>
+        <AppProvider>
+          <Router>
+            <App />
+          </Router>
+        </AppProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

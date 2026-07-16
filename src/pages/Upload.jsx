@@ -353,7 +353,7 @@ export default function Upload() {
                         <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded-md border border-emerald-500/20">Ready</span>
                       )}
                       
-                      <button type="button" onClick={() => removeFile(index, file.name)} className="text-white/40 hover:text-red-400 p-1 transition-colors">
+                      <button type="button" onClick={() => removeFile(index, file.name)} className="text-white/70 hover:text-red-400 p-1 transition-colors">
                         <X size={14} />
                       </button>
                     </div>
@@ -370,7 +370,7 @@ export default function Upload() {
           className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 ${
             isFormValid && !isSubmitting 
               ? "bg-[#FFD700] text-black shadow-[0_0_15px_rgba(255,215,0,0.3)] hover:scale-[1.02]" 
-              : "bg-white/10 text-white/30 cursor-not-allowed"
+              : "bg-white/10 text-white/60 cursor-not-allowed border border-white/10"
           }`}
         >
           {isSubmitting ? (
