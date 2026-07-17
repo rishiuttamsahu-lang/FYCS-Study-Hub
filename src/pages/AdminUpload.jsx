@@ -648,7 +648,7 @@ export default function AdminUpload() {
                               {semester?.name} • {subject?.name} • {material.type}
                             </div>
                             <div className="text-xs text-white/60 mt-1">
-                              Uploaded by {material.uploadedBy} • {new Date(material.date).toLocaleDateString()}
+                              Uploaded by {material.uploadedBy} • {material.date ? (new Date(material.date.seconds ? material.date.seconds * 1000 : (material.date.toDate ? material.date.toDate() : material.date)).toLocaleDateString()) : "Just now"}
                             </div>
                           </div>
                         </div>

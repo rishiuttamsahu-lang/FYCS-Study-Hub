@@ -246,19 +246,18 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
             )}
           </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <div className="text-xs text-zinc-300 font-medium">
+            <div className="text-xs text-zinc-400">
               {material.type}
             </div>
             
-            {/* Semester tag */}
             {material.semId && (
-              <span className="text-xs text-zinc-300 font-medium whitespace-nowrap">
+              <span className="text-xs text-zinc-400 whitespace-nowrap">
                 • Sem {material.semId}
               </span>
             )}
             
             {getSubjectById && material.subjectId && (
-              <span className="px-2 py-0.5 bg-zinc-800 text-white/90 text-xs font-semibold rounded-md whitespace-nowrap border border-white/10">
+              <span className="px-2 py-0.5 bg-zinc-800 text-gray-300 text-xs rounded-md whitespace-nowrap">
                 {getSubjectAbbreviation(getSubjectById(material.subjectId)?.name || "Unknown")}
               </span>
             )}

@@ -94,20 +94,21 @@ export default function AdminSettings({
     }
     const loadingToast = toast.loading("AI is parsing your custom draft data...");
     try {
-      const prompt = `You are the Official Notification Architect for BNN CS Study Hub.
-      Analyze this detailed academic draft text and extract/generate THREE specific attributes:
+      const prompt = `You are an Expert Copywriter and Official Announcement Architect for BNN CS Study Hub.
+      Your task is to take the user's rough input and ENHANCE it into a highly engaging, professional, and visually appealing email announcement.
       
       CRITICAL ROLE & STRICT TONAL BOUNDS:
-      - The tone for ALL generated text should be helpful, clear, and friendly, suitable for university students (peer-to-peer vibe but respectful).
-      - Use simple, easy-to-understand English. Avoid overly complex vocabulary or corporate jargon.
-      - Keep it structured and visually appealing using HTML tags like <br/> and <b>...</b>, but ensure it sounds like a helpful update from the platform creators, not a strict administrative circular.
-      
+      - The tone must be exciting, professional, and welcoming (perfect for university students).
+      - Do not just repeat the input. EXPAND on it beautifully. Add proper greetings, smooth transitions, and a professional sign-off (e.g., "Best regards, [Name], Admin & Creator").
+      - Use emojis naturally to make it visually appealing and scannable (e.g., 📁, 👥, ✨, 🚀).
+      - Structure the 'emailBody' perfectly using HTML formatting: use <br/><br/> for paragraph breaks, and <b>...</b> to highlight key metrics or important words. If statistics are provided, format them as a clear list.
+      -Do not Use Hard english Words.
       STRICT CONSTRAINTS:
-      1. 'title': MAXIMUM 3-4 words long, engaging and clear, with exactly 1 relevant emoji.
-      2. 'shortMessage': A friendly, single-line marquee notification text for the web header layout (MAX 60 characters with 1 emoji).
-      3. 'emailBody': The clear, visually formatted HTML email text body parsed from the input.
+      1. 'title': MAXIMUM 4-6 words long, catchy, official, with exactly 1 relevant emoji.
+      2. 'shortMessage': A single-line marquee notification text (MAX 60 characters with 1 emoji).
+      3. 'emailBody': The fully enhanced, expanded, and beautiful HTML email text.
 
-      Original Text Body to parse: "${emailMessage}"
+      Original Rough Draft to enhance: "${emailMessage}"
       
       Return ONLY a pure valid JSON object string in this exact schema template without any markdown formatting wraps or codeblocks:
       {
@@ -205,7 +206,7 @@ export default function AdminSettings({
           if (result.success) {
             // HTML Image tag banakar email text me jod do
             const imgHtml = `<br/><br/><img src="${result.data.url}" alt="Admin Screenshot" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #333;" /><br/>`;
-            
+
             setEmailMessage((prev) => prev + imgHtml);
             toast.success("Screenshot attached to email successfully!", { id: loadingToast });
           } else {
@@ -370,7 +371,7 @@ export default function AdminSettings({
               className="w-full glass-card px-3 py-2 sm:px-4 sm:py-3 rounded-lg border border-purple-500/40 bg-purple-500/5 text-white placeholder:text-purple-200/60 focus:border-purple-500 focus:outline-none text-sm min-h-[150px] no-scrollbar"
               placeholder="AI will automatically write the detailed professional email here... (You can also type manually and attach screenshots)"
             />
-            
+
             {/* 🌟 TEST MODE TOGGLE & ATTACH SCREENSHOT BUTTON */}
             <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
               <label className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer select-none bg-zinc-800/40 hover:bg-zinc-800/70 border border-zinc-700/50 px-3 py-1.5 rounded-lg transition-colors">
@@ -384,19 +385,18 @@ export default function AdminSettings({
                 <span className="text-[10px] text-zinc-400 hidden sm:inline">(simulate - no real email sent)</span>
               </label>
 
-              <label className={`cursor-pointer text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all ${
-                isUploadingImg 
-                  ? 'bg-zinc-800 text-zinc-500 border-zinc-700' 
+              <label className={`cursor-pointer text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all ${isUploadingImg
+                  ? 'bg-zinc-800 text-zinc-500 border-zinc-700'
                   : 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20'
-              }`}>
+                }`}>
                 {isUploadingImg ? <Loader2 className="animate-spin" size={14} /> : <Image size={14} />}
                 {isUploadingImg ? "Uploading..." : "Attach Screenshot"}
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={handleImageUploadForEmail} 
-                  disabled={isUploadingImg} 
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUploadForEmail}
+                  disabled={isUploadingImg}
                 />
               </label>
             </div>
@@ -546,7 +546,7 @@ export default function AdminSettings({
       <div className="glass-card p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-base md:text-lg text-white/90">📋 Sent Notifications</h3>
-          
+
           {/* 🚨 TEMPORARY / PERMANENT BULK DELETE ACTION FOR CREATOR/ADMIN POOL */}
           {sentNotifications.length > 0 && CREATOR_EMAILS.includes(user?.email) && (
             <button

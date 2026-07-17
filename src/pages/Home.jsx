@@ -2,7 +2,9 @@ import { BookOpen, Download, FileText, GraduationCap, Layers, Lock, Circle, Load
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useState, useEffect, startTransition } from "react";
-import dbLogo from "/logo.png";
+import logoLight from "/logo-b.png";
+import logoDark from "/logo.png";
+import { useTheme } from "../context/ThemeContext";
 import MaterialCard from "../components/MaterialCard";
 
 // Shared shimmer primitive (matches App.jsx route-level skeletons so the
@@ -46,6 +48,8 @@ const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loadingCard, setLoadingCard] = useState(null);
+  const { isGlass } = useTheme();
+  const dbLogo = isGlass ? logoLight : logoDark;
   const {
     semesters,
     getSubjectById,
@@ -61,7 +65,7 @@ const Home = () => {
   useEffect(() => {
     setLoadingCard(null);
   }, [location.pathname]);
-  
+
   // 🌟 CONFIG: Max 5 recent approved materials requested
   const recentMaterials = getRecentMaterials(5);
 
@@ -75,26 +79,26 @@ const Home = () => {
 
   // 🌟 CONFIG: Limit cache render to exactly 5 elements
   const recentApproved = recentMaterials.slice(0, 5);
-  
+
   // Helper function to check if material is new (within 24 hours)
   const isNewMaterial = (material) => {
     if (!material.createdAt) return false;
-    
+
     // Handle both Timestamp objects and regular dates
-    const createdAt = material.createdAt?.toDate ? 
-      material.createdAt.toDate() : 
+    const createdAt = material.createdAt?.toDate ?
+      material.createdAt.toDate() :
       new Date(material.createdAt || material.date || Date.now());
-    
+
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     return createdAt > twentyFourHoursAgo;
   };
-  
+
   // Helper function to convert Google Drive view links to direct download links
   const convertToDownloadLink = (viewLink) => {
     if (!viewLink) return viewLink;
-    
+
     // Handle different Google Drive URL formats
-    
+
     // Pattern 1: drive.google.com/file/d/{fileId}/view
     if (viewLink.includes("drive.google.com/file/d/")) {
       // Extract file ID from the URL
@@ -102,14 +106,15 @@ const Home = () => {
       if (fileIdMatch && fileIdMatch[1]) {
         return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}&confirm=t`;
       }
-    } 
+    }
     // Pattern 2: drive.google.com/open?id={fileId} (legacy format)
     else if (viewLink.includes("drive.google.com/open?id=")) {
       // Extract file ID from the legacy URL format
       const urlObj = new URL(viewLink);
-      const fileId = urlObj.searchParams.get("id");       if (fileId) {
+      const fileId = urlObj.searchParams.get("id");
+      if (fileId) {
         return `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
-      } Jesse
+      }
     }
     // Pattern 3: Extract ID from URL between /d/ and /view (as specified in requirements)
     else if (viewLink.includes("/d/") && viewLink.includes("/view")) {
@@ -118,7 +123,7 @@ const Home = () => {
         return `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}&confirm=t`;
       }
     }
-    
+
     // If it's not a Google Drive link, return the original link
     return viewLink;
   };
@@ -160,47 +165,47 @@ const Home = () => {
             };
 
             return (
-            <button
-              key={sem.id}
-              type="button"
-              onClick={(e) => handleCardClick(e, `/semester/${sem.id}`, sem.id)}
-              disabled={isLocked}
-              className={`glass-card p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-gray-500 max-w-[320px] ${isLocked ? 'opacity-70 cursor-not-allowed' : 'hover:bg-white/5'} relative`}
-            >
-              <div className="bg-gray-800/50 p-2 rounded-full w-fit mb-3 relative">
-                {loadingCard === sem.id ? (
-                  <Loader2 className="animate-spin text-[#FFD700]" size={18} />
-                ) : (
-                  <GraduationCap size={16} className="text-white/90" />
-                )}
-                {isLocked && (
-                  <Lock size={12} className="absolute -top-1 -right-1 text-amber-400" />
-                )}
-                {isSem3 && !isLocked && (
-                  <Circle size={6} className="absolute -top-0.5 -right-0.5 text-green-500 fill-current animate-pulse" />
-                )}
-              </div>
-              <h2 className="font-bold text-sm mb-2 flex items-center gap-1">
-                {sem.title}
-                {isSem3 && !isLocked && (
-                  <span className="text-[8px] text-green-500 bg-green-500/10 px-1 py-0.5 rounded">LIVE</span>
-                )}
-              </h2>
-              {isLocked ? (
-                <span className="inline-block px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] rounded-full whitespace-nowrap">
-                  Coming Soon
-                </span>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-[10px] text-white/50">{sem.subjects} subjects available</p>
-                  {sem.academicYear && (
-                    <span className="text-xs px-2 py-1 bg-gray-800/50 text-gray-400 rounded-md inline-block">
-                      {sem.academicYear}
-                    </span>
+              <button
+                key={sem.id}
+                type="button"
+                onClick={(e) => handleCardClick(e, `/semester/${sem.id}`, sem.id)}
+                disabled={isLocked}
+                className={`glass-card p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-gray-500 max-w-[320px] ${isLocked ? 'opacity-70 cursor-not-allowed' : 'hover:bg-white/5'} relative`}
+              >
+                <div className="bg-gray-800/50 p-2 rounded-full w-fit mb-3 relative">
+                  {loadingCard === sem.id ? (
+                    <Loader2 className="animate-spin text-[#FFD700]" size={18} />
+                  ) : (
+                    <GraduationCap size={16} className="text-white/90" />
+                  )}
+                  {isLocked && (
+                    <Lock size={12} className="absolute -top-1 -right-1 text-amber-400" />
+                  )}
+                  {isSem3 && !isLocked && (
+                    <Circle size={6} className="absolute -top-0.5 -right-0.5 text-green-500 fill-current animate-pulse" />
                   )}
                 </div>
-              )}
-            </button>
+                <h2 className="font-bold text-sm mb-2 flex items-center gap-1">
+                  {sem.title}
+                  {isSem3 && !isLocked && (
+                    <span className="text-[8px] text-green-500 bg-green-500/10 px-1 py-0.5 rounded">LIVE</span>
+                  )}
+                </h2>
+                {isLocked ? (
+                  <span className="inline-block px-2 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] rounded-full whitespace-nowrap">
+                    Coming Soon
+                  </span>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-white/50">{sem.subjects} subjects available</p>
+                    {sem.academicYear && (
+                      <span className="text-xs px-2 py-1 bg-gray-800/50 text-gray-400 rounded-md inline-block">
+                        {sem.academicYear}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </button>
             );
           })}
         </div>
@@ -224,9 +229,9 @@ const Home = () => {
           {recentApproved && recentApproved.length > 0 ? (
             // Maps exactly 5 recent materials
             recentApproved.map((m) => (
-              <MaterialCard 
-                key={m.id} 
-                material={m} 
+              <MaterialCard
+                key={m.id}
+                material={m}
                 convertToDownloadLink={convertToDownloadLink}
                 navigateToSubject={true}
                 navigate={navigate}
@@ -254,12 +259,12 @@ const Home = () => {
 
           {/* 🌟 HERE IS THE BULLETPROOF TEXT LINK OUTSIDE BREAKETS */}
           <div className="text-center pt-2 pb-6">
-            <Link 
-              to="/library" 
+            <Link
+              to="/library"
               className="inline-block text-xs font-bold text-[#FFD700] hover:text-white hover:scale-105 active:scale-95 transition-all tracking-wide"
             >
               Click to Explore more &rarr;
-                </Link>
+            </Link>
           </div>
         </div>
       )}

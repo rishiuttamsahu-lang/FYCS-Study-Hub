@@ -11,6 +11,10 @@ const getInitialTheme = () => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "dark" || saved === "glass") return saved;
+
+    // First time visit: Check device preference (dark or light)
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return prefersDark ? "dark" : "glass";
   } catch (_) {
     /* localStorage unavailable (private mode etc.) — fall back below */
   }

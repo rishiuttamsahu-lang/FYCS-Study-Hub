@@ -50,7 +50,7 @@ export default function TodayVisitorsPage() {
           <ArrowLeft size={16} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="text-base font-bold text-white/90 truncate bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+          <h1 className="text-base font-bold hero-gradient-title truncate">
             Today's Visitors
           </h1>
           <p className="text-[11px] text-white/50 truncate mt-0.5">Logs of verified student logins today</p>

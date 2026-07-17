@@ -14,9 +14,7 @@ const isLocalhost = typeof window !== "undefined" &&
 
 const firebaseConfig = {
   apiKey: "AIzaSyCCDR8O9zy0bSyCa5dsinR8SSmnMQcWxTY",
-  authDomain: !isLocalhost && typeof window !== "undefined" && window.location.hostname
-    ? window.location.hostname
-    : "fycs-study-hub.firebaseapp.com",
+  authDomain: "fycs-study-hub.vercel.app",
   projectId: "fycs-study-hub",
   storageBucket: "fycs-study-hub.firebasestorage.app",
   messagingSenderId: "308883339928",

@@ -1364,7 +1364,7 @@ export default function Admin() {
       <div className="p-5 pt-8 max-w-4xl mx-auto bg-[#0a0a0a]/50 backdrop-blur-sm rounded-xl">
         {/* Header */}
         <div className="mb-6 md:mb-8 text-center">
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold hero-gradient-title">
             Admin Dashboard
           </h1>
           <p className="text-white/55 text-xs md:text-sm mt-1 md:mt-2">

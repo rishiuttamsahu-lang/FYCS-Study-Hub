@@ -108,7 +108,7 @@ const Navbar = () => {
           <Link 
             key={item.path} 
             to={item.path} 
-            onClick={() => handleTabClick(item.path)} // Spinner trigger karega
+            onClick={() => handleTabClick(item.path)}
             className={`flex flex-col items-center gap-1 transition-colors ${
               isActive(item.path)
                 ? "text-[#FFD700]"
@@ -116,7 +116,6 @@ const Navbar = () => {
             }`}
           >
             <div className="relative">
-              {/* 🚨 Spinner Condition */}
               {loadingPath === item.path ? (
                 <Loader2 size={22} className="animate-spin text-[#FFD700]" />
               ) : (

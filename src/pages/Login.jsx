@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { useTheme } from "../context/ThemeContext";
 import { Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function Login() {
   const { login, user } = useApp();
+  const { isGlass } = useTheme();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -169,7 +171,7 @@ export default function Login() {
 
   return (
     // Root container wahi hai jo aapne bheja tha (Scrolling 100% kaam karegi)
-    <div className="bg-[#0a0a0a] min-h-screen text-white overflow-y-auto font-sans relative">
+    <div className="bg-[#0a0a0a] min-h-screen text-white overflow-y-auto font-sans relative login-page">
 
       {/* 1. MAIN LOGIN SECTION */}
       {/* 🚨 FIX: flex-col aur justify-between lagaya hai, aur 100svh use kiya hai */}
@@ -197,7 +199,7 @@ export default function Login() {
               <div className="flex justify-center mb-8">
                 <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-600/30 to-blue-500/30 border border-white/20 flex items-center justify-center shadow-lg shadow-purple-500/20 backdrop-blur-sm">
                   <img
-                    src="/logo.png"
+                    src={isGlass ? "/logo-b.png" : "/logo.png"}
                     alt="BNN CS Study Hub Logo"
                     width="64"
                     height="64"
