@@ -1576,28 +1576,3 @@ button[disabled] {
   color: rgba(var(--ink), 0.7) !important;
   border-top-color: rgba(var(--ink), 0.08) !important;
 }
-
-@keyframes reveal {
-  from {
-    clip-path: circle(0px at var(--x) var(--y));
-  }
-  to {
-    clip-path: circle(var(--r) at var(--x) var(--y));
-  }
-}
-
-/* Disable default view-transition cross-fade animations for custom clipPath reveal */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-::view-transition-old(root) {
-  z-index: 1;
-}
-
-::view-transition-new(root) {
-  animation: reveal 700ms ease-in-out;
-  z-index: 9999;
-}

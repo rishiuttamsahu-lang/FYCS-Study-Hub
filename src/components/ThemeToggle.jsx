@@ -1,41 +1,25 @@
-import { useRef, useCallback } from "react";
+import { useCallback } from "react";
 import { flushSync } from "react-dom";
 import { useTheme } from "../context/ThemeContext";
 
 const ThemeToggle = () => {
   const { isGlass, toggleTheme } = useTheme();
-  const buttonRef = useRef(null);
 
-  const onToggle = useCallback(async () => {
-    if (!buttonRef.current) return;
-
+  const onToggle = useCallback(() => {
     if (!document.startViewTransition) {
       toggleTheme();
       return;
     }
 
-    const { left, top, width, height } = buttonRef.current.getBoundingClientRect();
-    const centerX = left + width / 2;
-    const centerY = top + height / 2;
-    const maxDistance = Math.hypot(
-      Math.max(centerX, window.innerWidth - centerX),
-      Math.max(centerY, window.innerHeight - centerY)
-    );
-
-    document.documentElement.style.setProperty('--x', `${centerX}px`);
-    document.documentElement.style.setProperty('--y', `${centerY}px`);
-    document.documentElement.style.setProperty('--r', `${maxDistance}px`);
-
-    await document.startViewTransition(() => {
+    document.startViewTransition(() => {
       flushSync(() => {
         toggleTheme();
       });
-    }).ready;
+    });
   }, [toggleTheme]);
 
   return (
     <button
-      ref={buttonRef}
       aria-pressed={isGlass ? "true" : "false"}
       className="theme-toggle-btn fixed top-4 right-4 z-50 cursor-pointer"
       onClick={onToggle}
