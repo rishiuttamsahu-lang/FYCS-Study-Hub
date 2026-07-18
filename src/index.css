@@ -1538,6 +1538,12 @@ button[disabled] {
   fill: currentColor !important;
 }
 
+/* Prevent spin loaders from getting solid filled */
+.login-page button .animate-spin,
+.login-page button .animate-spin * {
+  fill: none !important;
+}
+
 /* Make the main backdrop orbglows soft in light mode */
 [data-theme="glass"] .login-page .bg-purple-600\/30 {
   background-color: rgba(147, 51, 234, 0.12) !important;
