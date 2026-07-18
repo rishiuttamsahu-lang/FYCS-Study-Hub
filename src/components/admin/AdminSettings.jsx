@@ -170,58 +170,73 @@ export default function AdminSettings({
     }
   };
 
-  // 🌟 SCREENSHOT UPLOAD LOGIC FOR EMAILS
+  const compressImage = (file, maxWidth = 1280, quality = 0.7) => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(1, maxWidth / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressedBase64.split(',')[1]); // base64 payload only
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // 🌟 SCREENSHOT UPLOAD LOGIC FOR EMAILS WITH CLIENT-SIDE COMPRESSION
   const handleImageUploadForEmail = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Screenshot must be under 2MB.");
+    if (file.size > 5 * 1024 * 1024) { // relaxed limit, compression handles the rest
+      toast.error("Screenshot must be under 5MB.");
       e.target.value = '';
       return;
     }
 
-    const loadingToast = toast.loading("Uploading screenshot to cloud...");
+    const loadingToast = toast.loading("Compressing & uploading screenshot...");
     setIsUploadingImg(true);
 
     try {
-      // Base64 conversion (Exactly like your Profile.jsx feedback logic)
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        try {
-          const base64Image = reader.result.split(',')[1];
-          const formData = new FormData();
-          formData.append('image', base64Image);
+      const base64Image = await compressImage(file, 1280, 0.7);
 
-          const imgbbKey = import.meta.env.VITE_IMGBB_KEY;
+      const formData = new FormData();
+      formData.append('image', base64Image);
 
-          const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
-            method: 'POST',
-            body: formData
-          });
+      const imgbbKey = import.meta.env.VITE_IMGBB_KEY;
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+        method: 'POST',
+        body: formData
+      });
 
-          const result = await res.json();
+      const result = await res.json();
 
-          if (result.success) {
-            // HTML Image tag banakar email text me jod do
-            const imgHtml = `<br/><br/><img src="${result.data.url}" alt="Admin Screenshot" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #333;" /><br/>`;
+      if (result.success) {
+        // HTML Image tag banakar email text me jod do
+        const imgHtml = `<br/><br/><img src="${result.data.url}" alt="Admin Screenshot" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #333;" /><br/>`;
 
-            setEmailMessage((prev) => prev + imgHtml);
-            toast.success("Screenshot attached to email successfully!", { id: loadingToast });
-          } else {
-            throw new Error("ImgBB server rejected image");
-          }
-        } catch (err) {
-          toast.error("Upload failed.", { id: loadingToast });
-        } finally {
-          setIsUploadingImg(false);
-        }
-      };
-    } catch (error) {
-      toast.error("Failed to process image.", { id: loadingToast });
-      setIsUploadingImg(false);
+        setEmailMessage((prev) => prev + imgHtml);
+        toast.success("Screenshot compressed & attached successfully!", { id: loadingToast });
+      } else {
+        throw new Error("ImgBB server rejected image");
+      }
+    } catch (err) {
+      toast.error("Upload failed.", { id: loadingToast });
     } finally {
+      setIsUploadingImg(false);
       e.target.value = '';
     }
   };

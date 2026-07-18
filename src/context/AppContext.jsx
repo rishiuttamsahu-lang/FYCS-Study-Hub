@@ -47,6 +47,7 @@ export const AppProvider = ({ children }) => {
   // static shell immediately and progressively reveal each section as soon
   // as ITS data is ready — instead of an all-or-nothing skeleton swap.
   const [authLoading, setAuthLoading] = useState(true);
+  const [authTimedOut, setAuthTimedOut] = useState(false);
   const [materialsLoading, setMaterialsLoading] = useState(true);
   const [subjectsLoading, setSubjectsLoading] = useState(true);
 
@@ -313,6 +314,7 @@ export const AppProvider = ({ children }) => {
               });
               setUserRole(userData.role || "student");
               setAuthLoading(false);
+              setAuthTimedOut(false);
             } else {
               // 🚨 DUPLICATE EMAIL CHECK: Naya doc banane se pehle email check karo
               try {
@@ -377,16 +379,19 @@ export const AppProvider = ({ children }) => {
                 toast.error("Connected, but database profile sync delayed.");
               } finally {
                 setAuthLoading(false);
+                setAuthTimedOut(false);
               }
             }
           }, (error) => {
             console.error("User doc listener error:", error);
             setAuthLoading(false);
+            setAuthTimedOut(false);
           });
         } else {
           setUser(null);
           setUserRole(null);
           setAuthLoading(false);
+          setAuthTimedOut(false);
         }
       });
     };
@@ -398,19 +403,13 @@ export const AppProvider = ({ children }) => {
     // round-trip) the auth flow above can fail to ever call
     // setAuthLoading(false), which leaves the skeleton on screen forever
     // and forces the user to manually refresh. If auth hasn't resolved
-    // within 8s, force it through so the app becomes usable — worst case
-    // it briefly shows the logged-out/Login view until the real auth
-    // state catches up a moment later.
+    // within 3s, flag it to warn the user but do not force unblock to prevent Login flash.
     const authTimeout = setTimeout(() => {
       if (isMounted) {
-        setAuthLoading((prev) => {
-          if (prev) {
-            console.warn('Auth took too long to resolve — unblocking UI.');
-          }
-          return false;
-        });
+        setAuthTimedOut(true);
+        console.warn('Auth took too long to resolve — marking timed out.');
       }
-    }, 8000);
+    }, 3000);
 
     return () => {
       isMounted = false;
@@ -1001,6 +1000,7 @@ export const AppProvider = ({ children }) => {
     isBanned: user?.isBanned || false,
     stats,
     loading,
+    authTimedOut,
     materialsLoading,
     subjectsLoading,
     dataLoading,

@@ -319,6 +319,7 @@ function AdminPageSkeleton() {
 // Uses useLocation (HashRouter compatible location.pathname) to pick the right page skeleton,
 // so the AppContext loading phase and page-level loading phase are visually identical.
 function AppSkeleton() {
+  const { authTimedOut } = useApp();
   const location = useLocation();
   const path = location.pathname;
   const parts = path.split('/').filter(Boolean);
@@ -342,6 +343,13 @@ function AppSkeleton() {
     <div className="bg-app text-white min-h-screen">
       <GlassBackdrop />
       <PageSkeleton />
+      {authTimedOut && (
+        <div className="fixed bottom-28 left-4 right-4 z-50 flex justify-center animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="glass-card px-4 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-300 text-xs text-center shadow-lg max-w-sm">
+            ⚡ Session verification is taking longer than usual. Please check your connection or refresh the page.
+          </div>
+        </div>
+      )}
       <NavbarSkeleton />
     </div>
   );
