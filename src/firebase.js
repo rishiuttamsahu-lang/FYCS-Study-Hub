@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence, getRedirectResult } from "firebase/auth";
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -27,6 +27,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const authReady = setPersistence(auth, browserLocalPersistence);
 export const googleProvider = new GoogleAuthProvider();
+export const redirectResultReady = authReady.then(() => getRedirectResult(auth));
 
 // 🚀 PERSISTENT OFFLINE CACHE
 // Without this, every full page refresh wipes Firestore's in-memory cache,
