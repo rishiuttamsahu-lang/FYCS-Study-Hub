@@ -205,11 +205,7 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
       const fileId = fileIdMatch ? fileIdMatch[1] : null;
 
       if (fileId) {
-        // 3. Address shift to local serverless API endpoint (Bypass mobile intent interception)
-        // material.type se dynamic extension fallback backup handle kar rahe hain (e.g. filename.pdf)
-        const fileExt = material.link.includes('.pdf') ? '.pdf' : '.zip'; 
-        const downloadName = `${material.title || 'file'}${fileExt}`;
-        
+        const downloadName = material.title || 'file';
         window.location.href = `/api/download?id=${fileId}&name=${encodeURIComponent(downloadName)}`;
       } else {
         // Fallback agar direct link na badle

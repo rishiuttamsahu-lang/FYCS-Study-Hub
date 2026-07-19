@@ -26,8 +26,31 @@ export default async function handler(req, res) {
       return res.status(500).send("Error: Google Drive returned an empty response body.");
     }
 
-    res.setHeader("Content-Type", driveRes.headers.get("content-type") || "application/octet-stream");
-    res.setHeader("Content-Disposition", `attachment; filename="${(name || id).replace(/"/g, '')}"`);
+    const contentType = driveRes.headers.get("content-type") || "application/octet-stream";
+    res.setHeader("Content-Type", contentType);
+
+    // Map MIME-type to file extension automatically
+    const mimeToExt = {
+      "application/pdf": ".pdf",
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "application/zip": ".zip",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+      "application/x-javascript": ".js",
+      "text/jsx": ".jsx",
+      "text/plain": ".txt",
+      "text/html": ".html",
+      "text/css": ".css"
+    };
+
+    let finalName = name ? decodeURIComponent(name) : id;
+    if (!finalName.includes('.')) {
+      finalName += (mimeToExt[contentType] || "");
+    }
+
+    res.setHeader("Content-Disposition", `attachment; filename="${finalName.replace(/"/g, '')}"`);
 
     Readable.fromWeb(driveRes.body).pipe(res);
   } catch (error) {
