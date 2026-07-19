@@ -189,8 +189,10 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
     }
   };
 
+  // 🌟 PROXY DOWNLOADING WORKFLOW (NO DRIVE INTERCEPTION FILTER)
   const handleDownloadClick = async () => {
     try {
+      // 1. Firebase analytics update karo instantly
       await updateDoc(doc(db, "materials", material.id), { 
         downloads: increment(1) 
       });
@@ -198,16 +200,24 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
       addToDownloadHistory(material);
       setDownloadCount(prev => prev + 1);
       
-      const downloadUrl = convertToDownloadLink(material.link);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.setAttribute('download', '');
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // 2. Google Drive unique file ID extract karo regex se
+      const fileIdMatch = material.link.match(/\/d\/([^/]+)/) || material.link.match(/[?&]id=([^&]+)/);
+      const fileId = fileIdMatch ? fileIdMatch[1] : null;
+
+      if (fileId) {
+        // 3. Address shift to local serverless API endpoint (Bypass mobile intent interception)
+        // material.type se dynamic extension fallback backup handle kar rahe hain (e.g. filename.pdf)
+        const fileExt = material.link.includes('.pdf') ? '.pdf' : '.zip'; 
+        const downloadName = `${material.title || 'file'}${fileExt}`;
+        
+        window.location.href = `/api/download?id=${fileId}&name=${encodeURIComponent(downloadName)}`;
+      } else {
+        // Fallback agar direct link na badle
+        window.open(material.link, "_blank", "noopener,noreferrer");
+      }
     } catch (error) {
-      console.error("Error updating download count:", error);
+      console.error("Proxy download configuration exception:", error);
+      // Fail ਹੋne par standard fallback chain execution
       const downloadUrl = convertToDownloadLink(material.link);
       window.open(downloadUrl, "_blank", "noopener,noreferrer");
     }

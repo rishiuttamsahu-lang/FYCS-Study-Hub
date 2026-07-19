@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import compression from 'vite-plugin-compression'
 
 export default defineConfig({
   plugins: [
@@ -56,20 +55,6 @@ export default defineConfig({
           { src: 'logo512.png', sizes: '512x512', type: 'image/png' },
         ],
       },
-    }),
-    compression({
-      verbose: true,
-      disable: false,
-      threshold: 10240, // Compress files > 10KB
-      algorithm: 'gzip',
-      ext: '.gz',
-    }),
-    compression({
-      verbose: true,
-      disable: false,
-      threshold: 10240,
-      algorithm: 'brotli',
-      ext: '.br',
     }),
   ],
   server: {
