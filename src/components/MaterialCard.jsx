@@ -190,32 +190,19 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
   };
 
   // 🌟 PROXY DOWNLOADING WORKFLOW (NO DRIVE INTERCEPTION FILTER)
-  const handleDownloadClick = async () => {
-    try {
-      // 1. Firebase analytics update karo instantly
-      await updateDoc(doc(db, "materials", material.id), { 
-        downloads: increment(1) 
-      });
-      
-      addToDownloadHistory(material);
-      setDownloadCount(prev => prev + 1);
-      
-      // 2. Google Drive unique file ID extract karo regex se
-      const fileIdMatch = material.link.match(/\/d\/([^/]+)/) || material.link.match(/[?&]id=([^&]+)/);
-      const fileId = fileIdMatch ? fileIdMatch[1] : null;
+  const handleDownloadClick = () => {
+    addToDownloadHistory(material);
+    setDownloadCount(prev => prev + 1);
 
-      if (fileId) {
-        const downloadName = material.title || 'file';
-        window.location.href = `/api/download?id=${fileId}&name=${encodeURIComponent(downloadName)}`;
-      } else {
-        // Fallback agar direct link na badle
-        window.open(material.link, "_blank", "noopener,noreferrer");
-      }
-    } catch (error) {
-      console.error("Proxy download configuration exception:", error);
-      // Fail ਹੋne par standard fallback chain execution
-      const downloadUrl = convertToDownloadLink(material.link);
-      window.open(downloadUrl, "_blank", "noopener,noreferrer");
+    const fileIdMatch = material.link.match(/\/d\/([^/]+)/) || material.link.match(/[?&]id=([^&]+)/);
+    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+
+    if (fileId) {
+      const downloadName = material.title || 'file';
+      const gateUrl = `${window.location.origin}/#/download?id=${fileId}&name=${encodeURIComponent(downloadName)}&materialId=${material.id}`;
+      window.open(gateUrl, "_blank", "noopener,noreferrer");
+    } else {
+      window.open(material.link, "_blank", "noopener,noreferrer");
     }
   };
 

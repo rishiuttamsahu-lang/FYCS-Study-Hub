@@ -29,6 +29,7 @@ const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Navbar = lazy(() => import('./components/Navbar'));
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
 const TodayVisitorsPage = lazy(() => import('./pages/TodayVisitorsPage'));
+const DownloadGate = lazy(() => import('./pages/DownloadGate'));
 
 // Shared shimmer primitive
 const Sk = ({ className, style }) => (
@@ -516,6 +517,7 @@ function App() {
             <Route path="/semester/:semId" element={<Subjects />} />
             <Route path="/semester/:semId/:subjectId" element={<Materials />} />
             <Route path="/library" element={<Library />} />
+            <Route path="/download" element={<DownloadGate />} />
             <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
             
             {user && isAdmin && (
