@@ -143,7 +143,7 @@ export default function DownloadGate() {
 
           {/* Centered Download Card */}
           <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm sm:max-w-md mx-auto">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full text-center shadow-lg mx-auto">
+            <div className="glass-card p-6 w-full text-center mx-auto" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
               {/* Metadata Badges */}
               <div className="flex justify-center items-center gap-1.5 mb-3 flex-wrap">
                 {materialType && (
