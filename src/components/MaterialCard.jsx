@@ -19,6 +19,9 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
   // Loading state for view button
   const [isViewing, setIsViewing] = useState(false);
 
+  // Loading state for download button
+  const [isDownloading, setIsDownloading] = useState(false);
+
   // View modal state
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
@@ -191,18 +194,30 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
 
   // 🌟 PROXY DOWNLOADING WORKFLOW (NO DRIVE INTERCEPTION FILTER)
   const handleDownloadClick = () => {
-    addToDownloadHistory(material);
-    setDownloadCount(prev => prev + 1);
+    setIsDownloading(true);
+    try {
+      const downloadedMaterials = JSON.parse(localStorage.getItem('downloadedMaterials') || '[]');
+      if (!downloadedMaterials.includes(material.id)) {
+        setDownloadCount(prev => prev + 1);
+      }
+      addToDownloadHistory(material);
 
-    const fileIdMatch = material.link.match(/\/d\/([^/]+)/) || material.link.match(/[?&]id=([^&]+)/);
-    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+      const fileIdMatch = material.link.match(/\/d\/([^/]+)/) || material.link.match(/[?&]id=([^&]+)/);
+      const fileId = fileIdMatch ? fileIdMatch[1] : null;
 
-    if (fileId) {
-      const downloadName = material.title || 'file';
-      const gateUrl = `${window.location.origin}/#/download?id=${fileId}&name=${encodeURIComponent(downloadName)}&materialId=${material.id}`;
-      window.open(gateUrl, "_blank", "noopener,noreferrer");
-    } else {
-      window.open(material.link, "_blank", "noopener,noreferrer");
+      if (fileId) {
+        const downloadName = material.title || 'file';
+        const gateUrl = `${window.location.origin}/#/download?id=${fileId}&name=${encodeURIComponent(downloadName)}&materialId=${material.id}`;
+        window.open(gateUrl, "_blank", "noopener,noreferrer");
+      } else {
+        window.open(material.link, "_blank", "noopener,noreferrer");
+      }
+    } catch (error) {
+      console.error("Download handling error:", error);
+    } finally {
+      setTimeout(() => {
+        setIsDownloading(false);
+      }, 2000);
     }
   };
 
@@ -310,12 +325,17 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
             </button>
             <button
               type="button"
+              disabled={isDownloading}
               onClick={handleDownloadClick}
-              className="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+              className={`flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors ${isDownloading ? "opacity-60 cursor-not-allowed" : ""}`}
               title="Download"
               aria-label="Download material"
             >
-              <Download size={18} />
+              {isDownloading ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <Download size={18} />
+              )}
             </button>
             <button
               type="button"

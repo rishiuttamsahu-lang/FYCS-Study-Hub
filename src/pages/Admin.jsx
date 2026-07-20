@@ -1045,6 +1045,8 @@ export default function Admin() {
       toast.error("Error updating material: " + error.message);
     }
   };
+
+
   
   const handleEditSubjectClick = (subject) => {
     setEditingSubject(subject);
@@ -1087,6 +1089,7 @@ export default function Admin() {
       toast.error("Error resetting analytics: " + error.message);
     }
   };
+
 
   const handleResetAnalytics = () => {
     setShowResetModal(true);

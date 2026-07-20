@@ -78,7 +78,12 @@ export default function DownloadGate() {
   const triggerDownload = async () => {
     if (materialId) {
       try {
-        await updateDoc(doc(db, "materials", materialId), { downloads: increment(1) });
+        const downloadedMaterials = JSON.parse(localStorage.getItem('downloadedMaterials') || '[]');
+        if (!downloadedMaterials.includes(materialId)) {
+          downloadedMaterials.push(materialId);
+          localStorage.setItem('downloadedMaterials', JSON.stringify(downloadedMaterials));
+          await updateDoc(doc(db, "materials", materialId), { downloads: increment(1) });
+        }
       } catch (err) {
         console.error("Download count update failed:", err);
       }
