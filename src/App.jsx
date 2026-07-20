@@ -318,6 +318,17 @@ function AdminPageSkeleton() {
   );
 }
 
+function DownloadGatePageSkeleton() {
+  return (
+    <div className="h-[100dvh] bg-gray-950 text-white flex flex-col items-center justify-center px-4 relative">
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-sm text-center shadow-lg mx-auto flex flex-col items-center gap-4">
+        <Sk className="h-4 w-3/4 mb-2" />
+        <Sk className="h-14 w-full rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 // Route-aware global skeleton.
 // Uses useLocation (HashRouter compatible location.pathname) to pick the right page skeleton,
 // so the AppContext loading phase and page-level loading phase are visually identical.
@@ -336,6 +347,8 @@ function AppSkeleton() {
     PageSkeleton = UploadPageSkeleton;
   } else if (path.startsWith('/admin')) {
     PageSkeleton = AdminPageSkeleton;
+  } else if (path === '/download') {
+    PageSkeleton = DownloadGatePageSkeleton;
   } else if (parts[0] === 'semester' && parts.length >= 3) {
     PageSkeleton = MaterialsPageSkeleton;
   } else if (parts[0] === 'semester') {
@@ -373,6 +386,8 @@ function RouteSuspenseFallback() {
     PageSkeleton = UploadPageSkeleton;
   } else if (path.startsWith('/admin')) {
     PageSkeleton = AdminPageSkeleton;
+  } else if (path === '/download') {
+    PageSkeleton = DownloadGatePageSkeleton;
   } else if (parts[0] === 'semester' && parts.length >= 3) {
     PageSkeleton = MaterialsPageSkeleton;
   } else if (parts[0] === 'semester') {
@@ -389,7 +404,7 @@ function App() {
   const isOnline = useOfflineDetection();
 
   // Reactively check if the user is on a public page
-  const isPublicRoute = location.pathname === '/privacy' || location.pathname === '/terms';
+  const isPublicRoute = location.pathname === '/privacy' || location.pathname === '/terms' || location.pathname === '/download';
 
   // Apply Site Zoom globally with Smooth Transition
   useEffect(() => {
@@ -508,7 +523,7 @@ function App() {
           }
         }
       />
-      <main className="bg-app text-white pb-24 relative min-h-screen">
+      <main className={`bg-app text-white relative min-h-screen ${location.pathname === '/download' ? '' : 'pb-24'}`}>
         <GlassBackdrop />
         <ThemeToggle />
         <Suspense fallback={<RouteSuspenseFallback />}>
@@ -536,7 +551,7 @@ function App() {
           </Routes>
         </Suspense>
 
-        <Navbar />
+        {location.pathname !== '/download' && <Navbar />}
         <GlobalUploadBlob />
 
         {/* Floating AI Assistant Button */}

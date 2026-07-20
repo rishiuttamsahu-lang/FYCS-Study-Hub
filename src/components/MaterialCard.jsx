@@ -207,7 +207,8 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
 
       if (fileId) {
         const downloadName = material.title || 'file';
-        const gateUrl = `${window.location.origin}/#/download?id=${fileId}&name=${encodeURIComponent(downloadName)}&materialId=${material.id}`;
+        const subjectName = getSubjectById?.(material.subjectId)?.name || 'Subject';
+        const gateUrl = `${window.location.origin}/#/download?id=${fileId}&name=${encodeURIComponent(downloadName)}&materialId=${material.id}&subject=${encodeURIComponent(subjectName)}&type=${encodeURIComponent(material.type)}&sem=${encodeURIComponent(material.semId)}`;
         window.open(gateUrl, "_blank", "noopener,noreferrer");
       } else {
         window.open(material.link, "_blank", "noopener,noreferrer");
