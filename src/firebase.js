@@ -9,7 +9,7 @@ import {
 // ✅ Correct Config for 'fycs-study-hub'
 const firebaseConfig = {
   apiKey: "AIzaSyCCDR8O9zy0bSyCa5dsinR8SSmnMQcWxTY",
-  authDomain: "fycs-study-hub.firebaseapp.com",
+  authDomain: "fycs-study-hub.vercel.app",
   projectId: "fycs-study-hub",
   storageBucket: "fycs-study-hub.firebasestorage.app",
   messagingSenderId: "308883339928",
