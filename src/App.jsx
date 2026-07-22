@@ -8,6 +8,7 @@ import BrainCircuitIcon from "./components/AnimatedIcons";
 import GlassBackdrop from "./components/GlassBackdrop";
 import ThemeToggle from "./components/ThemeToggle";
 import ErrorBoundary from "./components/ErrorBoundary";
+import Footer from "./components/Footer";
 import { useOfflineDetection } from "./hooks/useOfflineDetection";
 
 import { useApp } from "./context/AppContext";
@@ -523,33 +524,37 @@ function App() {
           }
         }
       />
-      <main className={`bg-app text-white relative min-h-screen ${location.pathname === '/download' ? '' : 'pb-24'}`}>
+      <main className={`bg-app text-white relative min-h-screen flex flex-col ${location.pathname === '/download' ? '' : 'pb-24'}`}>
         <GlassBackdrop />
         <ThemeToggle />
-        <Suspense fallback={<RouteSuspenseFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/semester/:semId" element={<Subjects />} />
-            <Route path="/semester/:semId/:subjectId" element={<Materials />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/download" element={<DownloadGate />} />
-            <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-            
-            {user && isAdmin && (
-              <>
-                <Route path="/admin-upload" element={<ProtectedRoute requiredRole="admin"><AdminUpload /></ProtectedRoute>} />
-                <Route path="/admin/analytics/visitors" element={<ProtectedRoute requiredRole="admin"><TodayVisitorsPage /></ProtectedRoute>} />
-                <Route path="/admin/:activeTab" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
-                <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
-              </>
-            )}
-            
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+        <div className="flex-1">
+          <Suspense fallback={<RouteSuspenseFallback />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/semester/:semId" element={<Subjects />} />
+              <Route path="/semester/:semId/:subjectId" element={<Materials />} />
+              <Route path="/library" element={<Library />} />
+              <Route path="/download" element={<DownloadGate />} />
+              <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+              
+              {user && isAdmin && (
+                <>
+                  <Route path="/admin-upload" element={<ProtectedRoute requiredRole="admin"><AdminUpload /></ProtectedRoute>} />
+                  <Route path="/admin/analytics/visitors" element={<ProtectedRoute requiredRole="admin"><TodayVisitorsPage /></ProtectedRoute>} />
+                  <Route path="/admin/:activeTab" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
+                  <Route path="/admin" element={<Navigate to="/admin/analytics" replace />} />
+                </>
+              )}
+              
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </div>
+
+        <Footer />
 
         {location.pathname !== '/download' && <Navbar />}
         <GlobalUploadBlob />
