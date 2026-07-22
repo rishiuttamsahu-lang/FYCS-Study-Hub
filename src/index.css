@@ -320,17 +320,20 @@
    GLASS MODE (LIGHT THEME) DROPDOWNS & OVERLAYS FIX
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
+/* Icon positioning wrappers, badges, and pointer-events-none elements must NEVER have a background */
+[data-theme="glass"] .pointer-events-none,
+[data-theme="glass"] [class*="pointer-events-none"] {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
 /* 1. Custom Select popups, Sort & Filter dropdowns, and floating menus */
 [data-theme="glass"] .absolute.z-\[100\],
-[data-theme="glass"] .absolute.z-50,
-[data-theme="glass"] .absolute.z-10,
-[data-theme="glass"] .fixed.z-50,
-[data-theme="glass"] [class*="absolute"][class*="z-"],
-[data-theme="glass"] [class*="absolute"][class*="mt-2"],
-[data-theme="glass"] [class*="absolute"][class*="top-full"],
-[data-theme="glass"] [class*="fixed"][class*="top-"],
-[data-theme="glass"] div[ref="dropdownRef"] > div,
-[data-theme="glass"] .relative > div.absolute {
+[data-theme="glass"] [class*="top-full"],
+[data-theme="glass"] [class*="mt-2"].absolute,
+[data-theme="glass"] div[ref="dropdownRef"] > div.absolute,
+[data-theme="glass"] div[ref="sortRef"] > div.absolute,
+[data-theme="glass"] .custom-dropdown-menu {
   background-color: rgba(255, 255, 255, 0.98) !important;
   color: rgb(var(--ink)) !important;
   border-color: rgba(var(--ink), 0.15) !important;
@@ -340,18 +343,19 @@
 }
 
 /* Options / Items text inside custom dropdown menus */
-[data-theme="glass"] .absolute[class*="z-"] div,
-[data-theme="glass"] .absolute[class*="z-"] button,
-[data-theme="glass"] [class*="absolute"][class*="top-full"] button,
+[data-theme="glass"] .absolute.z-\[100\] div,
+[data-theme="glass"] .absolute.z-\[100\] button,
+[data-theme="glass"] [class*="top-full"] div,
+[data-theme="glass"] [class*="top-full"] button,
 [data-theme="glass"] div[ref="dropdownRef"] div,
 [data-theme="glass"] div[ref="dropdownRef"] button {
   color: rgb(var(--ink));
 }
 
 /* Hover state for items inside custom dropdown menus */
-[data-theme="glass"] .absolute[class*="z-"] div[onClick]:hover,
-[data-theme="glass"] .absolute[class*="z-"] button:hover,
-[data-theme="glass"] [class*="absolute"][class*="top-full"] button:hover,
+[data-theme="glass"] .absolute.z-\[100\] div[onClick]:hover,
+[data-theme="glass"] .absolute.z-\[100\] button:hover,
+[data-theme="glass"] [class*="top-full"] button:hover,
 [data-theme="glass"] div[ref="dropdownRef"] div[onClick]:hover,
 [data-theme="glass"] div[ref="dropdownRef"] button:hover {
   background-color: rgba(var(--ink), 0.08) !important;
