@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { doc, updateDoc, increment } from "firebase/firestore";
-import { db } from "../firebase";
+import { doc, updateDoc, increment, arrayUnion } from "firebase/firestore";
+import { db, auth } from "../firebase";
 import AdBanner from "../components/AdBanner";
 
 function NativeAd() {
@@ -109,7 +109,21 @@ export default function DownloadGate() {
         if (!downloadedMaterials.includes(materialId)) {
           downloadedMaterials.push(materialId);
           localStorage.setItem('downloadedMaterials', JSON.stringify(downloadedMaterials));
-          await updateDoc(doc(db, "materials", materialId), { downloads: increment(1) });
+          
+          const materialRef = doc(db, "materials", materialId);
+          const currentUser = auth.currentUser;
+          let updateData = { downloads: increment(1) };
+          
+          if (currentUser) {
+            const downloaderDetails = {
+              name: currentUser.displayName || "Unknown",
+              email: currentUser.email || "No Email",
+              time: new Date().toISOString()
+            };
+            updateData.downloadedBy = arrayUnion(downloaderDetails);
+          }
+          
+          await updateDoc(materialRef, updateData);
         }
       } catch (err) {
         console.error("Download count update failed:", err);

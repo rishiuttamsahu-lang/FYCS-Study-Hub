@@ -28,6 +28,12 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
   // Viewers search query state
   const [viewersSearchQuery, setViewersSearchQuery] = useState("");
 
+  // Downloaders modal state
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+
+  // Downloaders search query state
+  const [downloadersSearchQuery, setDownloadersSearchQuery] = useState("");
+
   // Helper function to format time and date as "18 Jul, 05:55 PM"
   const formatTime = (timeString) => {
     if (!timeString) return "N/A";
@@ -396,7 +402,11 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
               >
                 <Eye size={12} className="sm:w-[14px] sm:h-[14px]" /> {viewCount}
               </span>
-              <span className="flex items-center gap-1 text-green-400" title="Downloads">
+              <span 
+                className="flex items-center gap-1 text-green-400 cursor-pointer hover:underline" 
+                title="Downloaders Log"
+                onClick={() => setIsDownloadModalOpen(true)}
+              >
                 <Download size={12} className="sm:w-[14px] sm:h-[14px]" /> {material.downloads || 0}
               </span>
               <span className="flex items-center gap-1 text-purple-400" title="Date">
@@ -599,6 +609,102 @@ export default function MaterialCard({ material, onIncrementView, convertToDownl
                 return (
                   <p className="text-zinc-500 text-xs text-center py-6">
                     {material.viewedBy?.length > 0 ? "No matching viewers found." : "No views recorded yet."}
+                  </p>
+                );
+              })()}
+            </div>
+
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Downloaders Log Modal */}
+      {isDownloadModalOpen && createPortal(
+        <div 
+          onClick={() => {
+            setIsDownloadModalOpen(false);
+            setDownloadersSearchQuery("");
+          }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm glass-card overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-200"
+          >
+            
+            {/* Header */}
+            <div className="p-4 border-b border-white/10 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-green-400 bg-green-500/10 px-2.5 py-1 rounded-lg border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.05)]">
+                <Download size={14} />
+                <span className="text-[11px] font-extrabold tracking-wide">
+                  Downloads: {material.downloadedBy?.length || 0}
+                </span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsDownloadModalOpen(false);
+                  setDownloadersSearchQuery("");
+                }} 
+                className="text-zinc-400 hover:text-white transition-colors"
+                aria-label="Close downloaders modal"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Search Input Box */}
+            <div className="p-3 border-b border-white/10 bg-black/20">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="text-white/70" size={14} />
+                </div>
+                <input 
+                  type="text" 
+                  value={downloadersSearchQuery}
+                  onChange={(e) => setDownloadersSearchQuery(e.target.value)}
+                  placeholder="Search by name or email..." 
+                  className="w-full glass-card pl-9 pr-4 py-2 text-xs bg-white/5 border border-white/20 text-white placeholder:text-white/60 focus:border-[#FFD700] focus:outline-none transition-all duration-200" 
+                />
+              </div>
+            </div>
+
+            {/* Downloaders List */}
+            <div className="p-2 space-y-1.5 max-h-[calc(100vh-220px)] overflow-y-auto no-scrollbar">
+              {(() => {
+                const filtered = (material.downloadedBy || []).filter(v => {
+                  const name = (v.name || "").toLowerCase();
+                  const email = (v.email || "").toLowerCase();
+                  const q = downloadersSearchQuery.toLowerCase();
+                  return name.includes(q) || email.includes(q);
+                });
+
+                if (filtered.length > 0) {
+                  return [...filtered]
+                    .sort((a, b) => new Date(b.time) - new Date(a.time))
+                    .map((v, i) => (
+                      <div 
+                        key={i} 
+                        className="bg-zinc-900/50 border border-zinc-800/50 p-2.5 px-3 rounded-xl flex items-center justify-between gap-3 transition-colors hover:bg-zinc-800/50 hover:border-zinc-700 duration-150 animate-in fade-in slide-in-from-bottom-1"
+                      >
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-bold text-white text-xs truncate tracking-wide">{v.name}</span>
+                          <span className="text-[10px] text-white/70 truncate mt-0.5">{v.email}</span>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/10 text-green-400 text-[10px] font-bold rounded-md border border-green-500/15">
+                            <Clock size={10} />
+                            {formatTime(v.time)}
+                          </span>
+                        </div>
+                      </div>
+                    ));
+                }
+
+                return (
+                  <p className="text-zinc-500 text-xs text-center py-6">
+                    {material.downloadedBy?.length > 0 ? "No matching downloaders found." : "No downloads recorded yet."}
                   </p>
                 );
               })()}

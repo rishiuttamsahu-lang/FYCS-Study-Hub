@@ -22,7 +22,7 @@ service cloud.firestore {
       allow update: if request.auth != null && 
         (getUserRole() == 'admin' || 
          getUserRole() == 'superadmin' ||
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'viewedBy', 'downloads']));
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'viewedBy', 'downloads', 'downloadedBy']));
         
       allow delete: if request.auth != null && getUserRole() == 'superadmin';
     }
