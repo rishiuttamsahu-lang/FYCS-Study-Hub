@@ -316,6 +316,83 @@
   color: rgb(var(--ink));
 }
 
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GLASS MODE (LIGHT THEME) DROPDOWNS & OVERLAYS FIX
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* 1. Custom Select popups, Sort & Filter dropdowns, and floating menus */
+[data-theme="glass"] .absolute.z-\[100\],
+[data-theme="glass"] .absolute.z-50,
+[data-theme="glass"] .absolute.z-10,
+[data-theme="glass"] .fixed.z-50,
+[data-theme="glass"] [class*="absolute"][class*="z-"],
+[data-theme="glass"] [class*="absolute"][class*="mt-2"],
+[data-theme="glass"] [class*="absolute"][class*="top-full"],
+[data-theme="glass"] [class*="fixed"][class*="top-"],
+[data-theme="glass"] div[ref="dropdownRef"] > div,
+[data-theme="glass"] .relative > div.absolute {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  color: rgb(var(--ink)) !important;
+  border-color: rgba(var(--ink), 0.15) !important;
+  box-shadow: 0 12px 40px rgba(30, 22, 54, 0.18), 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+}
+
+/* Options / Items text inside custom dropdown menus */
+[data-theme="glass"] .absolute[class*="z-"] div,
+[data-theme="glass"] .absolute[class*="z-"] button,
+[data-theme="glass"] [class*="absolute"][class*="top-full"] button,
+[data-theme="glass"] div[ref="dropdownRef"] div,
+[data-theme="glass"] div[ref="dropdownRef"] button {
+  color: rgb(var(--ink));
+}
+
+/* Hover state for items inside custom dropdown menus */
+[data-theme="glass"] .absolute[class*="z-"] div[onClick]:hover,
+[data-theme="glass"] .absolute[class*="z-"] button:hover,
+[data-theme="glass"] [class*="absolute"][class*="top-full"] button:hover,
+[data-theme="glass"] div[ref="dropdownRef"] div[onClick]:hover,
+[data-theme="glass"] div[ref="dropdownRef"] button:hover {
+  background-color: rgba(var(--ink), 0.08) !important;
+  color: rgb(var(--ink)) !important;
+}
+
+/* Selected option highlight inside custom dropdowns */
+[data-theme="glass"] .bg-\[\#FFD700\]\/15,
+[data-theme="glass"] .bg-\[\#FFD700\]\/20 {
+  background-color: rgba(234, 88, 12, 0.12) !important;
+  color: #b45309 !important;
+}
+
+/* 2. Native HTML <select> and <option> tags in Light Mode */
+[data-theme="glass"] select,
+[data-theme="glass"] .select-premium,
+[data-theme="glass"] .premium-dropdown,
+[data-theme="glass"] .select-premium-sm {
+  color-scheme: light !important;
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  color: rgb(var(--ink)) !important;
+  border-color: rgba(var(--ink), 0.18) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(30,22,54,0.7)' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+}
+
+[data-theme="glass"] select option,
+[data-theme="glass"] .select-premium option,
+[data-theme="glass"] .premium-dropdown option,
+[data-theme="glass"] .select-premium-sm option {
+  background-color: #ffffff !important;
+  color: rgb(30, 22, 54) !important;
+}
+
+[data-theme="glass"] select option:checked,
+[data-theme="glass"] select option:hover,
+[data-theme="glass"] .select-premium option:checked,
+[data-theme="glass"] .premium-dropdown option:checked {
+  background-color: #f3eefc !important;
+  color: #b45309 !important;
+}
+
 /* Remaining muted grays used for secondary text */
 [data-theme="glass"] .text-gray-300 {
   color: rgba(var(--ink), 0.82);
