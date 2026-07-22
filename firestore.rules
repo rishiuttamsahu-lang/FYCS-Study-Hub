@@ -2,94 +2,84 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 🛡️ Helper function to get user role
+    // 🛡️ Helper Function: Safe Role Check (Avoids crashes for first-time visitors)
     function getUserRole() {
       let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return exists(userPath) ? get(userPath).data.role : 'student';
     }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // 📚 MATERIALS: Only authenticated users can read
+    // 📚 1. MATERIALS RULES
     match /materials/{document} {
-      allow read: if request.auth != null;
+      allow read: if true; 
       
+      // ✅ Normal users can upload, but the status must be 'Pending'. Admins can create directly.
       allow create: if request.auth != null && 
-        (request.resource.data.status == 'Pending' || getUserRole() == 'admin' || getUserRole() == 'superadmin');
+        (request.resource.data.status == 'Pending' || getUserRole() == 'admin' || getUserRole() == 'superadmin'); 
       
+      // ✅ Edit or Approve requires Admin/Superadmin. Normal users can ONLY update 'views', 'viewedBy', 'downloads', and 'downloadedBy' fields.
       allow update: if request.auth != null && 
-        (getUserRole() == 'admin' || 
-         getUserRole() == 'superadmin' ||
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'viewedBy', 'downloads', 'downloadedBy']));
+        (
+          getUserRole() == 'admin' || 
+          getUserRole() == 'superadmin' ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'viewedBy', 'downloads', 'downloadedBy'])
+        );
         
+      // 🚨 Superadmin only
       allow delete: if request.auth != null && getUserRole() == 'superadmin';
     }
 
-    // 📖 SUBJECTS: Only authenticated users can read
+    // 📖 2. SUBJECTS RULES
     match /subjects/{document} {
-      allow read: if request.auth != null;
+      allow read: if true; 
       allow write: if request.auth != null && 
         (getUserRole() == 'admin' || getUserRole() == 'superadmin');
     }
 
-    // 👤 USERS: Only read own data + admins can read all
+    // 👤 3. USERS COLLECTION RULES
     match /users/{userId} {
-      allow read: if request.auth != null && 
-        (
-          isOwner(userId) || 
-          resource.data.email == request.auth.token.email ||
-          (request.auth.uid != userId && getUserRole() == 'admin') || 
-          (request.auth.uid != userId && getUserRole() == 'superadmin')
-        );
+      allow read: if true; 
       
-      allow create: if request.auth != null && isOwner(userId) &&
+      // Normal users can only register themselves with 'student' role and not banned
+      allow create: if request.auth != null && request.auth.uid == userId &&
         request.resource.data.role == 'student' &&
         request.resource.data.isBanned == false;
       
+      // Prevent normal users from promoting themselves or unbanning themselves
       allow update: if request.auth != null && 
         (
-          (isOwner(userId) && 
+          (request.auth.uid == userId && 
            request.resource.data.role == resource.data.role && 
            request.resource.data.isBanned == resource.data.isBanned) || 
-          (request.auth.uid != userId && getUserRole() == 'admin') || 
-          (request.auth.uid != userId && getUserRole() == 'superadmin')
+          getUserRole() == 'admin' || 
+          getUserRole() == 'superadmin'
         );
         
       allow delete: if request.auth != null && getUserRole() == 'superadmin';
     }
 
-    // 🔔 NOTIFICATIONS: Only read own notifications
+    // 🔔 4. NOTIFICATIONS RULES
     match /notifications/{docId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null; 
       
+      // Normal users can only modify readBy/deletedBy when marking read/unread or deleting
       allow update: if request.auth != null && 
-        (resource.data.userId == request.auth.uid && 
+        (getUserRole() == 'admin' || getUserRole() == 'superadmin' || 
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy', 'deletedBy']));
          
       allow create, delete: if request.auth != null && 
         (getUserRole() == 'admin' || getUserRole() == 'superadmin');
     }
 
-    // 💬 FEEDBACKS: Only authenticated users can create, admins can read
+    // 💬 5. FEEDBACKS RULES
     match /feedbacks/{docId} {
       allow create: if request.auth != null;
       allow read, update, delete: if request.auth != null && 
         (getUserRole() == 'admin' || getUserRole() == 'superadmin');
     }
 
-    // 📊 ANALYTICS: Only admins can read
-    match /analytics/{docId} {
-      allow read: if request.auth != null && 
-        (getUserRole() == 'admin' || getUserRole() == 'superadmin');
-      allow write: if request.auth != null && 
-        (getUserRole() == 'admin' || getUserRole() == 'superadmin');
-    }
-
-    // 🔒 DEFAULT FALLBACK: Deny everything else
+    // 🔒 6. FALLBACK RULE
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }
